@@ -62,6 +62,7 @@ const state = {
   allowedEmailDomain: "",
   boardUnsubscribe: null,
   pendingSharedScore: null,
+  savingSharedScore: false,
   latestSharedScoreId: null,
   sharedScores: {
     quick: null,
@@ -202,6 +203,60 @@ function renderAuthControls() {
   elements.signOutButton.hidden = true;
 }
 
+function getFirebaseMessage(error, fallback) {
+  const code = error?.code || "";
+
+  if (code.includes("unauthorized-domain")) {
+    return "This GitHub Pages domain is not authorized in Firebase Authentication settings.";
+  }
+
+  if (code.includes("operation-not-supported-in-this-environment")) {
+    return "Google sign-in only works from the deployed GitHub Pages site, not from the local file preview.";
+  }
+
+  if (code.includes("network-request-failed")) {
+    return "Firebase could not be reached. Check the internet connection and try again.";
+  }
+
+  if (code.includes("popup-blocked")) {
+    return "The Google sign-in popup was blocked. Allow popups for this site and try again.";
+  }
+
+  if (code.includes("popup-closed-by-user")) {
+    return "Google sign-in was closed before it finished.";
+  }
+
+  if (code.includes("permission-denied")) {
+    return "Firebase blocked the score. Check that Firestore rules are published and you used a @bcc.vic.edu.au account.";
+  }
+
+  if (code.includes("not-found") || code.includes("failed-precondition")) {
+    return "Firestore is not ready yet. Create the Firestore database in Firebase Console and publish the rules.";
+  }
+
+  return error?.message || fallback;
+}
+
+function applyAuthState(authState) {
+  state.authEmail = authState?.email || "";
+  state.authAllowed = Boolean(authState?.allowed);
+  state.allowedEmailDomain = authState?.allowedEmailDomain || state.allowedEmailDomain;
+  renderAuthControls();
+
+  if (state.authAllowed) {
+    setLeaderboardStatus("shared", "Signed in. Shared leaderboard scores can now be submitted.");
+    if (state.pendingSharedScore) saveSharedScore();
+    return;
+  }
+
+  if (state.authEmail) {
+    setLeaderboardStatus(
+      "local",
+      `Use a ${getAllowedDomainLabel()} Google account to submit leaderboard scores.`,
+    );
+  }
+}
+
 function updateSharedResultRank() {
   if (!state.latestSharedScoreId) return;
 
@@ -234,7 +289,7 @@ function listenToSharedBoard(game) {
     () => {
       state.sharedScores[game] = null;
       if (state.board === game) renderLeaderboard();
-      setLeaderboardStatus("local", "Shared leaderboard unavailable. Scores are saving on this device.");
+      setLeaderboardStatus("local", "Shared leaderboard unavailable. Check Firestore database setup and rules.");
     },
   );
 }
@@ -255,11 +310,12 @@ function connectSharedLeaderboard() {
   }
 
   renderAuthControls();
+  applyAuthState(window.sharedLeaderboard.getAuthState?.());
   listenToSharedBoard(state.board);
 }
 
 async function saveSharedScore() {
-  if (!state.sharedConfigured) return;
+  if (!state.sharedConfigured || state.savingSharedScore) return;
 
   if (!state.authAllowed) {
     state.pendingSharedScore = {
@@ -283,6 +339,7 @@ async function saveSharedScore() {
   };
 
   try {
+    state.savingSharedScore = true;
     state.latestSharedScoreId = await window.sharedLeaderboard.addScore(
       scoreToSave.game,
       scoreToSave.name,
@@ -291,8 +348,15 @@ async function saveSharedScore() {
     state.pendingSharedScore = null;
     renderAuthControls();
     updateSharedResultRank();
-  } catch {
-    setLeaderboardStatus("local", "Could not share this score. It is saved on this device.");
+    setLeaderboardStatus("shared", "Score added to the shared leaderboard.");
+  } catch (error) {
+    console.error(error);
+    setLeaderboardStatus(
+      "local",
+      getFirebaseMessage(error, "Could not share this score. It is saved on this device."),
+    );
+  } finally {
+    state.savingSharedScore = false;
   }
 }
 
@@ -302,11 +366,12 @@ async function signInForLeaderboard() {
   setLeaderboardStatus("connecting", `Waiting for ${getAllowedDomainLabel()} Google sign-in...`);
 
   try {
-    await window.sharedLeaderboard.signIn();
+    applyAuthState(await window.sharedLeaderboard.signIn());
   } catch (error) {
+    console.error(error);
     setLeaderboardStatus(
       "local",
-      error?.message || `Sign in with a ${getAllowedDomainLabel()} account to submit scores.`,
+      getFirebaseMessage(error, `Sign in with a ${getAllowedDomainLabel()} account to submit scores.`),
     );
   }
 }
@@ -588,22 +653,7 @@ elements.soundToggle.addEventListener("click", () => {
   elements.soundToggle.firstElementChild.textContent = state.sound ? "♪" : "×";
 });
 
-window.addEventListener("leaderboard-auth-changed", (event) => {
-  state.authEmail = event.detail.email || "";
-  state.authAllowed = Boolean(event.detail.allowed);
-  state.allowedEmailDomain = event.detail.allowedEmailDomain || state.allowedEmailDomain;
-  renderAuthControls();
-
-  if (state.authAllowed) {
-    setLeaderboardStatus("shared", "Signed in. Shared leaderboard scores can now be submitted.");
-    if (state.pendingSharedScore) saveSharedScore();
-  } else if (state.authEmail) {
-    setLeaderboardStatus(
-      "local",
-      `Use a ${getAllowedDomainLabel()} Google account to submit leaderboard scores.`,
-    );
-  }
-});
+window.addEventListener("leaderboard-auth-changed", (event) => applyAuthState(event.detail));
 
 window.addEventListener("shared-leaderboard-ready", connectSharedLeaderboard);
 renderLeaderboard();

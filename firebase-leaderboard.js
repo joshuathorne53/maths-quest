@@ -1,8 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
   GoogleAuthProvider,
+  browserLocalPersistence,
   getAuth,
   onAuthStateChanged,
+  setPersistence,
   signInWithPopup,
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
@@ -68,10 +70,12 @@ if (!isConfigured) {
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ hd: cleanAllowedDomain });
+  const persistenceReady = setPersistence(auth, browserLocalPersistence);
 
   onAuthStateChanged(auth, announceAuth);
 
   async function signInWithSchoolGoogle() {
+    await persistenceReady;
     const credential = await signInWithPopup(auth, provider);
 
     if (!emailIsAllowed(credential.user.email)) {
@@ -104,6 +108,7 @@ if (!isConfigured) {
   window.sharedLeaderboard = {
     isConfigured: true,
     allowedEmailDomain: cleanAllowedDomain,
+    getAuthState: () => getPublicAuthState(auth.currentUser),
     signIn: signInWithSchoolGoogle,
     signOut: () => signOut(auth),
 
