@@ -55,6 +55,7 @@ const isConfigured = hasFirebaseConfig && hasAllowedDomain;
 let studentProfile = null;
 let teacherProfile = null;
 let teacherApplication = null;
+let accountSettings = null;
 let accountUnsubscribes = [];
 
 function announceReady() {
@@ -87,6 +88,11 @@ function cleanYearLevels(yearLevels) {
     .filter((yearLevel, index, levels) => yearLevel && levels.indexOf(yearLevel) === index);
 }
 
+function cleanAccountType(accountType) {
+  const value = String(accountType || "").trim().toLowerCase();
+  return value === "student" || value === "teacher" ? value : "";
+}
+
 function makeError(code, message) {
   const error = new Error(message);
   error.code = code;
@@ -97,6 +103,7 @@ function resetAccountDocuments() {
   studentProfile = null;
   teacherProfile = null;
   teacherApplication = null;
+  accountSettings = null;
 }
 
 function stopWatchingAccountDocuments() {
@@ -116,6 +123,7 @@ function getPublicAuthState(user) {
     name: user ? getAccountName(user) : "",
     allowedEmailDomain: cleanAllowedDomain,
     allowedEmailDomains: cleanAllowedDomains,
+    accountType: cleanAccountType(accountSettings?.accountType),
     studentYearLevel: cleanYearLevel(studentProfile?.yearLevel),
     teacherApproved: Boolean(teacherProfile?.approved),
     teacherYearLevels,
@@ -160,19 +168,25 @@ if (!isConfigured) {
     return doc(db, "teacherApplications", user.uid);
   }
 
+  function accountSettingsRef(user) {
+    return doc(db, "accountSettings", user.uid);
+  }
+
   async function readAccountDocuments(user) {
     resetAccountDocuments();
     if (!user || !emailIsAllowed(user.email)) return;
 
-    const [studentSnapshot, teacherSnapshot, applicationSnapshot] = await Promise.all([
+    const [studentSnapshot, teacherSnapshot, applicationSnapshot, settingsSnapshot] = await Promise.all([
       getDoc(studentProfileRef(user)),
       getDoc(teacherProfileRef(user)),
       getDoc(teacherApplicationRef(user)),
+      getDoc(accountSettingsRef(user)),
     ]);
 
     studentProfile = studentSnapshot.exists() ? studentSnapshot.data() : null;
     teacherProfile = teacherSnapshot.exists() ? teacherSnapshot.data() : null;
     teacherApplication = applicationSnapshot.exists() ? applicationSnapshot.data() : null;
+    accountSettings = settingsSnapshot.exists() ? settingsSnapshot.data() : null;
   }
 
   function watchAccountDocuments(user) {
@@ -203,6 +217,14 @@ if (!isConfigured) {
         teacherApplicationRef(user),
         (snapshot) => {
           teacherApplication = snapshot.exists() ? snapshot.data() : null;
+          announceAuth(auth.currentUser);
+        },
+        handleError,
+      ),
+      onSnapshot(
+        accountSettingsRef(user),
+        (snapshot) => {
+          accountSettings = snapshot.exists() ? snapshot.data() : null;
           announceAuth(auth.currentUser);
         },
         handleError,
@@ -248,6 +270,32 @@ if (!isConfigured) {
     return collection(db, "leaderboards", game, "scores");
   }
 
+  async function saveAccountType(user, accountType) {
+    const cleanType = cleanAccountType(accountType);
+    if (!cleanType) {
+      throw makeError("profile/account-type-needed", "Choose Student or Teacher.");
+    }
+
+    const settingsDocument = accountSettingsRef(user);
+    const existingSettings = await getDoc(settingsDocument);
+    const settingsData = {
+      uid: user.uid,
+      name: getAccountName(user),
+      email: cleanEmail(user.email),
+      accountType: cleanType,
+      updatedAt: serverTimestamp(),
+    };
+
+    if (existingSettings.exists()) {
+      await updateDoc(settingsDocument, settingsData);
+    } else {
+      await setDoc(settingsDocument, {
+        ...settingsData,
+        createdAt: serverTimestamp(),
+      });
+    }
+  }
+
   async function saveStudentYearLevel(yearLevel) {
     const user = getAllowedUser();
     const cleanLevel = cleanYearLevel(yearLevel);
@@ -274,6 +322,7 @@ if (!isConfigured) {
       });
     }
 
+    await saveAccountType(user, "student");
     await readAccountDocuments(user);
     announceAuth(user);
     return getPublicAuthState(user);
@@ -300,6 +349,7 @@ if (!isConfigured) {
       });
     }
 
+    await saveAccountType(user, "teacher");
     await readAccountDocuments(user);
     announceAuth(user);
     return getPublicAuthState(user);
@@ -329,6 +379,7 @@ if (!isConfigured) {
       updatedAt: serverTimestamp(),
     });
 
+    await saveAccountType(user, "teacher");
     await readAccountDocuments(user);
     announceAuth(user);
     return getPublicAuthState(user);
@@ -421,7 +472,12 @@ if (!isConfigured) {
 
     async addScore(game, score, context = {}) {
       const user = getAllowedUser();
-      const role = context.role === "teacher" ? "teacher" : "student";
+      const accountType = cleanAccountType(accountSettings?.accountType);
+      if (!accountType) {
+        throw makeError("profile/account-type-needed", "Choose Student or Teacher before submitting a score.");
+      }
+
+      const role = accountType === "teacher" ? "teacher" : "student";
       const scoreData = role === "teacher"
         ? await getTeacherScorePayload(user, game, score)
         : await getStudentScorePayload(user, game, score, context.yearLevel);

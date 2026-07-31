@@ -55,19 +55,23 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
 4. Select **Publish**.
 
 These rules let anyone read the game leaderboards. Only approved-domain Google
-users can save their own student profile, apply for teacher approval, and add a
-score. Score values are limited, and existing score entries can only keep the
-same score or move higher.
+users can save their own account setting, save their own student profile, apply
+for teacher approval, and add a score. Score values are limited, and existing
+score entries can only keep the same score or move higher.
 
-Leaderboard names come from the user's Google account. Students must save one
-year level before playing. Each Google account can have one score document per
-game because the score document ID must match the signed-in user's Firebase UID.
+Leaderboard names come from the user's Google account. After signing in, users
+must choose **Student** or **Teacher** in the toolbar Settings menu. Student
+accounts then save one year level before playing. The chosen account type is
+stored in `accountSettings` and stays attached to that Google account until it is
+changed in Settings. Each Google account can have one score document per game
+because the score document ID must match the signed-in user's Firebase UID.
 Students can play any number of attempts, and the leaderboard keeps only their
 highest score for each game.
 
 Teacher approval uses a simple Firebase Console workflow:
 
-1. A teacher signs in on the website and selects **Apply for teacher account**.
+1. A teacher signs in on the website, opens **Settings**, chooses **Teacher**,
+   and selects **Apply for teacher account**.
 2. In Firestore, open `teacherApplications` and copy the applicant document ID.
    That document ID is the teacher's Firebase UID.
 3. Create a document in `teachers` with the same document ID.

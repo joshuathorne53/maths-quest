@@ -51,6 +51,10 @@ service cloud.firestore {
       return game in ['quick', 'times', 'missing'];
     }
 
+    function isValidAccountType(accountType) {
+      return accountType in ['student', 'teacher'];
+    }
+
     function isValidName(name) {
       return name is string
         && name.size() >= 1
@@ -63,6 +67,14 @@ service cloud.firestore {
         && isValidName(request.resource.data.name)
         && request.resource.data.email == userEmail()
         && isValidYearLevel(request.resource.data.yearLevel);
+    }
+
+    function hasValidAccountSettingsFields() {
+      return request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'accountType', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidName(request.resource.data.name)
+        && request.resource.data.email == userEmail()
+        && isValidAccountType(request.resource.data.accountType);
     }
 
     function hasValidTeacherApplicationFields() {
@@ -90,6 +102,15 @@ service cloud.firestore {
       return /databases/$(database)/documents/teachers/$(request.auth.uid);
     }
 
+    function accountSettingsPath() {
+      return /databases/$(database)/documents/accountSettings/$(request.auth.uid);
+    }
+
+    function hasSavedAccountType(accountType) {
+      return exists(accountSettingsPath())
+        && get(accountSettingsPath()).data.accountType == accountType;
+    }
+
     function isApprovedTeacher() {
       return exists(teacherProfilePath())
         && get(teacherProfilePath()).data.approved == true;
@@ -114,6 +135,7 @@ service cloud.firestore {
         && hasValidBaseScoreFields(game)
         && request.resource.data.role == 'student'
         && isValidYearLevel(request.resource.data.yearLevel)
+        && hasSavedAccountType('student')
         && hasSavedStudentYear(request.resource.data.yearLevel);
     }
 
@@ -121,6 +143,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && request.resource.data.role == 'teacher'
+        && hasSavedAccountType('teacher')
         && isApprovedTeacher()
         && request.resource.data.teacherYearLevels == get(teacherProfilePath()).data.yearLevels
         && isValidYearLevelList(request.resource.data.teacherYearLevels);
@@ -143,6 +166,26 @@ service cloud.firestore {
       allow update: if isAllowedSchoolGoogleUser()
         && profileId == request.auth.uid
         && hasValidStudentProfileFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /accountSettings/{settingsId} {
+      allow read: if isAllowedSchoolGoogleUser()
+        && settingsId == request.auth.uid;
+
+      allow create: if isAllowedSchoolGoogleUser()
+        && settingsId == request.auth.uid
+        && hasValidAccountSettingsFields()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isAllowedSchoolGoogleUser()
+        && settingsId == request.auth.uid
+        && hasValidAccountSettingsFields()
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;

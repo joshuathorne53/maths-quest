@@ -161,6 +161,31 @@ a {
   border-color: rgba(23, 33, 59, 0.1);
 }
 
+.settings-wrap {
+  position: relative;
+}
+
+.settings-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(580px, calc(100vw - 32px));
+}
+
+.settings-menu::before {
+  position: absolute;
+  top: -7px;
+  right: 38px;
+  width: 16px;
+  height: 16px;
+  content: "";
+  background: white;
+  border-top: 1px solid rgba(23, 33, 59, 0.08);
+  border-left: 1px solid rgba(23, 33, 59, 0.08);
+  transform: rotate(45deg);
+}
+
 .hero {
   position: relative;
   display: grid;
@@ -1143,36 +1168,118 @@ a {
 
 .account-panel {
   display: grid;
-  margin: 0 0 24px;
-  padding: 26px;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 24px;
+  margin: 0;
+  padding: 20px;
+  gap: 16px;
   color: var(--navy);
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 26px;
-  box-shadow: 0 24px 55px rgba(4, 10, 27, 0.18);
+  background: white;
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 26px 70px rgba(4, 10, 27, 0.22);
 }
 
-.account-copy h3 {
+.account-menu-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.account-menu-head .eyebrow {
+  margin-bottom: 10px;
+}
+
+.account-menu-head h3 {
   margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-size: 1.55rem;
   font-weight: 900;
   letter-spacing: -0.06em;
   line-height: 1;
 }
 
-.account-copy p:not(.eyebrow) {
-  margin: 16px 0 0;
+.settings-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
   color: var(--muted);
-  font-size: 0.8rem;
+  background: #f5f7fc;
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 11px;
+  place-items: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.account-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
   font-weight: 700;
   line-height: 1.65;
 }
 
+.account-type-options {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border: 0;
+}
+
+.account-type-options legend {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.account-choice {
+  display: flex;
+  min-height: 78px;
+  padding: 13px;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f6f8fd;
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.account-choice:has(input:checked) {
+  background: #eef1ff;
+  border-color: rgba(93, 124, 255, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(93, 124, 255, 0.15);
+}
+
+.account-choice input {
+  margin-top: 3px;
+  accent-color: var(--blue);
+}
+
+.account-choice span {
+  display: grid;
+  gap: 3px;
+}
+
+.account-choice strong {
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.account-choice small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .account-tools {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -1612,6 +1719,20 @@ footer > a:last-child {
     display: none;
   }
 
+  .settings-menu {
+    position: fixed;
+    top: 76px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+    max-height: calc(100vh - 92px);
+    overflow: auto;
+  }
+
+  .settings-menu::before {
+    right: 92px;
+  }
+
   .hero {
     min-height: 700px;
     padding: 135px 20px 70px;
@@ -1738,6 +1859,10 @@ footer > a:last-child {
   .account-panel {
     padding: 16px;
     border-radius: 22px;
+  }
+
+  .account-type-options {
+    grid-template-columns: 1fr;
   }
 
   .account-tools {
