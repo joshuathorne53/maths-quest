@@ -17,8 +17,8 @@ in to GitHub.
 2. Enter an app nickname such as `Bayside Maths Challenge Website`.
 3. Do not enable Firebase Hosting. GitHub Pages is already the host.
 4. Select **Register app**.
-5. Firebase displays a `firebaseConfig` object. Copy its values into
-   [`firebase-config.js`](firebase-config.js), replacing every `YOUR_...` value.
+5. Firebase displays a `firebaseConfig` object. The current project config has
+   already been copied into [`firebase-config.js`](firebase-config.js).
 6. The approved student Google domain is already set to `bcc.vic.edu.au` in
    [`firebase-config.js`](firebase-config.js). If this ever changes, use only
    the part after the `@` symbol. For example:

@@ -1,12 +1,13 @@
-// Replace these placeholder values with the firebaseConfig object shown when
-// you register a Web app in Firebase. These identifiers are safe to publish.
+// Firebase web app identifiers. These are safe to publish; access is controlled
+// by Firebase Authentication and Firestore Security Rules.
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDVFgCMWxw2R20TXLV71LvpMH9tLMjm3JY",
+  authDomain: "bayside-maths-challenge.firebaseapp.com",
+  projectId: "bayside-maths-challenge",
+  storageBucket: "bayside-maths-challenge.firebasestorage.app",
+  messagingSenderId: "976100526278",
+  appId: "1:976100526278:web:098b782ddb09aaefe56fc7",
+  measurementId: "G-P3R47GE24L",
 };
 
 // Only Google accounts whose email ends with this domain can submit shared
