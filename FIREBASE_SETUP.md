@@ -19,12 +19,15 @@ in to GitHub.
 4. Select **Register app**.
 5. Firebase displays a `firebaseConfig` object. The current project config has
    already been copied into [`firebase-config.js`](firebase-config.js).
-6. The approved student Google domains are already set to `bcc.vic.edu.au` and
-   `baysidecc.vic.edu.au` in [`firebase-config.js`](firebase-config.js). If this
-   ever changes, use only the part after the `@` symbol. For example:
+6. The school Google domains are already set in [`firebase-config.js`](firebase-config.js):
+   `bcc.vic.edu.au` accounts are students and `baysidecc.vic.edu.au` accounts
+   are teachers. If this ever changes, use only the part after the `@` symbol.
+   For example:
 
    ```js
-   export const allowedEmailDomains = ["bcc.vic.edu.au", "baysidecc.vic.edu.au"];
+   export const studentEmailDomain = "bcc.vic.edu.au";
+   export const teacherEmailDomain = "baysidecc.vic.edu.au";
+   export const allowedEmailDomains = [studentEmailDomain, teacherEmailDomain];
    ```
 
 It is safe for `firebase-config.js` to be public. Access is controlled by Firebase
@@ -54,52 +57,45 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
    [`firestore.rules`](firestore.rules).
 4. Select **Publish**.
 
-These rules let anyone read the game leaderboards. Only approved-domain Google
-users can save their own account setting, save their own student profile, apply
-for teacher approval, and add a score. Score values are limited, and existing
-score entries can only keep the same score or move higher.
+These rules let anyone read the game leaderboards. Only school Google users can
+save profiles and add scores. `@bcc.vic.edu.au` users can only save student
+profiles and student scores. `@baysidecc.vic.edu.au` users can only save teacher
+profiles and teacher scores. Score values are limited, and existing score
+entries can only keep the same score or move higher.
 
-Leaderboard names come from the user's Google account. After signing in, users
-must choose **Student** or **Teacher** in the toolbar Settings menu. Student
-accounts then save one year level before playing. The chosen account type is
-stored in `accountSettings` and stays attached to that Google account until it is
-changed in Settings. Each Google account can have one score document per game
-because the score document ID must match the signed-in user's Firebase UID.
+Leaderboard names come from the user's Google account. Student accounts save one
+year level before playing. Each Google account can have one score document per
+game because the score document ID must match the signed-in user's Firebase UID.
 Students can play any number of attempts, and the leaderboard keeps only their
 highest score for each game.
 
-Teacher approval uses a simple Firebase Console workflow:
+Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
+Teachers open **Settings**, choose the year levels they teach, and the website
+creates or updates their `teachers/{uid}` profile automatically with:
 
-1. A teacher signs in on the website, opens **Settings**, chooses **Teacher**,
-   and selects **Apply for teacher account**.
-2. In Firestore, open `teacherApplications` and copy the applicant document ID.
-   That document ID is the teacher's Firebase UID.
-3. Create a document in `teachers` with the same document ID.
-4. Add these fields:
-
-   - `uid`: the copied document ID
-   - `name`: the teacher's display name
-   - `email`: the teacher's school email address in lowercase
-   - `approved`: `true`
-   - `yearLevels`: an array, for example `["year7", "year8"]`
-   - `createdAt`: a Firestore timestamp
-   - `approvedAt`: a Firestore timestamp
-   - `updatedAt`: a Firestore timestamp
+- `uid`: the teacher's Firebase UID
+- `name`: the teacher's Google display name
+- `email`: the teacher's school email address in lowercase
+- `approved`: `true`
+- `yearLevels`: an array, for example `["year7", "year8"]`
+- `createdAt`: a Firestore timestamp
+- `approvedAt`: a Firestore timestamp
+- `updatedAt`: a Firestore timestamp
 
 The allowed `yearLevels` values are `prep`, `year1`, `year2`, `year3`,
 `year4`, `year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`,
 and `year12`.
 
-After approval, the teacher can choose their teaching year levels from the
-website. Year-level leaderboards include teacher filters at the bottom:
+Year-level leaderboards include teacher filters at the bottom:
 
 - **No teachers:** student scores only.
 - **Year level teachers:** students plus teachers who teach the selected year.
-- **All teachers:** students plus all approved teachers with scores.
+- **All teachers:** students plus all teachers with scores.
 
-After this update, only signed-in Google users from your chosen domain can add a
-score. Personal Gmail accounts and other domains are blocked by the database
-rules, even if someone edits the website code in their browser.
+After this update, only signed-in Google users from the matching school domain
+can add the matching kind of score. Personal Gmail accounts, other domains, and
+student accounts attempting teacher scores are blocked by the database rules,
+even if someone edits the website code in their browser.
 
 ## 6. Upload and test
 
@@ -113,7 +109,7 @@ Upload all project files to the GitHub repository, including:
 Wait for GitHub Pages to deploy, then open the site. Below the leaderboard:
 
 - A green dot means the shared leaderboard is connected.
-- An orange dot means Firebase is not connected, the student is signed out, or the
+- An orange dot means Firebase is not connected, the user is signed out, or the
   account is not from the approved domain.
 
 Sign in with an approved school Google account, play a game, and finish it. Then

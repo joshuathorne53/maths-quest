@@ -1220,62 +1220,16 @@ a {
   line-height: 1.65;
 }
 
-.account-type-options {
-  display: grid;
+.account-role-note {
   margin: 0;
-  padding: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  border: 0;
-}
-
-.account-type-options legend {
-  margin-bottom: 8px;
-  color: var(--muted);
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.account-choice {
-  display: flex;
-  min-height: 78px;
-  padding: 13px;
-  align-items: flex-start;
-  gap: 10px;
+  padding: 11px 13px;
+  color: var(--blue-dark);
   background: #f6f8fd;
   border: 1px solid rgba(23, 33, 59, 0.08);
-  border-radius: 16px;
-  cursor: pointer;
-}
-
-.account-choice:has(input:checked) {
-  background: #eef1ff;
-  border-color: rgba(93, 124, 255, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(93, 124, 255, 0.15);
-}
-
-.account-choice input {
-  margin-top: 3px;
-  accent-color: var(--blue);
-}
-
-.account-choice span {
-  display: grid;
-  gap: 3px;
-}
-
-.account-choice strong {
-  font-size: 0.78rem;
+  border-radius: 14px;
+  font-size: 0.68rem;
   font-weight: 900;
-}
-
-.account-choice small {
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .account-tools {
@@ -1859,10 +1813,6 @@ footer > a:last-child {
   .account-panel {
     padding: 16px;
     border-radius: 22px;
-  }
-
-  .account-type-options {
-    grid-template-columns: 1fr;
   }
 
   .account-tools {

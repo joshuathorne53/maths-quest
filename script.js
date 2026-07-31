@@ -70,13 +70,10 @@ const state = {
   allowedEmailDomain: "",
   allowedEmailDomains: [],
   accountType: "",
-  accountChoice: "student",
   settingsOpen: false,
   settingsUserOpen: false,
   studentYearLevel: "",
-  teacherApproved: false,
   teacherYearLevels: [],
-  teacherApplicationStatus: "",
   boardUnsubscribe: null,
   pendingSharedScore: null,
   savingSharedScore: false,
@@ -133,14 +130,13 @@ const elements = {
   accountPanel: document.querySelector("#account-panel"),
   accountTitle: document.querySelector("#account-title"),
   accountMessage: document.querySelector("#account-message"),
-  accountTypeOptions: document.querySelector("#account-type-options"),
+  accountRoleNote: document.querySelector("#account-role-note"),
   studentProfileForm: document.querySelector("#student-profile-form"),
   studentYearSelect: document.querySelector("#student-year-select"),
   profileStatus: document.querySelector("#profile-status"),
   teacherPanel: document.querySelector("#teacher-panel"),
   teacherBadge: document.querySelector("#teacher-badge"),
   teacherStatus: document.querySelector("#teacher-status"),
-  teacherApplyButton: document.querySelector("#teacher-apply-button"),
   teacherYearPanel: document.querySelector("#teacher-year-panel"),
   teacherYearOptions: document.querySelector("#teacher-year-options"),
   teacherYearsSave: document.querySelector("#teacher-years-save"),
@@ -243,10 +239,7 @@ function getLocalScores() {
 }
 
 function getActiveAccountType() {
-  if (state.accountChoice) return state.accountChoice;
-  if (state.accountType) return state.accountType;
-  if (state.teacherApproved || state.teacherApplicationStatus === "pending") return "teacher";
-  return "student";
+  return state.accountType;
 }
 
 function accountSetupRequired() {
@@ -255,8 +248,7 @@ function accountSetupRequired() {
   const accountType = getActiveAccountType();
   if (!state.accountType) return true;
   if (accountType === "teacher") {
-    if (state.teacherApproved) return state.teacherYearLevels.length === 0;
-    return state.teacherApplicationStatus !== "pending";
+    return state.teacherYearLevels.length === 0;
   }
 
   return !state.studentYearLevel;
@@ -266,16 +258,12 @@ function getAccountSetupMessage() {
   const accountType = getActiveAccountType();
 
   if (!state.accountType) {
-    return "Choose Student or Teacher in Settings before playing.";
+    return "Sign in with a school Google account before playing.";
   }
 
   if (accountType === "teacher") {
-    if (state.teacherApproved && !state.teacherYearLevels.length) {
+    if (!state.teacherYearLevels.length) {
       return "Choose your teaching year levels before playing as a teacher.";
-    }
-
-    if (!state.teacherApproved) {
-      return "Teacher application pending approval.";
     }
   }
 
@@ -402,7 +390,7 @@ function hasPlayableProfile() {
   if (!state.authAllowed) return false;
   if (!state.accountType) return false;
   if (getActiveAccountType() === "teacher") {
-    return state.teacherApproved && state.teacherYearLevels.length > 0;
+    return state.teacherYearLevels.length > 0;
   }
   return Boolean(state.studentYearLevel);
 }
@@ -421,7 +409,7 @@ function updateStartPanel() {
   }
 
   if (!state.accountType) {
-    elements.startPlayer.textContent = "Open Settings and choose Student or Teacher before playing.";
+    elements.startPlayer.textContent = "Sign in with a school Google account before playing.";
     elements.startGameButton.textContent = "Open settings";
     return;
   }
@@ -430,12 +418,9 @@ function updateStartPanel() {
     if (state.teacherYearLevels.length) {
       elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher for ${getTeacherYearLabel()}.`;
       elements.startGameButton.textContent = "Start game →";
-    } else if (state.teacherApproved) {
+    } else {
       elements.startPlayer.textContent = "Choose your teaching year levels before playing as a teacher.";
       elements.startGameButton.textContent = "Open settings";
-    } else {
-      elements.startPlayer.textContent = "Teacher application pending approval.";
-      elements.startGameButton.textContent = "Teacher approval needed";
     }
     return;
   }
@@ -476,13 +461,6 @@ function setSettingsOpen(open, { userAction = false } = {}) {
   elements.settingsClose.hidden = needsSetup;
 }
 
-function setAccountChoice(accountType) {
-  state.accountChoice = cleanAccountType(accountType) || "student";
-  renderAccountPanel();
-  updateStartPanel();
-  setSettingsOpen(true, { userAction: true });
-}
-
 function renderAccountPanel() {
   elements.settingsWrap.hidden = !(state.sharedConfigured && state.authAllowed);
   elements.accountPanel.hidden = elements.settingsWrap.hidden;
@@ -491,31 +469,26 @@ function renderAccountPanel() {
   const accountType = getActiveAccountType();
   const needsSetup = accountSetupRequired();
 
-  elements.accountTypeOptions.querySelectorAll("input").forEach((radio) => {
-    radio.checked = radio.value === accountType;
-  });
   elements.studentProfileForm.hidden = accountType !== "student";
   elements.teacherPanel.hidden = accountType !== "teacher";
   elements.studentYearSelect.value = state.studentYearLevel;
   elements.accountTitle.textContent = needsSetup ? "Finish account setup" : "Settings";
-  elements.accountMessage.textContent = accountType === "teacher"
-    ? "Teacher mode stays saved for this Google account. Approval is needed before teacher scores can be submitted."
-    : "Your student year level stays saved for this Google account until you change it here.";
 
-  if (state.teacherApproved) {
-    elements.teacherBadge.textContent = "Approved";
-    elements.teacherStatus.textContent = `Teacher account approved for ${getTeacherYearLabel()}.`;
-    elements.teacherApplyButton.hidden = true;
-    elements.teacherYearPanel.hidden = false;
-  } else if (state.teacherApplicationStatus === "pending") {
-    elements.teacherBadge.textContent = "Pending";
-    elements.teacherStatus.textContent = "Teacher application sent. A Firebase Console owner still needs to approve it.";
-    elements.teacherApplyButton.hidden = true;
+  if (!accountType) {
+    elements.accountRoleNote.textContent = "Checking your school email domain...";
+    elements.accountMessage.textContent = "@bcc.vic.edu.au accounts are students. @baysidecc.vic.edu.au accounts are teachers.";
     elements.teacherYearPanel.hidden = true;
+  } else if (accountType === "teacher") {
+    elements.accountRoleNote.textContent = "@baysidecc.vic.edu.au accounts are teacher accounts.";
+    elements.accountMessage.textContent = "Pick the year levels you teach. Your teacher scores can appear in the teacher leaderboard views for those year levels.";
+    elements.teacherBadge.textContent = "Teacher";
+    elements.teacherStatus.textContent = state.teacherYearLevels.length
+      ? `Teaching years saved: ${getTeacherYearLabel()}.`
+      : "Choose the year level(s) you teach before playing.";
+    elements.teacherYearPanel.hidden = false;
   } else {
-    elements.teacherBadge.textContent = "Not applied";
-    elements.teacherStatus.textContent = "Teachers can apply here. Once approved, they can choose their teaching year levels.";
-    elements.teacherApplyButton.hidden = false;
+    elements.accountRoleNote.textContent = "@bcc.vic.edu.au accounts are student accounts.";
+    elements.accountMessage.textContent = "Save your student year level. It stays saved for this Google account until you change it here.";
     elements.teacherYearPanel.hidden = true;
   }
 
@@ -606,12 +579,16 @@ function getFirebaseMessage(error, fallback) {
     return "Choose and save your year level before submitting a score.";
   }
 
-  if (code.includes("profile/account-type-needed")) {
-    return "Choose Student or Teacher in Settings first.";
+  if (code.includes("profile/student-domain-required")) {
+    return "Use an @bcc.vic.edu.au account for student leaderboards.";
   }
 
-  if (code.includes("teacher/not-approved")) {
-    return "This teacher account is not approved yet.";
+  if (code.includes("profile/account-type-needed")) {
+    return "Use the correct school Google domain before submitting a score.";
+  }
+
+  if (code.includes("teacher/domain-required")) {
+    return "Use an @baysidecc.vic.edu.au account for teacher leaderboards.";
   }
 
   if (code.includes("teacher/year-levels-needed")) {
@@ -640,7 +617,6 @@ function setBoardYearLevel(yearLevel) {
 function applyAuthState(authState) {
   const oldAccountType = state.accountType;
   const oldStudentYearLevel = state.studentYearLevel;
-  const oldTeacherApproved = state.teacherApproved;
   const oldTeacherYears = state.teacherYearLevels.join(",");
 
   state.authUid = authState?.uid || "";
@@ -651,13 +627,9 @@ function applyAuthState(authState) {
   state.allowedEmailDomains = authState?.allowedEmailDomains || state.allowedEmailDomains;
   state.accountType = cleanAccountType(authState?.accountType);
   state.studentYearLevel = cleanYearLevel(authState?.studentYearLevel);
-  state.teacherApproved = Boolean(authState?.teacherApproved);
   state.teacherYearLevels = Array.isArray(authState?.teacherYearLevels)
     ? authState.teacherYearLevels.map(cleanYearLevel).filter(Boolean)
     : [];
-  state.teacherApplicationStatus = authState?.teacherApplicationStatus || "";
-  state.accountChoice = state.accountType
-    || (state.teacherApproved || state.teacherApplicationStatus === "pending" ? "teacher" : "student");
 
   if (state.authAllowed) {
     state.player = getGooglePlayerName();
@@ -665,7 +637,6 @@ function applyAuthState(authState) {
       setBoardYearLevel(state.studentYearLevel);
     }
   } else {
-    state.accountChoice = "student";
     state.settingsOpen = false;
     state.settingsUserOpen = false;
   }
@@ -682,9 +653,9 @@ function applyAuthState(authState) {
       setProfileStatus(`Year level saved as ${getYearLabel(state.studentYearLevel)}.`);
     }
 
-    if (!oldTeacherApproved && state.teacherApproved) {
-      setProfileStatus("Teacher account approved. Pick the year levels you teach.");
-    } else if (oldTeacherYears !== state.teacherYearLevels.join(",") && state.teacherApproved) {
+    if (oldAccountType !== "teacher" && state.accountType === "teacher" && !state.teacherYearLevels.length) {
+      setProfileStatus("Teacher account detected. Pick the year levels you teach.");
+    } else if (oldTeacherYears !== state.teacherYearLevels.join(",") && state.accountType === "teacher") {
       setProfileStatus(`Teaching years saved: ${getTeacherYearLabel()}.`);
     }
 
@@ -888,7 +859,6 @@ async function saveStudentProfile(event) {
 
   try {
     setProfileStatus("Saving year level...");
-    state.accountChoice = "student";
     applyAuthState(await window.sharedLeaderboard.saveStudentYearLevel(yearLevel));
     setBoardYearLevel(yearLevel);
     setLeaderboardStatus("shared", `Scores will now submit to ${getYearLabel(yearLevel)}.`);
@@ -896,26 +866,6 @@ async function saveStudentProfile(event) {
   } catch (error) {
     console.error(error);
     setProfileStatus(getFirebaseMessage(error, "Could not save your year level."));
-  }
-}
-
-async function applyForTeacherAccount() {
-  if (!state.sharedConfigured) return;
-
-  if (!state.authAllowed) {
-    const signedIn = await signInForLeaderboard();
-    if (!signedIn) return;
-  }
-
-  try {
-    setProfileStatus("Sending teacher application...");
-    state.accountChoice = "teacher";
-    applyAuthState(await window.sharedLeaderboard.applyForTeacherAccount());
-    setProfileStatus("Teacher application sent. Wait for approval in Firebase Console.");
-    setSettingsOpen(false, { userAction: true });
-  } catch (error) {
-    console.error(error);
-    setProfileStatus(getFirebaseMessage(error, "Could not send teacher application."));
   }
 }
 
@@ -930,7 +880,6 @@ async function saveTeacherYears() {
 
   try {
     setProfileStatus("Saving teaching year levels...");
-    state.accountChoice = "teacher";
     applyAuthState(await window.sharedLeaderboard.saveTeacherYearLevels(yearLevels));
     setLeaderboardStatus("shared", `Teacher scores can now appear for ${getTeacherYearLabel()}.`);
     setSettingsOpen(false, { userAction: true });
@@ -1294,11 +1243,7 @@ elements.boardYearSelect.addEventListener("change", () => {
   );
 });
 elements.studentProfileForm.addEventListener("submit", saveStudentProfile);
-elements.teacherApplyButton.addEventListener("click", applyForTeacherAccount);
 elements.teacherYearsSave.addEventListener("click", saveTeacherYears);
-elements.accountTypeOptions.querySelectorAll('input[name="account-type"]').forEach((radio) => {
-  radio.addEventListener("change", () => setAccountChoice(radio.value));
-});
 elements.settingsButton.addEventListener("click", () => setSettingsOpen(!state.settingsOpen, { userAction: true }));
 elements.settingsClose.addEventListener("click", () => setSettingsOpen(false, { userAction: true }));
 elements.startGameButton.addEventListener("click", requestStartGame);

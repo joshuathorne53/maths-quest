@@ -11,8 +11,10 @@ export const firebaseConfig = {
 };
 
 // Only Google accounts whose email ends with one of these domains can submit
-// shared leaderboard scores. Use the part after the @ symbol.
-export const allowedEmailDomains = ["bcc.vic.edu.au", "baysidecc.vic.edu.au"];
+// shared leaderboard scores. Student/teacher roles are assigned by domain.
+export const studentEmailDomain = "bcc.vic.edu.au";
+export const teacherEmailDomain = "baysidecc.vic.edu.au";
+export const allowedEmailDomains = [studentEmailDomain, teacherEmailDomain];
 
 // Kept as the primary domain for older code paths and display fallbacks.
 export const allowedEmailDomain = allowedEmailDomains[0];
