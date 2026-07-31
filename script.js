@@ -137,14 +137,28 @@ function getLocalScores() {
 
 function saveLocalScore() {
   const scores = getLocalScores();
-  scores[state.game].push({ name: state.player, score: state.score });
+  const playerName = state.player || getGooglePlayerName();
+  const existingIndex = scores[state.game].findIndex((entry) => entry.name === playerName);
+  const previousScore = existingIndex >= 0 ? scores[state.game][existingIndex].score : null;
+  const improved = previousScore === null || state.score > previousScore;
+
+  if (improved && existingIndex >= 0) {
+    scores[state.game][existingIndex].score = state.score;
+  } else if (improved) {
+    scores[state.game].push({ name: playerName, score: state.score });
+  }
+
   scores[state.game] = scores[state.game]
     .sort((a, b) => b.score - a.score)
     .slice(0, 20);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
-  return scores[state.game].findIndex(
-    (entry) => entry.name === state.player && entry.score === state.score,
-  ) + 1;
+
+  return {
+    rank: scores[state.game].findIndex((entry) => entry.name === playerName) + 1,
+    improved,
+    previousScore,
+    bestScore: improved ? state.score : previousScore,
+  };
 }
 
 function getVisibleScores(game) {
@@ -240,10 +254,6 @@ function getFirebaseMessage(error, fallback) {
 
   if (code.includes("permission-denied")) {
     return "Firebase blocked the score. Check that Firestore rules are published and you used an approved school Google account.";
-  }
-
-  if (code.includes("already-submitted")) {
-    return "This Google account has already submitted a score for this game.";
   }
 
   if (code.includes("not-found") || code.includes("failed-precondition")) {
@@ -360,19 +370,29 @@ async function saveSharedScore() {
 
   try {
     state.savingSharedScore = true;
-    state.latestSharedScoreId = await window.sharedLeaderboard.addScore(
+    const savedScore = await window.sharedLeaderboard.addScore(
       scoreToSave.game,
       scoreToSave.score,
     );
+    state.latestSharedScoreId = savedScore.id;
     state.pendingSharedScore = null;
     renderAuthControls();
     updateSharedResultRank();
-    setLeaderboardStatus("shared", "Score added to the shared leaderboard.");
+
+    if (savedScore.improved) {
+      const previous = savedScore.previousScore;
+      const message = previous === null
+        ? "Score added to the shared leaderboard."
+        : `New best score saved. Previous best was ${previous.toLocaleString()} points.`;
+      setLeaderboardStatus("shared", message);
+    } else {
+      setLeaderboardStatus(
+        "shared",
+        `Your best score is still ${savedScore.score.toLocaleString()} points. This attempt was not higher.`,
+      );
+    }
   } catch (error) {
     console.error(error);
-    if (error?.code?.includes("already-submitted")) {
-      elements.resultRank.textContent = "Already submitted";
-    }
     setLeaderboardStatus(
       "local",
       getFirebaseMessage(error, "Could not share this score. It is saved on this device."),
@@ -563,7 +583,7 @@ function finishGame() {
 
   state.running = false;
   window.clearInterval(state.timerId);
-  const rank = saveLocalScore();
+  const localScore = saveLocalScore();
   state.latestSharedScoreId = null;
 
   elements.gamePanel.hidden = true;
@@ -572,7 +592,7 @@ function finishGame() {
   elements.finalScore.textContent = state.score.toLocaleString();
   elements.correctTotal.textContent = String(state.correct);
   elements.bestStreak.textContent = String(state.bestStreak);
-  elements.resultRank.textContent = rank > 0 ? `#${rank}` : "Top 20+";
+  elements.resultRank.textContent = localScore.rank > 0 ? `#${localScore.rank}` : "Top 20+";
   state.board = state.game;
   setActiveBoardTab();
   renderLeaderboard();

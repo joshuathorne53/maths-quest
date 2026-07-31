@@ -55,12 +55,13 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
 4. Select **Publish**.
 
 These rules let anyone read the leaderboard. Only approved-domain Google users
-can add a score, score values are limited, and existing entries cannot be edited
-or deleted from the website.
+can add a score, score values are limited, and existing entries can only be
+updated when the new score is higher.
 
 Leaderboard names come from the student's Google account. Each Google account can
-create only one score document per game leaderboard because the score document ID
-must match the signed-in user's Firebase UID.
+have one score document per game leaderboard because the score document ID must
+match the signed-in user's Firebase UID. Students can play any number of attempts,
+and the leaderboard keeps only their highest score for each game.
 
 After this update, only signed-in Google users from your chosen domain can add a
 score. Personal Gmail accounts and other domains are blocked by the database

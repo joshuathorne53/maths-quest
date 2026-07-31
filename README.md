@@ -32,7 +32,8 @@ Then visit `http://localhost:8000`.
 The site is ready to use Firebase Cloud Firestore for a leaderboard shared between
 different devices. Students must sign in with an approved Google school domain to
 submit shared scores. Their leaderboard name comes from their Google account, and
-each Google account can submit one score per game leaderboard. Follow
+each Google account can try as many times as they like while only their highest
+score per game is kept on the leaderboard. Follow
 [FIREBASE_SETUP.md](FIREBASE_SETUP.md) once to connect it.
 
 Until Firebase is configured, scores automatically fall back to the browser's

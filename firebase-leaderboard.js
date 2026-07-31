@@ -19,6 +19,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { allowedEmailDomain, allowedEmailDomains, firebaseConfig } from "./firebase-config.js";
 
@@ -150,20 +151,40 @@ if (!isConfigured) {
       const user = getAllowedUser();
       const scoreDocument = doc(scoreCollection(game), user.uid);
       const existingScore = await getDoc(scoreDocument);
+      const existingData = existingScore.exists() ? existingScore.data() : null;
+      const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
 
-      if (existingScore.exists()) {
-        const error = new Error("This Google account has already submitted a score for this game.");
-        error.code = "score/already-submitted";
-        throw error;
+      if (previousScore !== null && score <= previousScore) {
+        return {
+          id: user.uid,
+          improved: false,
+          previousScore,
+          score: previousScore,
+        };
       }
 
-      await setDoc(scoreDocument, {
-        name: getAccountName(user),
+      if (existingScore.exists()) {
+        await updateDoc(scoreDocument, {
+          name: getAccountName(user),
+          score,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await setDoc(scoreDocument, {
+          name: getAccountName(user),
+          score,
+          uid: user.uid,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      return {
+        id: user.uid,
+        improved: true,
+        previousScore,
         score,
-        uid: user.uid,
-        createdAt: serverTimestamp(),
-      });
-      return user.uid;
+      };
     },
   };
 
