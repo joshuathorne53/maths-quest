@@ -759,6 +759,7 @@ a {
 }
 
 .start-panel,
+.countdown-panel,
 .result-panel {
   display: grid;
   min-height: 500px;
@@ -768,6 +769,7 @@ a {
 }
 
 .start-panel h2,
+.countdown-panel h2,
 .result-panel h2 {
   margin: 0;
   font-size: clamp(2.6rem, 7vw, 4.7rem);
@@ -785,50 +787,44 @@ a {
   line-height: 1.7;
 }
 
-.name-form {
-  width: min(500px, 100%);
-  margin: 0 auto;
-  text-align: left;
-}
-
-.name-form label {
-  display: block;
-  margin: 0 0 8px 4px;
-  font-size: 0.7rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.name-input-row {
+.start-actions {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
+  width: min(460px, 100%);
+  margin: 0 auto;
+  gap: 13px;
+  justify-items: center;
 }
 
-.name-form input {
-  min-width: 0;
-  height: 52px;
-  padding: 0 16px;
+.player-preview {
+  width: 100%;
+  margin: 0;
+  padding: 13px 16px;
   color: var(--navy);
   background: #f5f7fc;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  outline: none;
-  font-size: 0.86rem;
-  font-weight: 800;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
-.name-form input:focus {
-  background: white;
-  border-color: var(--blue);
-}
-
-.name-form small {
-  display: block;
-  margin: 8px 0 0 4px;
+.start-actions small {
   color: var(--muted);
   font-size: 0.64rem;
-  font-weight: 700;
+  font-weight: 800;
+  text-align: center;
+}
+
+.countdown-panel h2 {
+  color: var(--blue);
+  font-size: clamp(5rem, 18vw, 9rem);
+}
+
+.countdown-panel p:last-child {
+  max-width: 440px;
+  margin: 14px auto 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.6;
 }
 
 .game-panel {
@@ -1447,13 +1443,10 @@ footer > a:last-child {
   }
 
   .start-panel,
+  .countdown-panel,
   .result-panel {
     min-height: 500px;
     padding: 25px 12px;
-  }
-
-  .name-input-row {
-    grid-template-columns: 1fr;
   }
 
   .game-panel {

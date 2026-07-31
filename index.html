@@ -158,22 +158,17 @@
             <p class="eyebrow centered"><span></span> Ready to play?</p>
             <h2 id="start-title">Quick Fire</h2>
             <p id="start-description">Solve as many questions as you can in 60 seconds.</p>
-            <form class="name-form" id="name-form">
-              <label for="player-name">Your leaderboard name</label>
-              <div class="name-input-row">
-                <input
-                  id="player-name"
-                  name="player-name"
-                  type="text"
-                  maxlength="18"
-                  autocomplete="nickname"
-                  placeholder="Enter your name"
-                  required
-                />
-                <button class="button button-primary" type="submit">Start game →</button>
-              </div>
-              <small>Use your first name or a classroom nickname.</small>
-            </form>
+            <div class="start-actions">
+              <p class="player-preview" id="start-player">Sign in with your school Google account to play.</p>
+              <button class="button button-primary" id="start-game-button" type="button">Start game →</button>
+              <small>Your leaderboard name comes from your Google account.</small>
+            </div>
+          </div>
+
+          <div class="countdown-panel" id="countdown-panel" hidden>
+            <p class="eyebrow centered"><span></span> Get ready</p>
+            <h2 id="countdown-number">3</h2>
+            <p id="countdown-message">Starting Quick Fire...</p>
           </div>
 
           <div class="game-panel" id="game-panel" hidden>

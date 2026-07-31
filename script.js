@@ -34,12 +34,15 @@ const state = {
   answer: 0,
   time: GAME_SECONDS,
   timerId: null,
+  countdownId: null,
+  countdownTimeoutId: null,
   running: false,
   acceptingAnswer: false,
   sound: true,
   sharedInitialized: false,
   sharedConfigured: false,
   authEmail: "",
+  authName: "",
   authAllowed: false,
   allowedEmailDomain: "",
   allowedEmailDomains: [],
@@ -57,13 +60,16 @@ const state = {
 const elements = {
   playSection: document.querySelector("#play"),
   startPanel: document.querySelector("#start-panel"),
+  countdownPanel: document.querySelector("#countdown-panel"),
   gamePanel: document.querySelector("#game-panel"),
   resultPanel: document.querySelector("#result-panel"),
   startTitle: document.querySelector("#start-title"),
   startDescription: document.querySelector("#start-description"),
+  startPlayer: document.querySelector("#start-player"),
+  startGameButton: document.querySelector("#start-game-button"),
+  countdownNumber: document.querySelector("#countdown-number"),
+  countdownMessage: document.querySelector("#countdown-message"),
   playMode: document.querySelector("#play-mode"),
-  nameForm: document.querySelector("#name-form"),
-  nameInput: document.querySelector("#player-name"),
   answerForm: document.querySelector("#answer-form"),
   answerInput: document.querySelector("#answer-input"),
   question: document.querySelector("#question"),
@@ -158,10 +164,26 @@ function getAllowedDomainLabel() {
   return state.allowedEmailDomain ? `@${state.allowedEmailDomain}` : "your school Google";
 }
 
+function getGooglePlayerName() {
+  return state.authName || state.authEmail.split("@")[0] || "Student";
+}
+
+function updateStartPanel() {
+  if (state.authAllowed) {
+    elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}`;
+    elements.startGameButton.textContent = "Start game →";
+    return;
+  }
+
+  elements.startPlayer.textContent = `Sign in with ${getAllowedDomainLabel()} to play and submit a score.`;
+  elements.startGameButton.textContent = "Sign in to play →";
+}
+
 function renderAuthControls() {
   if (!state.sharedConfigured) {
     elements.authCard.hidden = true;
     elements.resultSignIn.hidden = true;
+    updateStartPanel();
     return;
   }
 
@@ -173,6 +195,7 @@ function renderAuthControls() {
     elements.authMessage.textContent = state.authEmail;
     elements.signInButton.hidden = true;
     elements.signOutButton.hidden = false;
+    updateStartPanel();
     return;
   }
 
@@ -181,6 +204,7 @@ function renderAuthControls() {
     elements.authMessage.textContent = "Wrong account";
     elements.signInButton.hidden = false;
     elements.signOutButton.hidden = false;
+    updateStartPanel();
     return;
   }
 
@@ -188,6 +212,7 @@ function renderAuthControls() {
   elements.authMessage.textContent = "Sign in for leaderboards";
   elements.signInButton.hidden = false;
   elements.signOutButton.hidden = true;
+  updateStartPanel();
 }
 
 function getFirebaseMessage(error, fallback) {
@@ -217,6 +242,10 @@ function getFirebaseMessage(error, fallback) {
     return "Firebase blocked the score. Check that Firestore rules are published and you used an approved school Google account.";
   }
 
+  if (code.includes("already-submitted")) {
+    return "This Google account has already submitted a score for this game.";
+  }
+
   if (code.includes("not-found") || code.includes("failed-precondition")) {
     return "Firestore is not ready yet. Create the Firestore database in Firebase Console and publish the rules.";
   }
@@ -226,9 +255,13 @@ function getFirebaseMessage(error, fallback) {
 
 function applyAuthState(authState) {
   state.authEmail = authState?.email || "";
+  state.authName = authState?.name || "";
   state.authAllowed = Boolean(authState?.allowed);
   state.allowedEmailDomain = authState?.allowedEmailDomain || state.allowedEmailDomain;
   state.allowedEmailDomains = authState?.allowedEmailDomains || state.allowedEmailDomains;
+  if (state.authAllowed) {
+    state.player = getGooglePlayerName();
+  }
   renderAuthControls();
 
   if (state.authAllowed) {
@@ -309,7 +342,6 @@ async function saveSharedScore() {
   if (!state.authAllowed) {
     state.pendingSharedScore = {
       game: state.game,
-      name: state.player,
       score: state.score,
     };
     elements.resultRank.textContent = "Sign in needed";
@@ -323,7 +355,6 @@ async function saveSharedScore() {
 
   const scoreToSave = state.pendingSharedScore || {
     game: state.game,
-    name: state.player,
     score: state.score,
   };
 
@@ -331,7 +362,6 @@ async function saveSharedScore() {
     state.savingSharedScore = true;
     state.latestSharedScoreId = await window.sharedLeaderboard.addScore(
       scoreToSave.game,
-      scoreToSave.name,
       scoreToSave.score,
     );
     state.pendingSharedScore = null;
@@ -340,6 +370,9 @@ async function saveSharedScore() {
     setLeaderboardStatus("shared", "Score added to the shared leaderboard.");
   } catch (error) {
     console.error(error);
+    if (error?.code?.includes("already-submitted")) {
+      elements.resultRank.textContent = "Already submitted";
+    }
     setLeaderboardStatus(
       "local",
       getFirebaseMessage(error, "Could not share this score. It is saved on this device."),
@@ -350,18 +383,20 @@ async function saveSharedScore() {
 }
 
 async function signInForLeaderboard() {
-  if (!state.sharedConfigured) return;
+  if (!state.sharedConfigured) return false;
 
   setLeaderboardStatus("connecting", `Waiting for ${getAllowedDomainLabel()} Google sign-in...`);
 
   try {
     applyAuthState(await window.sharedLeaderboard.signIn());
+    return state.authAllowed;
   } catch (error) {
     console.error(error);
     setLeaderboardStatus(
       "local",
       getFirebaseMessage(error, `Sign in with a ${getAllowedDomainLabel()} account to submit scores.`),
     );
+    return false;
   }
 }
 
@@ -373,10 +408,6 @@ async function signOutOfLeaderboard() {
   } catch {
     setLeaderboardStatus("local", "Could not sign out. Please refresh the page and try again.");
   }
-}
-
-function cleanName(value) {
-  return value.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 18);
 }
 
 function initials(name) {
@@ -415,15 +446,19 @@ function selectGame(mode) {
   elements.startDescription.textContent = info.description;
   elements.playMode.textContent = info.name;
   elements.startPanel.hidden = false;
+  elements.countdownPanel.hidden = true;
   elements.gamePanel.hidden = true;
   elements.resultPanel.hidden = true;
   elements.playSection.hidden = false;
+  updateStartPanel();
   elements.playSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  window.setTimeout(() => elements.nameInput.focus(), 500);
+  window.setTimeout(() => elements.startGameButton.focus(), 500);
 }
 
 function resetGame() {
   window.clearInterval(state.timerId);
+  window.clearInterval(state.countdownId);
+  window.clearTimeout(state.countdownTimeoutId);
   Object.assign(state, {
     score: 0,
     streak: 0,
@@ -433,6 +468,8 @@ function resetGame() {
     answer: 0,
     time: GAME_SECONDS,
     timerId: null,
+    countdownId: null,
+    countdownTimeoutId: null,
     running: false,
     acceptingAnswer: false,
   });
@@ -462,10 +499,11 @@ function nextQuestion() {
   elements.question.classList.add("bump");
 }
 
-function startGame() {
+function beginGame() {
   resetGame();
   state.running = true;
   elements.startPanel.hidden = true;
+  elements.countdownPanel.hidden = true;
   elements.resultPanel.hidden = true;
   elements.gamePanel.hidden = false;
   nextQuestion();
@@ -483,6 +521,41 @@ function startGame() {
       finishGame();
     }
   }, 1000);
+}
+
+function startCountdown() {
+  resetGame();
+  let count = 3;
+  elements.startPanel.hidden = true;
+  elements.resultPanel.hidden = true;
+  elements.gamePanel.hidden = true;
+  elements.countdownPanel.hidden = false;
+  elements.countdownMessage.textContent = `Starting ${gameInfo[state.game].name} as ${state.player}...`;
+  elements.countdownNumber.textContent = String(count);
+
+  state.countdownId = window.setInterval(() => {
+    count -= 1;
+
+    if (count > 0) {
+      elements.countdownNumber.textContent = String(count);
+      return;
+    }
+
+    window.clearInterval(state.countdownId);
+    state.countdownId = null;
+    elements.countdownNumber.textContent = "Go!";
+    state.countdownTimeoutId = window.setTimeout(beginGame, 500);
+  }, 1000);
+}
+
+async function requestStartGame() {
+  if (state.sharedConfigured && !state.authAllowed) {
+    const signedIn = await signInForLeaderboard();
+    if (!signedIn) return;
+  }
+
+  state.player = getGooglePlayerName();
+  startCountdown();
 }
 
 function finishGame() {
@@ -540,9 +613,23 @@ function submitAnswer(event) {
 
 function endAndHideGame() {
   window.clearInterval(state.timerId);
+  window.clearInterval(state.countdownId);
+  window.clearTimeout(state.countdownTimeoutId);
+  state.countdownId = null;
+  state.countdownTimeoutId = null;
   state.running = false;
+  elements.countdownPanel.hidden = true;
   elements.playSection.hidden = true;
   document.querySelector("#games").scrollIntoView({ behavior: "smooth" });
+}
+
+function quitGame() {
+  if (state.running) {
+    finishGame();
+    return;
+  }
+
+  endAndHideGame();
 }
 
 function renderLeaderboard() {
@@ -615,22 +702,11 @@ document.querySelectorAll("[data-board]").forEach((button) => {
   });
 });
 
-elements.nameForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const name = cleanName(elements.nameInput.value);
-  if (!name) {
-    elements.nameInput.focus();
-    return;
-  }
-  state.player = name;
-  elements.nameInput.value = name;
-  startGame();
-});
-
+elements.startGameButton.addEventListener("click", requestStartGame);
 elements.answerForm.addEventListener("submit", submitAnswer);
 document.querySelector("#back-button").addEventListener("click", endAndHideGame);
-document.querySelector("#quit-button").addEventListener("click", finishGame);
-document.querySelector("#play-again").addEventListener("click", startGame);
+document.querySelector("#quit-button").addEventListener("click", quitGame);
+document.querySelector("#play-again").addEventListener("click", requestStartGame);
 elements.signInButton.addEventListener("click", signInForLeaderboard);
 elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
 elements.resultSignIn.addEventListener("click", signInForLeaderboard);

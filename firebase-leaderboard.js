@@ -9,14 +9,16 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
-  addDoc,
   collection,
+  doc,
+  getDoc,
   getFirestore,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { allowedEmailDomain, allowedEmailDomains, firebaseConfig } from "./firebase-config.js";
 
@@ -44,6 +46,10 @@ function emailIsAllowed(email) {
   );
 }
 
+function getAccountName(user) {
+  return user?.displayName || user?.email?.split("@")[0] || "Student";
+}
+
 function getPublicAuthState(user) {
   const email = user?.email || "";
 
@@ -51,6 +57,7 @@ function getPublicAuthState(user) {
     signedIn: Boolean(user),
     allowed: emailIsAllowed(email),
     email,
+    name: user ? getAccountName(user) : "",
     allowedEmailDomain: cleanAllowedDomain,
     allowedEmailDomains: cleanAllowedDomains,
   };
@@ -139,15 +146,24 @@ if (!isConfigured) {
       );
     },
 
-    async addScore(game, name, score) {
+    async addScore(game, score) {
       const user = getAllowedUser();
-      const document = await addDoc(scoreCollection(game), {
-        name,
+      const scoreDocument = doc(scoreCollection(game), user.uid);
+      const existingScore = await getDoc(scoreDocument);
+
+      if (existingScore.exists()) {
+        const error = new Error("This Google account has already submitted a score for this game.");
+        error.code = "score/already-submitted";
+        throw error;
+      }
+
+      await setDoc(scoreDocument, {
+        name: getAccountName(user),
         score,
         uid: user.uid,
         createdAt: serverTimestamp(),
       });
-      return document.id;
+      return user.uid;
     },
   };
 

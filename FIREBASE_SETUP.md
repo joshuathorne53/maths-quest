@@ -58,6 +58,10 @@ These rules let anyone read the leaderboard. Only approved-domain Google users
 can add a score, score values are limited, and existing entries cannot be edited
 or deleted from the website.
 
+Leaderboard names come from the student's Google account. Each Google account can
+create only one score document per game leaderboard because the score document ID
+must match the signed-in user's Firebase UID.
+
 After this update, only signed-in Google users from your chosen domain can add a
 score. Personal Gmail accounts and other domains are blocked by the database
 rules, even if someone edits the website code in their browser.
