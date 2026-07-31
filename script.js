@@ -1,5 +1,5 @@
 const GAME_SECONDS = 60;
-const STORAGE_KEY = "maths-quest-leaderboards-v1";
+const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v1";
 
 const gameInfo = {
   quick: {
@@ -55,6 +55,19 @@ const state = {
   running: false,
   acceptingAnswer: false,
   sound: true,
+  sharedInitialized: false,
+  sharedConfigured: false,
+  authEmail: "",
+  authAllowed: false,
+  allowedEmailDomain: "",
+  boardUnsubscribe: null,
+  pendingSharedScore: null,
+  latestSharedScoreId: null,
+  sharedScores: {
+    quick: null,
+    times: null,
+    missing: null,
+  },
 };
 
 const elements = {
@@ -84,6 +97,13 @@ const elements = {
   podium: document.querySelector("#podium"),
   scoreList: document.querySelector("#score-list"),
   soundToggle: document.querySelector("#sound-toggle"),
+  leaderboardStatus: document.querySelector("#leaderboard-status"),
+  authCard: document.querySelector("#auth-card"),
+  authTitle: document.querySelector("#auth-title"),
+  authMessage: document.querySelector("#auth-message"),
+  signInButton: document.querySelector("#sign-in-button"),
+  signOutButton: document.querySelector("#sign-out-button"),
+  resultSignIn: document.querySelector("#result-sign-in"),
 };
 
 function randomNumber(min, max) {
@@ -116,7 +136,7 @@ function createQuestion(mode) {
   return { text: `${a} − ${b} = ?`, answer: a - b };
 }
 
-function getScores() {
+function getLocalScores() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     return saved && saved.quick && saved.times && saved.missing ? saved : structuredClone(defaultScores);
@@ -125,8 +145,8 @@ function getScores() {
   }
 }
 
-function saveScore() {
-  const scores = getScores();
+function saveLocalScore() {
+  const scores = getLocalScores();
   scores[state.game].push({ name: state.player, score: state.score });
   scores[state.game] = scores[state.game]
     .sort((a, b) => b.score - a.score)
@@ -135,6 +155,170 @@ function saveScore() {
   return scores[state.game].findIndex(
     (entry) => entry.name === state.player && entry.score === state.score,
   ) + 1;
+}
+
+function getVisibleScores(game) {
+  return state.sharedScores[game] !== null ? state.sharedScores[game] : getLocalScores()[game];
+}
+
+function setLeaderboardStatus(status, message) {
+  elements.leaderboardStatus.dataset.status = status;
+  elements.leaderboardStatus.lastChild.textContent = message;
+}
+
+function getAllowedDomainLabel() {
+  return state.allowedEmailDomain ? `@${state.allowedEmailDomain}` : "your school Google";
+}
+
+function renderAuthControls() {
+  if (!state.sharedConfigured) {
+    elements.authCard.hidden = true;
+    elements.resultSignIn.hidden = true;
+    return;
+  }
+
+  elements.authCard.hidden = false;
+  elements.resultSignIn.hidden = !(state.pendingSharedScore && !state.authAllowed);
+
+  if (state.authAllowed) {
+    elements.authTitle.textContent = "Signed in for shared scores";
+    elements.authMessage.textContent = `Using ${state.authEmail}. Your scores can be added to the class leaderboard.`;
+    elements.signInButton.hidden = true;
+    elements.signOutButton.hidden = false;
+    return;
+  }
+
+  if (state.authEmail) {
+    elements.authTitle.textContent = "Wrong Google account";
+    elements.authMessage.textContent = `Signed in as ${state.authEmail}. Use a ${getAllowedDomainLabel()} account to submit scores.`;
+    elements.signInButton.hidden = false;
+    elements.signOutButton.hidden = false;
+    return;
+  }
+
+  elements.authTitle.textContent = "Sign in for shared scores";
+  elements.authMessage.textContent = `Only ${getAllowedDomainLabel()} accounts can submit leaderboard scores.`;
+  elements.signInButton.hidden = false;
+  elements.signOutButton.hidden = true;
+}
+
+function updateSharedResultRank() {
+  if (!state.latestSharedScoreId) return;
+
+  const rank = state.sharedScores[state.game]?.findIndex(
+    (entry) => entry.id === state.latestSharedScoreId,
+  );
+
+  if (rank >= 0) {
+    elements.resultRank.textContent = `#${rank + 1}`;
+  } else if (state.sharedScores[state.game]) {
+    elements.resultRank.textContent = "Top 20+";
+  }
+}
+
+function listenToSharedBoard(game) {
+  if (!state.sharedConfigured) return;
+  if (state.boardUnsubscribe) state.boardUnsubscribe();
+
+  setLeaderboardStatus("connecting", "Connecting to the shared leaderboard...");
+  state.boardUnsubscribe = window.sharedLeaderboard.listen(
+    game,
+    (scores) => {
+      state.sharedScores[game] = scores.filter(
+        (entry) => typeof entry.name === "string" && Number.isInteger(entry.score),
+      );
+      if (state.board === game) renderLeaderboard();
+      updateSharedResultRank();
+      setLeaderboardStatus("shared", "Shared leaderboard connected. Scores update live for everyone.");
+    },
+    () => {
+      state.sharedScores[game] = null;
+      if (state.board === game) renderLeaderboard();
+      setLeaderboardStatus("local", "Shared leaderboard unavailable. Scores are saving on this device.");
+    },
+  );
+}
+
+function connectSharedLeaderboard() {
+  if (state.sharedInitialized) return;
+  state.sharedInitialized = true;
+  state.sharedConfigured = Boolean(window.sharedLeaderboard?.isConfigured);
+  state.allowedEmailDomain = window.sharedLeaderboard?.allowedEmailDomain || "";
+
+  if (!state.sharedConfigured) {
+    setLeaderboardStatus(
+      "local",
+      "Firebase setup needed. Until then, scores save only on this device.",
+    );
+    renderAuthControls();
+    return;
+  }
+
+  renderAuthControls();
+  listenToSharedBoard(state.board);
+}
+
+async function saveSharedScore() {
+  if (!state.sharedConfigured) return;
+
+  if (!state.authAllowed) {
+    state.pendingSharedScore = {
+      game: state.game,
+      name: state.player,
+      score: state.score,
+    };
+    elements.resultRank.textContent = "Sign in needed";
+    renderAuthControls();
+    setLeaderboardStatus(
+      "local",
+      `Sign in with a ${getAllowedDomainLabel()} account to add this score to the shared leaderboard.`,
+    );
+    return;
+  }
+
+  const scoreToSave = state.pendingSharedScore || {
+    game: state.game,
+    name: state.player,
+    score: state.score,
+  };
+
+  try {
+    state.latestSharedScoreId = await window.sharedLeaderboard.addScore(
+      scoreToSave.game,
+      scoreToSave.name,
+      scoreToSave.score,
+    );
+    state.pendingSharedScore = null;
+    renderAuthControls();
+    updateSharedResultRank();
+  } catch {
+    setLeaderboardStatus("local", "Could not share this score. It is saved on this device.");
+  }
+}
+
+async function signInForLeaderboard() {
+  if (!state.sharedConfigured) return;
+
+  setLeaderboardStatus("connecting", `Waiting for ${getAllowedDomainLabel()} Google sign-in...`);
+
+  try {
+    await window.sharedLeaderboard.signIn();
+  } catch (error) {
+    setLeaderboardStatus(
+      "local",
+      error?.message || `Sign in with a ${getAllowedDomainLabel()} account to submit scores.`,
+    );
+  }
+}
+
+async function signOutOfLeaderboard() {
+  if (!state.sharedConfigured) return;
+
+  try {
+    await window.sharedLeaderboard.signOut();
+  } catch {
+    setLeaderboardStatus("local", "Could not sign out. Please refresh the page and try again.");
+  }
 }
 
 function cleanName(value) {
@@ -252,7 +436,8 @@ function finishGame() {
 
   state.running = false;
   window.clearInterval(state.timerId);
-  const rank = saveScore();
+  const rank = saveLocalScore();
+  state.latestSharedScoreId = null;
 
   elements.gamePanel.hidden = true;
   elements.resultPanel.hidden = false;
@@ -264,6 +449,8 @@ function finishGame() {
   state.board = state.game;
   setActiveBoardTab();
   renderLeaderboard();
+  listenToSharedBoard(state.board);
+  saveSharedScore();
 }
 
 function submitAnswer(event) {
@@ -305,7 +492,7 @@ function endAndHideGame() {
 }
 
 function renderLeaderboard() {
-  const scores = getScores()[state.board];
+  const scores = getVisibleScores(state.board);
   const topThree = [scores[1], scores[0], scores[2]];
   const places = [2, 1, 3];
 
@@ -316,7 +503,7 @@ function renderLeaderboard() {
       return `
         <div class="podium-place">
           <div class="podium-player">
-            <span class="podium-avatar">${initials(player.name)}</span>
+            <span class="podium-avatar">${escapeHtml(initials(player.name))}</span>
             <strong>${escapeHtml(player.name)}</strong>
             <span>${player.score.toLocaleString()} pts</span>
           </div>
@@ -337,7 +524,7 @@ function renderLeaderboard() {
       (entry, index) => `
         <li class="score-row ${entry.name === state.player ? "current-player" : ""}">
           <span class="score-rank">${index + 1}</span>
-          <span class="list-avatar">${initials(entry.name)}</span>
+          <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
           <span class="score-name">${escapeHtml(entry.name)}</span>
           <span class="score-points">${entry.score.toLocaleString()}</span>
         </li>
@@ -370,6 +557,7 @@ document.querySelectorAll("[data-board]").forEach((button) => {
     state.board = button.dataset.board;
     setActiveBoardTab();
     renderLeaderboard();
+    listenToSharedBoard(state.board);
   });
 });
 
@@ -389,6 +577,9 @@ elements.answerForm.addEventListener("submit", submitAnswer);
 document.querySelector("#back-button").addEventListener("click", endAndHideGame);
 document.querySelector("#quit-button").addEventListener("click", finishGame);
 document.querySelector("#play-again").addEventListener("click", startGame);
+elements.signInButton.addEventListener("click", signInForLeaderboard);
+elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
+elements.resultSignIn.addEventListener("click", signInForLeaderboard);
 
 elements.soundToggle.addEventListener("click", () => {
   state.sound = !state.sound;
@@ -397,4 +588,31 @@ elements.soundToggle.addEventListener("click", () => {
   elements.soundToggle.firstElementChild.textContent = state.sound ? "♪" : "×";
 });
 
+window.addEventListener("leaderboard-auth-changed", (event) => {
+  state.authEmail = event.detail.email || "";
+  state.authAllowed = Boolean(event.detail.allowed);
+  state.allowedEmailDomain = event.detail.allowedEmailDomain || state.allowedEmailDomain;
+  renderAuthControls();
+
+  if (state.authAllowed) {
+    setLeaderboardStatus("shared", "Signed in. Shared leaderboard scores can now be submitted.");
+    if (state.pendingSharedScore) saveSharedScore();
+  } else if (state.authEmail) {
+    setLeaderboardStatus(
+      "local",
+      `Use a ${getAllowedDomainLabel()} Google account to submit leaderboard scores.`,
+    );
+  }
+});
+
+window.addEventListener("shared-leaderboard-ready", connectSharedLeaderboard);
 renderLeaderboard();
+if (window.sharedLeaderboard) connectSharedLeaderboard();
+window.setTimeout(() => {
+  if (!state.sharedInitialized) {
+    setLeaderboardStatus(
+      "local",
+      "Shared leaderboard is not connected. Open the site through GitHub Pages or a local server.",
+    );
+  }
+}, 3000);

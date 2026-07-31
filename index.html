@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Play fast, friendly maths games and climb the classroom leaderboard."
+      content="Play fast, friendly maths games for Bayside Christian College and climb the classroom leaderboard."
     />
-    <title>Maths Quest | Learn, Play, Level Up</title>
+    <title>Bayside Maths Challenge | Learn, Play, Level Up</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,12 +17,13 @@
     />
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
+    <script type="module" src="firebase-leaderboard.js"></script>
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#home" aria-label="Maths Quest home">
-        <span class="brand-mark">MQ</span>
-        <span>Maths Quest</span>
+      <a class="brand" href="#home" aria-label="Bayside Maths Challenge home">
+        <span class="brand-mark">BMC</span>
+        <span>Bayside Maths Challenge</span>
       </a>
 
       <nav class="main-nav" aria-label="Main navigation">
@@ -58,7 +59,7 @@
           </div>
         </div>
 
-        <div class="hero-visual" aria-label="Maths Quest illustration">
+        <div class="hero-visual" aria-label="Bayside Maths Challenge illustration">
           <div class="orbit orbit-one"></div>
           <div class="orbit orbit-two"></div>
           <div class="floating-symbol symbol-plus">+</div>
@@ -228,6 +229,9 @@
             </div>
             <div class="result-actions">
               <button class="button button-primary" id="play-again" type="button">Play again →</button>
+              <button class="button button-secondary" id="result-sign-in" type="button" hidden>
+                Sign in to submit score
+              </button>
               <a class="text-link" href="#leaderboard">See leaderboard</a>
             </div>
           </div>
@@ -248,6 +252,21 @@
             </div>
           </div>
 
+          <div class="auth-card" id="auth-card" hidden>
+            <div>
+              <strong id="auth-title">Sign in for shared scores</strong>
+              <span id="auth-message">Only approved school Google accounts can join the leaderboard.</span>
+            </div>
+            <div class="auth-actions">
+              <button class="button button-secondary button-small" id="sign-in-button" type="button">
+                Sign in with Google
+              </button>
+              <button class="button button-ghost button-small" id="sign-out-button" type="button" hidden>
+                Sign out
+              </button>
+            </div>
+          </div>
+
           <div class="leaderboard-card">
             <div class="podium" id="podium" aria-label="Top three scores"></div>
             <div class="score-list-wrap">
@@ -258,8 +277,9 @@
               <ol class="score-list" id="score-list"></ol>
             </div>
           </div>
-          <p class="leaderboard-note">
-            Scores are saved on this device. Be kind and use a classroom-friendly name.
+          <p class="leaderboard-note" id="leaderboard-status" data-status="connecting" aria-live="polite">
+            <span></span>
+            Connecting to the shared leaderboard...
           </p>
         </div>
       </section>
@@ -267,8 +287,8 @@
 
     <footer>
       <a class="brand footer-brand" href="#home">
-        <span class="brand-mark">MQ</span>
-        <span>Maths Quest</span>
+        <span class="brand-mark">BMC</span>
+        <span>Bayside Maths Challenge</span>
       </a>
       <p>Made for curious minds and speedy thinkers.</p>
       <a href="#games">Play another game ↑</a>

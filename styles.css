@@ -255,6 +255,35 @@ a {
   transform: translateY(-2px);
 }
 
+.button-secondary {
+  color: var(--navy);
+  background: var(--yellow);
+  box-shadow: 0 12px 25px rgba(255, 205, 75, 0.24);
+}
+
+.button-secondary:hover {
+  background: #ffd86c;
+  transform: translateY(-2px);
+}
+
+.button-ghost {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.button-ghost:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.button-small {
+  min-height: 43px;
+  padding: 0 15px;
+  border-radius: 11px;
+  font-size: 0.68rem;
+}
+
 .text-link {
   color: var(--navy);
   font-size: 0.8rem;
@@ -1055,6 +1084,43 @@ a {
   background: white;
 }
 
+.auth-card {
+  display: flex;
+  margin: -18px 0 24px;
+  padding: 16px 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.auth-card div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.auth-card strong {
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.auth-card span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.auth-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .leaderboard-card {
   display: grid;
   min-height: 430px;
@@ -1242,11 +1308,32 @@ a {
 }
 
 .leaderboard-note {
+  display: flex;
   margin: 20px 0 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: rgba(255, 255, 255, 0.52);
   font-size: 0.66rem;
   font-weight: 700;
   text-align: center;
+}
+
+.leaderboard-note span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  background: var(--yellow);
+  border-radius: 50%;
+}
+
+.leaderboard-note[data-status="shared"] span {
+  background: var(--mint);
+  box-shadow: 0 0 0 4px rgba(117, 215, 184, 0.12);
+}
+
+.leaderboard-note[data-status="local"] span {
+  background: var(--coral);
 }
 
 footer {
@@ -1433,6 +1520,17 @@ footer > a:last-child {
 
   .leaderboard-tabs button {
     flex: 1 0 auto;
+  }
+
+  .auth-card {
+    margin-top: 0;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .auth-actions,
+  .auth-actions .button {
+    width: 100%;
   }
 
   .leaderboard-card {

@@ -1,7 +1,8 @@
-# Maths Quest
+# Bayside Maths Challenge
 
-A bright, responsive maths-games website built for GitHub Pages. Students can play
-three timed games, enter a classroom-friendly name, and appear on the leaderboard.
+A bright, responsive maths-games website for Bayside Christian College, built for
+GitHub Pages. Students can play three timed games, enter a classroom-friendly
+name, and appear on a shared live leaderboard.
 
 ## Games
 
@@ -28,6 +29,10 @@ Then visit `http://localhost:8000`.
 
 ## Leaderboard storage
 
-The leaderboard uses the browser's `localStorage`, so scores persist on the same
-browser and device. A leaderboard shared between different student devices would
-require an online database or backend service.
+The site is ready to use Firebase Cloud Firestore for a leaderboard shared between
+different devices. Students must sign in with an approved Google school domain to
+submit shared scores. Follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md) once to
+connect it.
+
+Until Firebase is configured, scores automatically fall back to the browser's
+`localStorage` and are visible only on that device.
