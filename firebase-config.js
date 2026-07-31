@@ -10,7 +10,9 @@ export const firebaseConfig = {
   measurementId: "G-P3R47GE24L",
 };
 
-// Only Google accounts whose email ends with this domain can submit shared
-// leaderboard scores. Use the part after the @ symbol, for example:
-// "student.school.edu.au"
-export const allowedEmailDomain = "bcc.vic.edu.au";
+// Only Google accounts whose email ends with one of these domains can submit
+// shared leaderboard scores. Use the part after the @ symbol.
+export const allowedEmailDomains = ["bcc.vic.edu.au", "baysidecc.vic.edu.au"];
+
+// Kept as the primary domain for older code paths and display fallbacks.
+export const allowedEmailDomain = allowedEmailDomains[0];

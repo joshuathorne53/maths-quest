@@ -60,6 +60,7 @@ const state = {
   authEmail: "",
   authAllowed: false,
   allowedEmailDomain: "",
+  allowedEmailDomains: [],
   boardUnsubscribe: null,
   pendingSharedScore: null,
   savingSharedScore: false,
@@ -168,6 +169,10 @@ function setLeaderboardStatus(status, message) {
 }
 
 function getAllowedDomainLabel() {
+  if (state.allowedEmailDomains.length > 1) {
+    return state.allowedEmailDomains.map((domain) => `@${domain}`).join(" or ");
+  }
+
   return state.allowedEmailDomain ? `@${state.allowedEmailDomain}` : "your school Google";
 }
 
@@ -227,7 +232,7 @@ function getFirebaseMessage(error, fallback) {
   }
 
   if (code.includes("permission-denied")) {
-    return "Firebase blocked the score. Check that Firestore rules are published and you used a @bcc.vic.edu.au account.";
+    return "Firebase blocked the score. Check that Firestore rules are published and you used an approved school Google account.";
   }
 
   if (code.includes("not-found") || code.includes("failed-precondition")) {
@@ -241,6 +246,7 @@ function applyAuthState(authState) {
   state.authEmail = authState?.email || "";
   state.authAllowed = Boolean(authState?.allowed);
   state.allowedEmailDomain = authState?.allowedEmailDomain || state.allowedEmailDomain;
+  state.allowedEmailDomains = authState?.allowedEmailDomains || state.allowedEmailDomains;
   renderAuthControls();
 
   if (state.authAllowed) {
@@ -299,6 +305,7 @@ function connectSharedLeaderboard() {
   state.sharedInitialized = true;
   state.sharedConfigured = Boolean(window.sharedLeaderboard?.isConfigured);
   state.allowedEmailDomain = window.sharedLeaderboard?.allowedEmailDomain || "";
+  state.allowedEmailDomains = window.sharedLeaderboard?.allowedEmailDomains || [];
 
   if (!state.sharedConfigured) {
     setLeaderboardStatus(

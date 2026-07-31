@@ -18,17 +18,20 @@ import {
   query,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-import { allowedEmailDomain, firebaseConfig } from "./firebase-config.js";
+import { allowedEmailDomain, allowedEmailDomains, firebaseConfig } from "./firebase-config.js";
 
 const validGames = new Set(["quick", "times", "missing"]);
-const cleanAllowedDomain = String(allowedEmailDomain || "")
-  .replace(/^@/, "")
-  .trim()
-  .toLowerCase();
+const configuredDomains = Array.isArray(allowedEmailDomains) && allowedEmailDomains.length
+  ? allowedEmailDomains
+  : [allowedEmailDomain];
+const cleanAllowedDomains = configuredDomains
+  .map((domain) => String(domain || "").replace(/^@/, "").trim().toLowerCase())
+  .filter((domain, index, domains) => domain && !domain.startsWith("your_") && domains.indexOf(domain) === index);
+const cleanAllowedDomain = cleanAllowedDomains[0] || "";
 const hasFirebaseConfig = Object.values(firebaseConfig).every(
   (value) => value && !String(value).startsWith("YOUR_"),
 );
-const hasAllowedDomain = cleanAllowedDomain && !cleanAllowedDomain.startsWith("your_");
+const hasAllowedDomain = cleanAllowedDomains.length > 0;
 const isConfigured = hasFirebaseConfig && hasAllowedDomain;
 
 function announceReady() {
@@ -36,7 +39,9 @@ function announceReady() {
 }
 
 function emailIsAllowed(email) {
-  return Boolean(email && email.toLowerCase().endsWith(`@${cleanAllowedDomain}`));
+  return Boolean(
+    email && cleanAllowedDomains.some((domain) => email.toLowerCase().endsWith(`@${domain}`)),
+  );
 }
 
 function getPublicAuthState(user) {
@@ -47,6 +52,7 @@ function getPublicAuthState(user) {
     allowed: emailIsAllowed(email),
     email,
     allowedEmailDomain: cleanAllowedDomain,
+    allowedEmailDomains: cleanAllowedDomains,
   };
 }
 
@@ -62,6 +68,7 @@ if (!isConfigured) {
   window.sharedLeaderboard = {
     isConfigured: false,
     allowedEmailDomain: cleanAllowedDomain,
+    allowedEmailDomains: cleanAllowedDomains,
   };
   announceReady();
 } else {
@@ -69,7 +76,9 @@ if (!isConfigured) {
   const auth = getAuth(app);
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ hd: cleanAllowedDomain });
+  if (cleanAllowedDomains.length === 1) {
+    provider.setCustomParameters({ hd: cleanAllowedDomain });
+  }
   const persistenceReady = setPersistence(auth, browserLocalPersistence);
 
   onAuthStateChanged(auth, announceAuth);
@@ -80,7 +89,7 @@ if (!isConfigured) {
 
     if (!emailIsAllowed(credential.user.email)) {
       await signOut(auth);
-      throw new Error(`Please sign in with your @${cleanAllowedDomain} Google account.`);
+      throw new Error("Please sign in with an approved school Google account.");
     }
 
     return getPublicAuthState(credential.user);
@@ -94,7 +103,7 @@ if (!isConfigured) {
     }
 
     if (!emailIsAllowed(user.email)) {
-      throw new Error(`Only @${cleanAllowedDomain} accounts can submit leaderboard scores.`);
+      throw new Error("Only approved school Google accounts can submit leaderboard scores.");
     }
 
     return user;
@@ -108,6 +117,7 @@ if (!isConfigured) {
   window.sharedLeaderboard = {
     isConfigured: true,
     allowedEmailDomain: cleanAllowedDomain,
+    allowedEmailDomains: cleanAllowedDomains,
     getAuthState: () => getPublicAuthState(auth.currentUser),
     signIn: signInWithSchoolGoogle,
     signOut: () => signOut(auth),

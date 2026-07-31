@@ -8,7 +8,10 @@ service cloud.firestore {
         && request.auth.token.email_verified == true
         && request.auth.token.email is string
         && request.auth.token.email.lower().split('@').size() == 2
-        && request.auth.token.email.lower().split('@')[1] == 'bcc.vic.edu.au';
+        && (
+          request.auth.token.email.lower().split('@')[1] == 'bcc.vic.edu.au'
+          || request.auth.token.email.lower().split('@')[1] == 'baysidecc.vic.edu.au'
+        );
     }
 
     match /leaderboards/{game}/scores/{scoreId} {

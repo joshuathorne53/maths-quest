@@ -19,12 +19,12 @@ in to GitHub.
 4. Select **Register app**.
 5. Firebase displays a `firebaseConfig` object. The current project config has
    already been copied into [`firebase-config.js`](firebase-config.js).
-6. The approved student Google domain is already set to `bcc.vic.edu.au` in
-   [`firebase-config.js`](firebase-config.js). If this ever changes, use only
-   the part after the `@` symbol. For example:
+6. The approved student Google domains are already set to `bcc.vic.edu.au` and
+   `baysidecc.vic.edu.au` in [`firebase-config.js`](firebase-config.js). If this
+   ever changes, use only the part after the `@` symbol. For example:
 
    ```js
-   export const allowedEmailDomain = "bcc.vic.edu.au";
+   export const allowedEmailDomains = ["bcc.vic.edu.au", "baysidecc.vic.edu.au"];
    ```
 
 It is safe for `firebase-config.js` to be public. Access is controlled by Firebase
@@ -49,7 +49,7 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
 
 1. In **Firestore Database**, open the **Rules** tab.
 2. [`firestore.rules`](firestore.rules) is already set to allow only
-   `bcc.vic.edu.au` Google accounts.
+   `bcc.vic.edu.au` and `baysidecc.vic.edu.au` Google accounts.
 3. Replace the existing Firebase rules with the contents of
    [`firestore.rules`](firestore.rules).
 4. Select **Publish**.
