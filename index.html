@@ -29,6 +29,16 @@
       <nav class="main-nav" aria-label="Main navigation">
         <a href="#games">Games</a>
         <a href="#leaderboard">Leaderboard</a>
+        <div class="header-auth" id="auth-card" hidden>
+          <span id="auth-message">Sign in for leaderboards</span>
+          <button class="button button-secondary button-small" id="sign-in-button" type="button">
+            Sign in
+          </button>
+          <button class="button button-ghost button-small" id="sign-out-button" type="button" hidden>
+            Sign out
+          </button>
+          <strong id="auth-title" class="sr-only">Sign in for shared scores</strong>
+        </div>
         <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true">
           <span aria-hidden="true">♪</span>
           <span class="sound-label">Sound on</span>
@@ -96,10 +106,6 @@
 
         <div class="game-grid">
           <article class="game-card game-card-sky">
-            <div class="game-card-top">
-              <span class="game-number">01</span>
-              <span class="difficulty">Starter</span>
-            </div>
             <div class="game-icon" aria-hidden="true">+</div>
             <h3>Quick Fire</h3>
             <p>Add and subtract at speed. A friendly place to warm up your brain.</p>
@@ -113,10 +119,6 @@
           </article>
 
           <article class="game-card game-card-sun">
-            <div class="game-card-top">
-              <span class="game-number">02</span>
-              <span class="difficulty">Popular</span>
-            </div>
             <div class="game-icon" aria-hidden="true">×</div>
             <h3>Times Table Dash</h3>
             <p>Race through multiplication facts and keep your winning streak alive.</p>
@@ -130,10 +132,6 @@
           </article>
 
           <article class="game-card game-card-coral">
-            <div class="game-card-top">
-              <span class="game-number">03</span>
-              <span class="difficulty">Challenge</span>
-            </div>
             <div class="game-icon" aria-hidden="true">?</div>
             <h3>Missing Number</h3>
             <p>Find the mystery number hiding inside each equation before time runs out.</p>
@@ -249,21 +247,6 @@
               <button class="active" type="button" data-board="quick">Quick Fire</button>
               <button type="button" data-board="times">Times Dash</button>
               <button type="button" data-board="missing">Missing No.</button>
-            </div>
-          </div>
-
-          <div class="auth-card" id="auth-card" hidden>
-            <div>
-              <strong id="auth-title">Sign in for shared scores</strong>
-              <span id="auth-message">Only approved school Google accounts can join the leaderboard.</span>
-            </div>
-            <div class="auth-actions">
-              <button class="button button-secondary button-small" id="sign-in-button" type="button">
-                Sign in with Google
-              </button>
-              <button class="button button-ghost button-small" id="sign-out-button" type="button" hidden>
-                Sign out
-              </button>
             </div>
           </div>
 

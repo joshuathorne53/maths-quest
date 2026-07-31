@@ -1,5 +1,5 @@
 const GAME_SECONDS = 60;
-const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v1";
+const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v2";
 
 const gameInfo = {
   quick: {
@@ -17,27 +17,9 @@ const gameInfo = {
 };
 
 const defaultScores = {
-  quick: [
-    { name: "Mia", score: 740 },
-    { name: "Noah", score: 680 },
-    { name: "Ava", score: 610 },
-    { name: "Leo", score: 570 },
-    { name: "Ivy", score: 520 },
-  ],
-  times: [
-    { name: "Arlo", score: 820 },
-    { name: "Zoe", score: 760 },
-    { name: "Sam", score: 690 },
-    { name: "Evie", score: 650 },
-    { name: "Kai", score: 590 },
-  ],
-  missing: [
-    { name: "Ruby", score: 780 },
-    { name: "Max", score: 710 },
-    { name: "Luca", score: 650 },
-    { name: "Ella", score: 600 },
-    { name: "Finn", score: 550 },
-  ],
+  quick: [],
+  times: [],
+  missing: [],
 };
 
 const state = {
@@ -188,7 +170,7 @@ function renderAuthControls() {
 
   if (state.authAllowed) {
     elements.authTitle.textContent = "Signed in for shared scores";
-    elements.authMessage.textContent = `Using ${state.authEmail}. Your scores can be added to the class leaderboard.`;
+    elements.authMessage.textContent = state.authEmail;
     elements.signInButton.hidden = true;
     elements.signOutButton.hidden = false;
     return;
@@ -196,14 +178,14 @@ function renderAuthControls() {
 
   if (state.authEmail) {
     elements.authTitle.textContent = "Wrong Google account";
-    elements.authMessage.textContent = `Signed in as ${state.authEmail}. Use a ${getAllowedDomainLabel()} account to submit scores.`;
+    elements.authMessage.textContent = "Wrong account";
     elements.signInButton.hidden = false;
     elements.signOutButton.hidden = false;
     return;
   }
 
   elements.authTitle.textContent = "Sign in for shared scores";
-  elements.authMessage.textContent = `Only ${getAllowedDomainLabel()} accounts can submit leaderboard scores.`;
+  elements.authMessage.textContent = "Sign in for leaderboards";
   elements.signInButton.hidden = false;
   elements.signOutButton.hidden = true;
 }
@@ -570,7 +552,7 @@ function renderLeaderboard() {
 
   elements.podium.innerHTML = topThree
     .map((entry, index) => {
-      const fallback = { name: "Your turn", score: 0 };
+      const fallback = { name: "No score yet", score: 0 };
       const player = entry || fallback;
       return `
         <div class="podium-place">

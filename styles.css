@@ -105,7 +105,7 @@ a {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 18px;
   font-size: 0.86rem;
   font-weight: 800;
 }
@@ -129,6 +129,35 @@ a {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.header-auth {
+  display: flex;
+  padding: 5px;
+  align-items: center;
+  gap: 8px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(23, 33, 59, 0.08);
+}
+
+.header-auth > span {
+  max-width: 190px;
+  overflow: hidden;
+  padding-left: 8px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-auth .button-ghost {
+  color: var(--navy);
+  background: white;
+  border-color: rgba(23, 33, 59, 0.1);
 }
 
 .hero {
@@ -601,34 +630,11 @@ a {
   background: #ffe1dc;
 }
 
-.game-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.game-number {
-  color: rgba(23, 33, 59, 0.45);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.13em;
-}
-
-.difficulty {
-  padding: 7px 10px;
-  color: var(--navy);
-  background: rgba(255, 255, 255, 0.66);
-  border-radius: 99px;
-  font-size: 0.6rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .game-icon {
   display: grid;
   width: 88px;
   height: 88px;
-  margin: 45px 0 28px;
+  margin: 18px 0 28px;
   color: white;
   background: var(--navy);
   border-radius: 28px;
@@ -1084,43 +1090,6 @@ a {
   background: white;
 }
 
-.auth-card {
-  display: flex;
-  margin: -18px 0 24px;
-  padding: 16px 18px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  color: white;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-}
-
-.auth-card div:first-child {
-  display: grid;
-  gap: 3px;
-}
-
-.auth-card strong {
-  font-size: 0.84rem;
-  font-weight: 900;
-}
-
-.auth-card span {
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.auth-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-}
-
 .leaderboard-card {
   display: grid;
   min-height: 430px;
@@ -1403,6 +1372,14 @@ footer > a:last-child {
     display: none;
   }
 
+  .header-auth {
+    max-width: 210px;
+  }
+
+  .header-auth > span {
+    display: none;
+  }
+
   .sound-label {
     display: none;
   }
@@ -1520,17 +1497,6 @@ footer > a:last-child {
 
   .leaderboard-tabs button {
     flex: 1 0 auto;
-  }
-
-  .auth-card {
-    margin-top: 0;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .auth-actions,
-  .auth-actions .button {
-    width: 100%;
   }
 
   .leaderboard-card {
