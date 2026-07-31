@@ -14,28 +14,176 @@ service cloud.firestore {
         );
     }
 
+    function userEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function validYearLevels() {
+      return [
+        'prep',
+        'year1',
+        'year2',
+        'year3',
+        'year4',
+        'year5',
+        'year6',
+        'year7',
+        'year8',
+        'year9',
+        'year10',
+        'year11',
+        'year12'
+      ];
+    }
+
+    function isValidYearLevel(yearLevel) {
+      return yearLevel in validYearLevels();
+    }
+
+    function isValidYearLevelList(yearLevels) {
+      return yearLevels is list
+        && yearLevels.size() >= 1
+        && yearLevels.size() <= 13
+        && yearLevels.hasOnly(validYearLevels());
+    }
+
     function isValidGame(game) {
       return game in ['quick', 'times', 'missing'];
     }
 
-    function hasValidScoreValues() {
-      return request.resource.data.name is string
-        && request.resource.data.name.size() >= 1
-        && request.resource.data.name.size() <= 80
+    function isValidName(name) {
+      return name is string
+        && name.size() >= 1
+        && name.size() <= 80;
+    }
+
+    function hasValidStudentProfileFields() {
+      return request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'yearLevel', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidName(request.resource.data.name)
+        && request.resource.data.email == userEmail()
+        && isValidYearLevel(request.resource.data.yearLevel);
+    }
+
+    function hasValidTeacherApplicationFields() {
+      return request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'status', 'requestedAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidName(request.resource.data.name)
+        && request.resource.data.email == userEmail()
+        && request.resource.data.status == 'pending';
+    }
+
+    function hasValidTeacherProfileFields() {
+      return request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'approved', 'yearLevels', 'createdAt', 'approvedAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidName(request.resource.data.name)
+        && request.resource.data.email == userEmail()
+        && request.resource.data.approved == true
+        && isValidYearLevelList(request.resource.data.yearLevels);
+    }
+
+    function studentProfilePath() {
+      return /databases/$(database)/documents/studentProfiles/$(request.auth.uid);
+    }
+
+    function teacherProfilePath() {
+      return /databases/$(database)/documents/teachers/$(request.auth.uid);
+    }
+
+    function isApprovedTeacher() {
+      return exists(teacherProfilePath())
+        && get(teacherProfilePath()).data.approved == true;
+    }
+
+    function hasSavedStudentYear(yearLevel) {
+      return exists(studentProfilePath())
+        && get(studentProfilePath()).data.yearLevel == yearLevel;
+    }
+
+    function hasValidBaseScoreFields(game) {
+      return isValidName(request.resource.data.name)
         && request.resource.data.score is int
         && request.resource.data.score >= 0
         && request.resource.data.score <= 10000
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.game == game;
     }
 
-    function hasValidNewScoreFields() {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'createdAt'])
-        && hasValidScoreValues();
+    function hasValidStudentScoreFields(game) {
+      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'role', 'yearLevel', 'game', 'createdAt', 'updatedAt'])
+        && hasValidBaseScoreFields(game)
+        && request.resource.data.role == 'student'
+        && isValidYearLevel(request.resource.data.yearLevel)
+        && hasSavedStudentYear(request.resource.data.yearLevel);
     }
 
-    function hasValidUpdatedScoreFields() {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'createdAt', 'updatedAt'])
-        && hasValidScoreValues();
+    function hasValidTeacherScoreFields(game) {
+      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
+        && hasValidBaseScoreFields(game)
+        && request.resource.data.role == 'teacher'
+        && isApprovedTeacher()
+        && request.resource.data.teacherYearLevels == get(teacherProfilePath()).data.yearLevels
+        && isValidYearLevelList(request.resource.data.teacherYearLevels);
+    }
+
+    function hasValidScoreFields(game) {
+      return hasValidStudentScoreFields(game) || hasValidTeacherScoreFields(game);
+    }
+
+    match /studentProfiles/{profileId} {
+      allow read: if isAllowedSchoolGoogleUser()
+        && profileId == request.auth.uid;
+
+      allow create: if isAllowedSchoolGoogleUser()
+        && profileId == request.auth.uid
+        && hasValidStudentProfileFields()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isAllowedSchoolGoogleUser()
+        && profileId == request.auth.uid
+        && hasValidStudentProfileFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /teacherApplications/{applicationId} {
+      allow read: if isAllowedSchoolGoogleUser()
+        && applicationId == request.auth.uid;
+
+      allow create: if isAllowedSchoolGoogleUser()
+        && applicationId == request.auth.uid
+        && hasValidTeacherApplicationFields()
+        && request.resource.data.requestedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isAllowedSchoolGoogleUser()
+        && applicationId == request.auth.uid
+        && hasValidTeacherApplicationFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.requestedAt == resource.data.requestedAt
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if isAllowedSchoolGoogleUser()
+        && teacherId == request.auth.uid;
+
+      allow update: if isAllowedSchoolGoogleUser()
+        && teacherId == request.auth.uid
+        && resource.data.approved == true
+        && hasValidTeacherProfileFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.approvedAt == resource.data.approvedAt
+        && request.resource.data.updatedAt == request.time;
+
+      allow create, delete: if false;
     }
 
     match /leaderboards/{game}/scores/{scoreId} {
@@ -44,18 +192,19 @@ service cloud.firestore {
       allow create: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
         && scoreId == request.auth.uid
-        && hasValidNewScoreFields()
-        && request.resource.data.createdAt == request.time;
+        && hasValidScoreFields(game)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow update: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
         && scoreId == request.auth.uid
         && resource.data.uid == request.auth.uid
-        && hasValidUpdatedScoreFields()
+        && hasValidScoreFields(game)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.score > resource.data.score;
+        && request.resource.data.score >= resource.data.score;
 
       allow delete: if false;
     }

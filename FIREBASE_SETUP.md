@@ -54,14 +54,44 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
    [`firestore.rules`](firestore.rules).
 4. Select **Publish**.
 
-These rules let anyone read the leaderboard. Only approved-domain Google users
-can add a score, score values are limited, and existing entries can only be
-updated when the new score is higher.
+These rules let anyone read the game leaderboards. Only approved-domain Google
+users can save their own student profile, apply for teacher approval, and add a
+score. Score values are limited, and existing score entries can only keep the
+same score or move higher.
 
-Leaderboard names come from the student's Google account. Each Google account can
-have one score document per game leaderboard because the score document ID must
-match the signed-in user's Firebase UID. Students can play any number of attempts,
-and the leaderboard keeps only their highest score for each game.
+Leaderboard names come from the user's Google account. Students must save one
+year level before playing. Each Google account can have one score document per
+game because the score document ID must match the signed-in user's Firebase UID.
+Students can play any number of attempts, and the leaderboard keeps only their
+highest score for each game.
+
+Teacher approval uses a simple Firebase Console workflow:
+
+1. A teacher signs in on the website and selects **Apply for teacher account**.
+2. In Firestore, open `teacherApplications` and copy the applicant document ID.
+   That document ID is the teacher's Firebase UID.
+3. Create a document in `teachers` with the same document ID.
+4. Add these fields:
+
+   - `uid`: the copied document ID
+   - `name`: the teacher's display name
+   - `email`: the teacher's school email address in lowercase
+   - `approved`: `true`
+   - `yearLevels`: an array, for example `["year7", "year8"]`
+   - `createdAt`: a Firestore timestamp
+   - `approvedAt`: a Firestore timestamp
+   - `updatedAt`: a Firestore timestamp
+
+The allowed `yearLevels` values are `prep`, `year1`, `year2`, `year3`,
+`year4`, `year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`,
+and `year12`.
+
+After approval, the teacher can choose their teaching year levels from the
+website. Year-level leaderboards include teacher filters at the bottom:
+
+- **No teachers:** student scores only.
+- **Year level teachers:** students plus teachers who teach the selected year.
+- **All teachers:** students plus all approved teachers with scores.
 
 After this update, only signed-in Google users from your chosen domain can add a
 score. Personal Gmail accounts and other domains are blocked by the database
@@ -73,6 +103,7 @@ Upload all project files to the GitHub repository, including:
 
 - `firebase-config.js`
 - `firebase-leaderboard.js`
+- `firebase.json`
 - `firestore.rules`
 
 Wait for GitHub Pages to deploy, then open the site. Below the leaderboard:
