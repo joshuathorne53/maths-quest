@@ -18,9 +18,8 @@ service cloud.firestore {
       return game in ['quick', 'times', 'missing'];
     }
 
-    function hasValidScoreFields() {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'createdAt', 'updatedAt'])
-        && request.resource.data.name is string
+    function hasValidScoreValues() {
+      return request.resource.data.name is string
         && request.resource.data.name.size() >= 1
         && request.resource.data.name.size() <= 80
         && request.resource.data.score is int
@@ -29,21 +28,30 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
     }
 
+    function hasValidNewScoreFields() {
+      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'createdAt'])
+        && hasValidScoreValues();
+    }
+
+    function hasValidUpdatedScoreFields() {
+      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'createdAt', 'updatedAt'])
+        && hasValidScoreValues();
+    }
+
     match /leaderboards/{game}/scores/{scoreId} {
       allow read: if isValidGame(game);
 
       allow create: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
         && scoreId == request.auth.uid
-        && hasValidScoreFields()
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && hasValidNewScoreFields()
+        && request.resource.data.createdAt == request.time;
 
       allow update: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
         && scoreId == request.auth.uid
         && resource.data.uid == request.auth.uid
-        && hasValidScoreFields()
+        && hasValidUpdatedScoreFields()
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time

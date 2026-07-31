@@ -175,7 +175,6 @@ if (!isConfigured) {
           score,
           uid: user.uid,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
         });
       }
 
