@@ -109,7 +109,7 @@
           <h1>Ready, set,<br /><em>solve!</em></h1>
           <p class="hero-text">
             Pick a challenge, sharpen your maths skills, and race your classmates
-            to the top of the leaderboard.
+            to the top of the high-school leaderboard.
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="#games">
@@ -119,9 +119,9 @@
           </div>
 
           <div class="hero-stats" aria-label="Game highlights">
-            <div><strong>3</strong><span>game modes</span></div>
+            <div><strong>9</strong><span>challenge modes</span></div>
             <div><strong>60</strong><span>seconds each</span></div>
-            <div><strong>∞</strong><span>chances to learn</span></div>
+            <div><strong>7-12</strong><span>year levels</span></div>
           </div>
         </div>
 
@@ -155,51 +155,12 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow"><span></span> Pick your challenge</p>
-            <h2>Three ways to train your brain</h2>
+            <h2>High school fluency, one level at a time</h2>
           </div>
-          <p>Every correct answer earns points. Build a streak for bonus points.</p>
+          <p>Year 7 starts the ladder. Higher year levels can play their own level and every level below.</p>
         </div>
 
-        <div class="game-grid">
-          <article class="game-card game-card-sky">
-            <div class="game-icon" aria-hidden="true">+</div>
-            <h3>Quick Fire</h3>
-            <p>Add and subtract at speed. A friendly place to warm up your brain.</p>
-            <ul>
-              <li>Numbers up to 50</li>
-              <li>Addition & subtraction</li>
-            </ul>
-            <button class="play-button" type="button" data-game="quick">
-              Play Quick Fire <span aria-hidden="true">→</span>
-            </button>
-          </article>
-
-          <article class="game-card game-card-sun">
-            <div class="game-icon" aria-hidden="true">×</div>
-            <h3>Times Table Dash</h3>
-            <p>Race through multiplication facts and keep your winning streak alive.</p>
-            <ul>
-              <li>Tables from 2 to 12</li>
-              <li>Streak bonuses</li>
-            </ul>
-            <button class="play-button" type="button" data-game="times">
-              Play Times Dash <span aria-hidden="true">→</span>
-            </button>
-          </article>
-
-          <article class="game-card game-card-coral">
-            <div class="game-icon" aria-hidden="true">?</div>
-            <h3>Missing Number</h3>
-            <p>Find the mystery number hiding inside each equation before time runs out.</p>
-            <ul>
-              <li>Reverse operations</li>
-              <li>Numbers up to 12</li>
-            </ul>
-            <button class="play-button" type="button" data-game="missing">
-              Play Missing Number <span aria-hidden="true">→</span>
-            </button>
-          </article>
-        </div>
+        <div class="game-grid" id="game-grid"></div>
       </section>
 
       <section class="play-section" id="play" hidden>
@@ -299,11 +260,7 @@
                 <span>Year level</span>
                 <select id="board-year-select"></select>
               </label>
-              <div class="leaderboard-tabs" role="group" aria-label="Choose leaderboard game">
-                <button class="active" type="button" data-board="quick">Quick Fire</button>
-                <button type="button" data-board="times">Times Dash</button>
-                <button type="button" data-board="missing">Missing No.</button>
-              </div>
+              <div class="leaderboard-tabs" id="leaderboard-tabs" role="group" aria-label="Choose leaderboard game"></div>
             </div>
           </div>
 

@@ -34,13 +34,6 @@ service cloud.firestore {
 
     function validYearLevels() {
       return [
-        'prep',
-        'year1',
-        'year2',
-        'year3',
-        'year4',
-        'year5',
-        'year6',
         'year7',
         'year8',
         'year9',
@@ -57,12 +50,45 @@ service cloud.firestore {
     function isValidYearLevelList(yearLevels) {
       return yearLevels is list
         && yearLevels.size() >= 1
-        && yearLevels.size() <= 13
+        && yearLevels.size() <= 6
         && yearLevels.hasOnly(validYearLevels());
     }
 
     function isValidGame(game) {
-      return game in ['quick', 'times', 'missing'];
+      return game in [
+        'quick',
+        'times',
+        'missing',
+        'year7-fluency',
+        'year8-fluency',
+        'year9-fluency',
+        'year10-fluency',
+        'year11-fluency',
+        'year12-fluency'
+      ];
+    }
+
+    function yearRank(yearLevel) {
+      return yearLevel == 'year7' ? 7
+        : yearLevel == 'year8' ? 8
+        : yearLevel == 'year9' ? 9
+        : yearLevel == 'year10' ? 10
+        : yearLevel == 'year11' ? 11
+        : yearLevel == 'year12' ? 12
+        : 0;
+    }
+
+    function gameRequiredYear(game) {
+      return game == 'year8-fluency' ? 8
+        : game == 'year9-fluency' ? 9
+        : game == 'year10-fluency' ? 10
+        : game == 'year11-fluency' ? 11
+        : game == 'year12-fluency' ? 12
+        : 7;
+    }
+
+    function canStudentAccessGame(game, yearLevel) {
+      return yearRank(yearLevel) >= gameRequiredYear(game);
     }
 
     function isValidName(name) {
@@ -126,6 +152,7 @@ service cloud.firestore {
         && isStudentUser()
         && request.resource.data.role == 'student'
         && isValidYearLevel(request.resource.data.yearLevel)
+        && canStudentAccessGame(game, request.resource.data.yearLevel)
         && hasSavedStudentYear(request.resource.data.yearLevel);
     }
 

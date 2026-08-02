@@ -69,6 +69,12 @@ game because the score document ID must match the signed-in user's Firebase UID.
 Students can play any number of attempts, and the leaderboard keeps only their
 highest score for each game.
 
+The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
+and `year12`. Students can submit scores for games at their saved year level and
+lower. For example, a `year10` student can play `year7-fluency`,
+`year8-fluency`, `year9-fluency`, and `year10-fluency`, but not the Year 11 or
+Year 12 fluency challenges.
+
 Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
 Teachers open **Settings**, choose the year levels they teach, and the website
 creates or updates their `teachers/{uid}` profile automatically with:
@@ -82,9 +88,8 @@ creates or updates their `teachers/{uid}` profile automatically with:
 - `approvedAt`: a Firestore timestamp
 - `updatedAt`: a Firestore timestamp
 
-The allowed `yearLevels` values are `prep`, `year1`, `year2`, `year3`,
-`year4`, `year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`,
-and `year12`.
+The allowed `yearLevels` values are `year7`, `year8`, `year9`, `year10`,
+`year11`, and `year12`.
 
 Year-level leaderboards include teacher filters at the bottom:
 

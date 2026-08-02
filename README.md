@@ -1,14 +1,16 @@
 # Bayside Maths Challenge
 
 A bright, responsive maths-games website for Bayside Christian College, built for
-GitHub Pages. Students can play three timed games, save their year level, and
-appear on a shared live leaderboard.
+GitHub Pages. Students in Years 7-12 can play timed fluency games, save their
+year level, and appear on a shared live leaderboard.
 
 ## Games
 
 - **Quick Fire:** addition and subtraction
 - **Times Table Dash:** multiplication from 2 to 12
 - **Missing Number:** reverse-operation multiplication puzzles
+- **Year 7-12 Fluency:** year-level challenge ladders for integers, algebra,
+  graphs, quadratics, functions, calculus, and senior fluency
 
 ## Run locally
 
@@ -35,6 +37,10 @@ they save one year level in the toolbar Settings menu, then submit shared scores
 to that year-level leaderboard. Their leaderboard name comes from their Google
 account, and each Google account can try as many times as they like while only
 their highest score per game is kept.
+
+The site is high-school only: Year 7 to Year 12. Students can access fluency
+challenges at their saved year level and every lower year level. For example, a
+Year 10 student can play Year 7, Year 8, Year 9, and Year 10 fluency challenges.
 
 `@baysidecc.vic.edu.au` Google accounts are treated as teachers automatically.
 Teachers choose the year levels they teach in Settings and can appear in the

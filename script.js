@@ -1,15 +1,8 @@
 const GAME_SECONDS = 60;
-const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v3";
+const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v4";
 const DEFAULT_YEAR_LEVEL = "year7";
 
 const YEAR_LEVELS = [
-  { id: "prep", label: "Prep" },
-  { id: "year1", label: "Year 1" },
-  { id: "year2", label: "Year 2" },
-  { id: "year3", label: "Year 3" },
-  { id: "year4", label: "Year 4" },
-  { id: "year5", label: "Year 5" },
-  { id: "year6", label: "Year 6" },
   { id: "year7", label: "Year 7" },
   { id: "year8", label: "Year 8" },
   { id: "year9", label: "Year 9" },
@@ -24,23 +17,97 @@ const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameInfo = {
   quick: {
     name: "Quick Fire",
+    shortName: "Quick",
     description: "Solve as many addition and subtraction questions as you can in 60 seconds.",
+    cardDescription: "Add and subtract at speed. A friendly place to warm up your brain.",
+    bullets: ["Integers and mental methods", "All high school years"],
+    icon: "+",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
   },
   times: {
     name: "Times Table Dash",
+    shortName: "Times",
     description: "Race through multiplication facts from the 2 to 12 times tables.",
+    cardDescription: "Race through multiplication facts and keep your winning streak alive.",
+    bullets: ["Tables from 2 to 12", "Streak bonuses"],
+    icon: "×",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
   },
   missing: {
     name: "Missing Number",
+    shortName: "Missing",
     description: "Find the mystery number hiding inside each equation.",
+    cardDescription: "Find the mystery number inside each equation before time runs out.",
+    bullets: ["Reverse operations", "Algebra thinking"],
+    icon: "?",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "year7-fluency": {
+    name: "Year 7 Fluency",
+    shortName: "Y7 Fluency",
+    description: "Build speed with integers, fractions, percentages, and simple equations.",
+    cardDescription: "High-school foundations: integers, fractions, percentages, and basic algebra.",
+    bullets: ["Integers and fractions", "Simple equations"],
+    icon: "7",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "year8-fluency": {
+    name: "Year 8 Fluency",
+    shortName: "Y8 Fluency",
+    description: "Sharpen ratios, percentages, powers, and linear equations.",
+    cardDescription: "Step up with ratios, percentages, powers, and linear equations.",
+    bullets: ["Ratios and percentages", "Powers and equations"],
+    icon: "8",
+    cardClass: "game-card-sun",
+    accessYear: "year8",
+  },
+  "year9-fluency": {
+    name: "Year 9 Fluency",
+    shortName: "Y9 Fluency",
+    description: "Practise gradients, index laws, expansion, and stronger algebra.",
+    cardDescription: "Tackle index laws, gradients, expansion, and stronger algebra.",
+    bullets: ["Index laws", "Linear graphs"],
+    icon: "9",
+    cardClass: "game-card-coral",
+    accessYear: "year9",
+  },
+  "year10-fluency": {
+    name: "Year 10 Fluency",
+    shortName: "Y10 Fluency",
+    description: "Train quadratics, simultaneous equations, Pythagoras, and functions.",
+    cardDescription: "Get fluent with quadratics, simultaneous equations, Pythagoras, and functions.",
+    bullets: ["Quadratics", "Pythagoras and functions"],
+    icon: "10",
+    cardClass: "game-card-sky",
+    accessYear: "year10",
+  },
+  "year11-fluency": {
+    name: "Year 11 Fluency",
+    shortName: "Y11 Fluency",
+    description: "Practise functions, logarithms, surds, sequences, and introductory calculus.",
+    cardDescription: "Senior fluency across functions, logarithms, surds, sequences, and calculus.",
+    bullets: ["Logs and surds", "Sequences and derivatives"],
+    icon: "11",
+    cardClass: "game-card-sun",
+    accessYear: "year11",
+  },
+  "year12-fluency": {
+    name: "Year 12 Fluency",
+    shortName: "Y12 Fluency",
+    description: "Refine calculus, exponentials, complex numbers, and series skills.",
+    cardDescription: "Final-year fluency with calculus, exponentials, complex numbers, and series.",
+    bullets: ["Calculus and series", "Complex numbers"],
+    icon: "12",
+    cardClass: "game-card-coral",
+    accessYear: "year12",
   },
 };
 
-const defaultScores = {
-  quick: [],
-  times: [],
-  missing: [],
-};
+const GAME_IDS = Object.keys(gameInfo);
 
 const state = {
   game: "quick",
@@ -78,11 +145,7 @@ const state = {
   pendingSharedScore: null,
   savingSharedScore: false,
   latestSharedScoreId: null,
-  sharedScores: {
-    quick: null,
-    times: null,
-    missing: null,
-  },
+  sharedScores: cloneSharedScores(),
 };
 
 const elements = {
@@ -112,9 +175,11 @@ const elements = {
   correctTotal: document.querySelector("#correct-total"),
   bestStreak: document.querySelector("#best-streak"),
   resultRank: document.querySelector("#result-rank"),
+  gameGrid: document.querySelector("#game-grid"),
   podium: document.querySelector("#podium"),
   scoreList: document.querySelector("#score-list"),
   boardYearSelect: document.querySelector("#board-year-select"),
+  boardTabs: document.querySelector("#leaderboard-tabs"),
   soundToggle: document.querySelector("#sound-toggle"),
   leaderboardStatus: document.querySelector("#leaderboard-status"),
   authCard: document.querySelector("#auth-card"),
@@ -146,7 +211,18 @@ function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function sample(items) {
+  return items[randomNumber(0, items.length - 1)];
+}
+
+function formatSigned(value) {
+  return value < 0 ? `(${value})` : String(value);
+}
+
 function createQuestion(mode) {
+  const fluencyGenerator = fluencyQuestionGenerators[mode];
+  if (fluencyGenerator) return fluencyGenerator();
+
   if (mode === "times") {
     const a = randomNumber(2, 12);
     const b = randomNumber(2, 12);
@@ -172,6 +248,162 @@ function createQuestion(mode) {
   return { text: `${a} − ${b} = ?`, answer: a - b };
 }
 
+const fluencyQuestionGenerators = {
+  "year7-fluency": () => sample([
+    () => {
+      const a = randomNumber(-18, 35);
+      const b = randomNumber(-15, 20);
+      return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
+    },
+    () => {
+      const denominator = sample([4, 5, 8, 10]);
+      const numerator = randomNumber(1, denominator - 1);
+      const multiplier = randomNumber(3, 12);
+      return {
+        text: `${numerator}/${denominator} of ${denominator * multiplier} = ?`,
+        answer: numerator * multiplier,
+      };
+    },
+    () => {
+      const percent = sample([10, 20, 25, 50, 75]);
+      const base = sample([40, 60, 80, 100, 120, 160]);
+      return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
+    },
+    () => {
+      const answer = randomNumber(4, 24);
+      const offset = randomNumber(5, 30);
+      return { text: `x + ${offset} = ${answer + offset}. x = ?`, answer };
+    },
+  ])(),
+  "year8-fluency": () => sample([
+    () => {
+      const a = randomNumber(2, 5);
+      const b = randomNumber(2, 5);
+      return { text: `${a}² + ${b}² = ?`, answer: a ** 2 + b ** 2 };
+    },
+    () => {
+      const left = randomNumber(2, 5);
+      const right = randomNumber(3, 8);
+      const total = (left + right) * randomNumber(4, 9);
+      return {
+        text: `Share ${total} in the ratio ${left}:${right}. Larger share = ?`,
+        answer: Math.max(left, right) * (total / (left + right)),
+      };
+    },
+    () => {
+      const percent = sample([10, 20, 25]);
+      const base = sample([40, 60, 80, 100, 120]);
+      return { text: `${base} increased by ${percent}% = ?`, answer: base + (base * percent) / 100 };
+    },
+    () => {
+      const answer = randomNumber(3, 16);
+      const coefficient = randomNumber(2, 9);
+      return { text: `${coefficient}x = ${coefficient * answer}. x = ?`, answer };
+    },
+  ])(),
+  "year9-fluency": () => sample([
+    () => {
+      const base = randomNumber(2, 5);
+      const leftPower = randomNumber(2, 5);
+      const rightPower = randomNumber(2, 5);
+      return { text: `${base}^${leftPower} × ${base}^${rightPower} = ${base}^?`, answer: leftPower + rightPower };
+    },
+    () => {
+      const gradient = randomNumber(2, 6);
+      const x = randomNumber(3, 8);
+      const y = gradient * x;
+      return { text: `Gradient from (0, 0) to (${x}, ${y}) = ?`, answer: gradient };
+    },
+    () => {
+      const coefficient = randomNumber(2, 6);
+      const inner = randomNumber(2, 8);
+      return { text: `Expand ${coefficient}(${inner}x + 3). Coefficient of x = ?`, answer: coefficient * inner };
+    },
+    () => {
+      const answer = randomNumber(4, 18);
+      const coefficient = randomNumber(2, 6);
+      const offset = randomNumber(5, 20);
+      return { text: `${coefficient}x − ${offset} = ${coefficient * answer - offset}. x = ?`, answer };
+    },
+  ])(),
+  "year10-fluency": () => sample([
+    () => {
+      const rootA = randomNumber(2, 7);
+      const rootB = randomNumber(rootA + 1, 10);
+      return { text: `x² − ${rootA + rootB}x + ${rootA * rootB} = 0. Smaller x = ?`, answer: rootA };
+    },
+    () => {
+      const triples = [
+        [3, 4, 5],
+        [5, 12, 13],
+        [8, 15, 17],
+        [7, 24, 25],
+      ];
+      const [a, b, c] = sample(triples);
+      return { text: `Right triangle legs ${a} and ${b}. Hypotenuse = ?`, answer: c };
+    },
+    () => {
+      const x = randomNumber(3, 12);
+      const y = randomNumber(1, x - 1);
+      return { text: `x + y = ${x + y}, x − y = ${x - y}. x = ?`, answer: x };
+    },
+    () => {
+      const x = randomNumber(3, 8);
+      const a = randomNumber(2, 5);
+      const b = randomNumber(1, 8);
+      return { text: `f(x) = ${a}x² − ${b}x. f(${x}) = ?`, answer: a * x ** 2 - b * x };
+    },
+  ])(),
+  "year11-fluency": () => sample([
+    () => {
+      const coefficient = randomNumber(2, 8);
+      const power = randomNumber(2, 4);
+      return { text: `d/dx (${coefficient}x^${power}) = ?x^${power - 1}`, answer: coefficient * power };
+    },
+    () => {
+      const base = sample([2, 3, 5]);
+      const power = randomNumber(2, 5);
+      return { text: `log_${base}(${base ** power}) = ?`, answer: power };
+    },
+    () => {
+      const a = randomNumber(2, 7);
+      const d = randomNumber(2, 8);
+      const n = randomNumber(6, 12);
+      return { text: `Arithmetic sequence a=${a}, d=${d}. T${n} = ?`, answer: a + (n - 1) * d };
+    },
+    () => {
+      const value = randomNumber(2, 9);
+      return { text: `√${value * value * 2} ÷ √2 = ?`, answer: value };
+    },
+  ])(),
+  "year12-fluency": () => sample([
+    () => {
+      const power = randomNumber(3, 5);
+      const x = randomNumber(2, 4);
+      return { text: `If f(x)=x^${power}, f′(${x}) = ?`, answer: power * x ** (power - 1) };
+    },
+    () => {
+      const coefficient = randomNumber(2, 9);
+      const power = randomNumber(1, 3);
+      return { text: `∫ ${coefficient * (power + 1)}x^${power} dx = ?x^${power + 1} + C`, answer: coefficient };
+    },
+    () => {
+      const real = randomNumber(3, 8);
+      const imaginary = randomNumber(4, 10);
+      const magnitudeSquared = real ** 2 + imaginary ** 2;
+      const magnitude = Math.sqrt(magnitudeSquared);
+      if (Number.isInteger(magnitude)) {
+        return { text: `|${real} + ${imaginary}i| = ?`, answer: magnitude };
+      }
+      return { text: `|3 + 4i| = ?`, answer: 5 };
+    },
+    () => {
+      const n = randomNumber(8, 18);
+      return { text: `1 + 2 + ... + ${n} = ?`, answer: (n * (n + 1)) / 2 };
+    },
+  ])(),
+};
+
 function getYearLabel(yearLevel) {
   return YEAR_LEVELS.find((level) => level.id === yearLevel)?.label || "No year";
 }
@@ -188,6 +420,47 @@ function cleanTeacherFilter(filter) {
 function cleanAccountType(accountType) {
   const value = String(accountType || "").trim().toLowerCase();
   return value === "student" || value === "teacher" ? value : "";
+}
+
+function getYearRank(yearLevel) {
+  return YEAR_LEVELS.findIndex((level) => level.id === yearLevel);
+}
+
+function getGameRequiredYear(gameId) {
+  return cleanYearLevel(gameInfo[gameId]?.accessYear) || DEFAULT_YEAR_LEVEL;
+}
+
+function canAccessGame(gameId) {
+  if (!gameInfo[gameId]) return false;
+  if (!state.sharedConfigured || !state.authAllowed) return true;
+  if (getActiveAccountType() === "teacher") return true;
+
+  const studentRank = getYearRank(state.studentYearLevel);
+  const requiredRank = getYearRank(getGameRequiredYear(gameId));
+  return studentRank >= 0 && requiredRank >= 0 && studentRank >= requiredRank;
+}
+
+function getGameAccessMessage(gameId) {
+  const requiredYear = getGameRequiredYear(gameId);
+  const requiredLabel = getYearLabel(requiredYear);
+
+  if (!state.sharedConfigured || !state.authAllowed) {
+    return `Unlocks from ${requiredLabel}. Sign in to check your access.`;
+  }
+
+  if (getActiveAccountType() === "teacher") {
+    return `Teacher access: ${requiredLabel} and up.`;
+  }
+
+  if (!state.studentYearLevel) {
+    return `Save your year level to unlock ${requiredLabel} and lower challenges.`;
+  }
+
+  if (canAccessGame(gameId)) {
+    return `Available to ${getYearLabel(state.studentYearLevel)} students.`;
+  }
+
+  return `Unlocks from ${requiredLabel}. Higher year levels can play lower challenges.`;
 }
 
 function createYearOptions({ includePlaceholder = false } = {}) {
@@ -214,11 +487,11 @@ function setupYearControls() {
 }
 
 function cloneDefaultScores() {
-  return {
-    quick: [],
-    times: [],
-    missing: [],
-  };
+  return Object.fromEntries(GAME_IDS.map((gameId) => [gameId, []]));
+}
+
+function cloneSharedScores() {
+  return Object.fromEntries(GAME_IDS.map((gameId) => [gameId, null]));
 }
 
 function normalizeScores(scores) {
@@ -232,7 +505,15 @@ function normalizeScores(scores) {
 function getLocalScores() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved && saved.quick && saved.times && saved.missing ? saved : cloneDefaultScores();
+    const scores = cloneDefaultScores();
+    if (!saved || typeof saved !== "object") return scores;
+
+    GAME_IDS.forEach((gameId) => {
+      if (Array.isArray(saved[gameId])) {
+        scores[gameId] = saved[gameId];
+      }
+    });
+    return scores;
   } catch {
     return cloneDefaultScores();
   }
@@ -441,6 +722,38 @@ function renderTeacherFilterControls() {
   });
 }
 
+function renderGameCards() {
+  elements.gameGrid.innerHTML = GAME_IDS.map((gameId) => {
+    const info = gameInfo[gameId];
+    const locked = !canAccessGame(gameId);
+    const accessMessage = getGameAccessMessage(gameId);
+    const buttonLabel = locked ? "Locked for now" : `Play ${info.shortName}`;
+
+    return `
+      <article class="game-card ${info.cardClass} ${locked ? "game-card-locked" : ""}">
+        <span class="game-access">${escapeHtml(accessMessage)}</span>
+        <div class="game-icon" aria-hidden="true">${escapeHtml(info.icon)}</div>
+        <h3>${escapeHtml(info.name)}</h3>
+        <p>${escapeHtml(info.cardDescription)}</p>
+        <ul>
+          ${info.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}
+        </ul>
+        <button class="play-button" type="button" data-game="${escapeHtml(gameId)}" ${locked ? "disabled" : ""}>
+          ${escapeHtml(buttonLabel)} <span aria-hidden="true">→</span>
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderBoardTabs() {
+  elements.boardTabs.innerHTML = GAME_IDS.map((gameId) => `
+    <button class="${gameId === state.board ? "active" : ""}" type="button" data-board="${escapeHtml(gameId)}">
+      ${escapeHtml(gameInfo[gameId].shortName)}
+    </button>
+  `).join("");
+}
+
 function setSettingsOpen(open, { userAction = false } = {}) {
   if (userAction) {
     state.settingsUserOpen = Boolean(open);
@@ -579,6 +892,10 @@ function getFirebaseMessage(error, fallback) {
     return "Choose and save your year level before submitting a score.";
   }
 
+  if (code.includes("profile/game-locked")) {
+    return "This challenge is locked for your year level. Higher year levels can play lower challenges.";
+  }
+
   if (code.includes("profile/student-domain-required")) {
     return "Use an @bcc.vic.edu.au account for student leaderboards.";
   }
@@ -642,6 +959,7 @@ function applyAuthState(authState) {
   }
 
   renderAuthControls();
+  renderGameCards();
   renderLeaderboard();
 
   if (state.authAllowed) {
@@ -722,6 +1040,7 @@ function connectSharedLeaderboard() {
       "Firebase setup needed. Until then, scores save only on this device.",
     );
     renderAuthControls();
+    renderGameCards();
     return;
   }
 
@@ -919,6 +1238,14 @@ function playTone(success) {
 }
 
 function selectGame(mode) {
+  if (!gameInfo[mode]) return;
+
+  if (!canAccessGame(mode)) {
+    setLeaderboardStatus("local", getGameAccessMessage(mode));
+    renderGameCards();
+    return;
+  }
+
   state.game = mode;
   const info = gameInfo[mode];
   elements.startTitle.textContent = info.name;
@@ -1037,6 +1364,12 @@ async function requestStartGame() {
     renderAuthControls();
     setSettingsOpen(true, { userAction: true });
     setLeaderboardStatus("local", getAccountSetupMessage());
+    return;
+  }
+
+  if (!canAccessGame(state.game)) {
+    setLeaderboardStatus("local", getGameAccessMessage(state.game));
+    renderGameCards();
     return;
   }
 
@@ -1211,19 +1544,23 @@ function setActiveBoardTab() {
 }
 
 setupYearControls();
+renderGameCards();
+renderBoardTabs();
 renderTeacherFilterControls();
 
-document.querySelectorAll("[data-game]").forEach((button) => {
-  button.addEventListener("click", () => selectGame(button.dataset.game));
+elements.gameGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-game]");
+  if (!button || button.disabled) return;
+  selectGame(button.dataset.game);
 });
 
-document.querySelectorAll("[data-board]").forEach((button) => {
-  button.addEventListener("click", () => {
-    state.board = button.dataset.board;
-    setActiveBoardTab();
-    renderLeaderboard();
-    listenToSharedBoard(state.board);
-  });
+elements.boardTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-board]");
+  if (!button) return;
+  state.board = button.dataset.board;
+  setActiveBoardTab();
+  renderLeaderboard();
+  listenToSharedBoard(state.board);
 });
 
 document.querySelectorAll("[data-teacher-filter]").forEach((button) => {

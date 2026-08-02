@@ -29,21 +29,35 @@ import {
   teacherEmailDomain,
 } from "./firebase-config.js";
 
-const validGames = new Set(["quick", "times", "missing"]);
+const validGames = new Set([
+  "quick",
+  "times",
+  "missing",
+  "year7-fluency",
+  "year8-fluency",
+  "year9-fluency",
+  "year10-fluency",
+  "year11-fluency",
+  "year12-fluency",
+]);
 const validYearLevels = new Set([
-  "prep",
-  "year1",
-  "year2",
-  "year3",
-  "year4",
-  "year5",
-  "year6",
   "year7",
   "year8",
   "year9",
   "year10",
   "year11",
   "year12",
+]);
+const gameAccessYears = new Map([
+  ["quick", "year7"],
+  ["times", "year7"],
+  ["missing", "year7"],
+  ["year7-fluency", "year7"],
+  ["year8-fluency", "year8"],
+  ["year9-fluency", "year9"],
+  ["year10-fluency", "year10"],
+  ["year11-fluency", "year11"],
+  ["year12-fluency", "year12"],
 ]);
 const configuredDomains = Array.isArray(allowedEmailDomains) && allowedEmailDomains.length
   ? allowedEmailDomains
@@ -102,6 +116,16 @@ function cleanYearLevels(yearLevels) {
   return yearLevels
     .map(cleanYearLevel)
     .filter((yearLevel, index, levels) => yearLevel && levels.indexOf(yearLevel) === index);
+}
+
+function getYearRank(yearLevel) {
+  const cleanLevel = cleanYearLevel(yearLevel);
+  return cleanLevel ? Number(cleanLevel.replace("year", "")) : 0;
+}
+
+function canStudentAccessGame(game, yearLevel) {
+  const requiredYear = gameAccessYears.get(game);
+  return Boolean(requiredYear) && getYearRank(yearLevel) >= getYearRank(requiredYear);
 }
 
 function makeError(code, message) {
@@ -328,6 +352,10 @@ if (!isConfigured) {
   }
 
   async function getStudentScorePayload(user, game, score, yearLevel) {
+    if (!validGames.has(game)) {
+      throw new Error("Unknown game mode.");
+    }
+
     if (getAccountTypeForEmail(user.email) !== "student") {
       throw makeError("profile/student-domain-required", "Only bcc.vic.edu.au accounts can submit student scores.");
     }
@@ -335,6 +363,10 @@ if (!isConfigured) {
     const cleanLevel = cleanYearLevel(yearLevel || studentProfile?.yearLevel);
     if (!cleanLevel) {
       throw makeError("profile/year-level-needed", "Choose and save your year level before submitting a score.");
+    }
+
+    if (!canStudentAccessGame(game, cleanLevel)) {
+      throw makeError("profile/game-locked", "This challenge is locked for your year level.");
     }
 
     return {
@@ -417,6 +449,10 @@ if (!isConfigured) {
 
     async addScore(game, score, context = {}) {
       const user = getAllowedUser();
+      if (!validGames.has(game)) {
+        throw new Error("Unknown game mode.");
+      }
+
       const accountType = getAccountTypeForEmail(user.email);
       if (!accountType) {
         throw makeError("profile/account-type-needed", "Use an approved school Google account before submitting a score.");

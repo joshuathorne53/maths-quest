@@ -679,6 +679,15 @@ a {
   transform: translateY(-7px);
 }
 
+.game-card-locked {
+  opacity: 0.62;
+}
+
+.game-card-locked:hover {
+  box-shadow: none;
+  transform: none;
+}
+
 .game-card::after {
   position: absolute;
   width: 170px;
@@ -700,6 +709,20 @@ a {
 
 .game-card-coral {
   background: #ffe1dc;
+}
+
+.game-access {
+  display: inline-flex;
+  min-height: 28px;
+  padding: 6px 10px;
+  align-items: center;
+  color: var(--blue-dark);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(23, 33, 59, 0.07);
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1.25;
 }
 
 .game-icon {
@@ -783,6 +806,13 @@ a {
 .play-button:hover {
   background: var(--blue-dark);
   transform: translateY(-2px);
+}
+
+.play-button:disabled {
+  cursor: not-allowed;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(23, 33, 59, 0.55);
+  transform: none;
 }
 
 .play-section {
@@ -1138,6 +1168,9 @@ a {
   display: flex;
   padding: 4px;
   gap: 3px;
+  max-width: 760px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
