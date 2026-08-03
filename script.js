@@ -1832,8 +1832,7 @@ function quitGame() {
 
 function getScoreMeta(entry) {
   if (entry.role === "teacher") {
-    const teachesCurrentYear = entry.teacherYearLevels.includes(state.boardYearLevel);
-    return teachesCurrentYear ? `${getYearLabel(state.boardYearLevel)} teacher` : "Teacher";
+    return "Teacher";
   }
 
   return getYearLabel(entry.yearLevel);
