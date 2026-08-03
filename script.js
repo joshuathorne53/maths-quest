@@ -1055,7 +1055,7 @@ function updateStartPanel() {
 
   if (getActiveAccountType() === "teacher") {
     if (state.teacherYearLevels.length) {
-      elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher for ${getTeacherYearLabel()}.`;
+      elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher.`;
       elements.startGameButton.textContent = "Start game →";
     } else {
       elements.startPlayer.textContent = "Choose your teaching year levels before playing as a teacher.";
