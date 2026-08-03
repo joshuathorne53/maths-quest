@@ -840,19 +840,21 @@ function getGameRequiredYear(gameId) {
   return cleanYearLevel(gameInfo[gameId]?.accessYear) || DEFAULT_YEAR_LEVEL;
 }
 
+function canYearAccessGame(yearLevel, gameId) {
+  const yearRank = getYearRank(yearLevel);
+  const requiredRank = getYearRank(getGameRequiredYear(gameId));
+  return yearRank >= 0 && requiredRank >= 0 && yearRank >= requiredRank;
+}
+
 function canAccessGame(gameId) {
   if (!gameInfo[gameId]) return false;
   if (!state.sharedConfigured || !state.authAllowed) return true;
   if (isTeacherTestingAsStudent()) {
-    const testRank = getYearRank(state.testStudentYearLevel);
-    const requiredRank = getYearRank(getGameRequiredYear(gameId));
-    return testRank >= 0 && requiredRank >= 0 && testRank >= requiredRank;
+    return canYearAccessGame(state.testStudentYearLevel, gameId);
   }
   if (getActiveAccountType() === "teacher") return true;
 
-  const studentRank = getYearRank(state.studentYearLevel);
-  const requiredRank = getYearRank(getGameRequiredYear(gameId));
-  return studentRank >= 0 && requiredRank >= 0 && studentRank >= requiredRank;
+  return canYearAccessGame(state.studentYearLevel, gameId);
 }
 
 function shouldHideInaccessibleGames() {
@@ -867,8 +869,15 @@ function getVisibleGameIds() {
     : GAME_IDS;
 }
 
+function getVisibleBoardGameIds() {
+  const boardGameIds = GAME_IDS.filter((gameId) => canYearAccessGame(state.boardYearLevel, gameId));
+  return shouldHideInaccessibleGames()
+    ? boardGameIds.filter(canAccessGame)
+    : boardGameIds;
+}
+
 function ensureVisibleBoard() {
-  const visibleGameIds = getVisibleGameIds();
+  const visibleGameIds = getVisibleBoardGameIds();
   if (visibleGameIds.length && !visibleGameIds.includes(state.board)) {
     state.board = visibleGameIds[0];
   }
@@ -1239,7 +1248,7 @@ function renderGameCards() {
 
 function renderBoardTabs() {
   ensureVisibleBoard();
-  elements.boardTabs.innerHTML = getVisibleGameIds().map((gameId) => `
+  elements.boardTabs.innerHTML = getVisibleBoardGameIds().map((gameId) => `
     <button class="${gameId === state.board ? "active" : ""}" type="button" data-board="${escapeHtml(gameId)}">
       ${escapeHtml(gameInfo[gameId].shortName)}
     </button>
@@ -1440,8 +1449,11 @@ function getFirebaseMessage(error, fallback) {
 
 function setBoardYearLevel(yearLevel) {
   const cleanLevel = cleanYearLevel(yearLevel) || DEFAULT_YEAR_LEVEL;
+  const previousBoard = state.board;
   state.boardYearLevel = cleanLevel;
   elements.boardYearSelect.value = cleanLevel;
+  renderBoardTabs();
+  if (state.board !== previousBoard) listenToSharedBoard(state.board);
   renderLeaderboard();
   updateSharedResultRank();
 }
