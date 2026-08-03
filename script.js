@@ -1,6 +1,7 @@
 const GAME_SECONDS = 60;
 const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
 const DEFAULT_YEAR_LEVEL = "year7";
+const TEST_STUDENT_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
 
 const YEAR_LEVELS = [
   { id: "year7", label: "Year 7" },
@@ -823,6 +824,14 @@ function cleanAccountType(accountType) {
   return value === "student" || value === "teacher" ? value : "";
 }
 
+function cleanEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function canUseTestStudentMode() {
+  return cleanEmail(state.authEmail) === TEST_STUDENT_ADMIN_EMAIL;
+}
+
 function getYearRank(yearLevel) {
   return YEAR_LEVELS.findIndex((level) => level.id === yearLevel);
 }
@@ -959,7 +968,10 @@ function getActiveAccountType() {
 }
 
 function isTeacherTestingAsStudent() {
-  return state.accountType === "teacher" && state.testStudentMode && Boolean(cleanYearLevel(state.testStudentYearLevel));
+  return state.accountType === "teacher"
+    && canUseTestStudentMode()
+    && state.testStudentMode
+    && Boolean(cleanYearLevel(state.testStudentYearLevel));
 }
 
 function getTestStudentLabel() {
@@ -976,7 +988,7 @@ function accountSetupRequired() {
   const accountType = getActiveAccountType();
   if (!state.accountType) return true;
   if (accountType === "teacher") {
-    if (state.testStudentMode) return !cleanYearLevel(state.testStudentYearLevel);
+    if (isTeacherTestingAsStudent()) return !cleanYearLevel(state.testStudentYearLevel);
     return state.teacherYearLevels.length === 0;
   }
 
@@ -991,7 +1003,7 @@ function getAccountSetupMessage() {
   }
 
   if (accountType === "teacher") {
-    if (state.testStudentMode && !cleanYearLevel(state.testStudentYearLevel)) {
+    if (isTeacherTestingAsStudent() && !cleanYearLevel(state.testStudentYearLevel)) {
       return "Choose a test student year level before playing.";
     }
 
@@ -1256,8 +1268,14 @@ function setSettingsOpen(open, { userAction = false } = {}) {
 
 function renderTestStudentControls() {
   const isTeacherAccount = state.accountType === "teacher";
-  elements.testStudentPanel.hidden = !isTeacherAccount;
-  if (!isTeacherAccount) return;
+  const canUseTestStudent = isTeacherAccount && canUseTestStudentMode();
+  elements.testStudentPanel.hidden = !canUseTestStudent;
+  if (!canUseTestStudent) {
+    state.testStudentMode = false;
+    elements.testStudentToggle.checked = false;
+    elements.testStudentYearSelect.disabled = true;
+    return;
+  }
 
   elements.testStudentToggle.checked = state.testStudentMode;
   elements.testStudentYearSelect.value = cleanYearLevel(state.testStudentYearLevel) || DEFAULT_YEAR_LEVEL;
@@ -1444,7 +1462,7 @@ function applyAuthState(authState) {
   state.teacherYearLevels = Array.isArray(authState?.teacherYearLevels)
     ? authState.teacherYearLevels.map(cleanYearLevel).filter(Boolean)
     : [];
-  if (state.accountType !== "teacher") {
+  if (state.accountType !== "teacher" || !canUseTestStudentMode()) {
     state.testStudentMode = false;
   }
 
@@ -2122,6 +2140,16 @@ elements.boardYearSelect.addEventListener("change", () => {
 elements.studentProfileForm.addEventListener("submit", saveStudentProfile);
 elements.teacherYearsSave.addEventListener("click", saveTeacherYears);
 elements.testStudentToggle.addEventListener("change", () => {
+  if (!canUseTestStudentMode()) {
+    state.testStudentMode = false;
+    elements.testStudentToggle.checked = false;
+    renderAuthControls();
+    renderGameCards();
+    renderBoardTabs();
+    renderLeaderboard();
+    return;
+  }
+
   state.testStudentMode = elements.testStudentToggle.checked;
   state.testStudentYearLevel = cleanYearLevel(elements.testStudentYearSelect.value) || DEFAULT_YEAR_LEVEL;
   state.pendingSharedScore = null;
