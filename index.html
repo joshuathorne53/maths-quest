@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
-    <script src="script.js?v=simplifying-surds-20260803" defer></script>
+    <script src="script.js?v=test-students-20260803" defer></script>
     <script type="module" src="firebase-leaderboard.js"></script>
   </head>
   <body>
@@ -83,6 +83,22 @@
                       <button class="button button-primary button-compact" id="teacher-years-save" type="button">
                         Save teaching years
                       </button>
+                    </div>
+                    <div class="teacher-test-panel" id="teacher-test-panel">
+                      <div class="teacher-card-heading">
+                        <h4>Test student mode</h4>
+                        <span id="test-student-badge">Off</span>
+                      </div>
+                      <p>Play as a test student for any year level. Test scores do not save locally or to the shared leaderboards.</p>
+                      <label class="test-toggle">
+                        <input id="test-student-toggle" type="checkbox" />
+                        <span>Use test student</span>
+                      </label>
+                      <label class="select-field" for="test-student-year-select">
+                        <span>Test student year level</span>
+                        <select id="test-student-year-select" disabled></select>
+                      </label>
+                      <p class="test-student-status" id="test-student-status">Test student mode is off.</p>
                     </div>
                   </div>
                 </div>

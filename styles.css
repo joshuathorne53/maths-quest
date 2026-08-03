@@ -1368,6 +1368,40 @@ a {
   gap: 12px;
 }
 
+.teacher-test-panel {
+  display: grid;
+  padding-top: 14px;
+  gap: 12px;
+  border-top: 1px solid rgba(23, 33, 59, 0.08);
+}
+
+.test-toggle {
+  display: flex;
+  min-height: 42px;
+  padding: 9px 11px;
+  align-items: center;
+  gap: 9px;
+  color: var(--navy);
+  background: white;
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 13px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.test-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+}
+
+.account-card .test-student-status {
+  padding: 10px 12px;
+  color: var(--blue-dark);
+  background: rgba(93, 124, 255, 0.08);
+  border-radius: 13px;
+}
+
 .teacher-year-options {
   display: grid;
   max-height: 210px;
