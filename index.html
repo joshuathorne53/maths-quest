@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
-    <script src="script.js?v=teacher-display-20260803" defer></script>
+    <script src="script.js?v=simplifying-surds-20260803" defer></script>
     <script type="module" src="firebase-leaderboard.js"></script>
   </head>
   <body>
@@ -211,16 +211,47 @@
               <p class="question-count" id="question-count">Question 1</p>
               <div class="question" id="question">12 + 8 = ?</div>
               <form class="answer-form" id="answer-form">
-                <label class="sr-only" for="answer-input">Your answer</label>
-                <input
-                  id="answer-input"
-                  name="answer"
-                  type="number"
-                  inputmode="numeric"
-                  placeholder="?"
-                  autocomplete="off"
-                  required
-                />
+                <div class="standard-answer-field" id="standard-answer-field">
+                  <label class="sr-only" for="answer-input">Your answer</label>
+                  <input
+                    id="answer-input"
+                    name="answer"
+                    type="number"
+                    inputmode="numeric"
+                    placeholder="?"
+                    autocomplete="off"
+                    required
+                  />
+                </div>
+                <div class="surd-answer-fields" id="surd-answer-fields" hidden>
+                  <label>
+                    <span>Whole number</span>
+                    <input
+                      id="surd-coefficient-input"
+                      name="surdCoefficient"
+                      type="number"
+                      inputmode="numeric"
+                      placeholder="?"
+                      autocomplete="off"
+                      min="1"
+                      disabled
+                    />
+                  </label>
+                  <span class="surd-symbol" aria-hidden="true">√</span>
+                  <label>
+                    <span>Surd</span>
+                    <input
+                      id="surd-radicand-input"
+                      name="surdRadicand"
+                      type="number"
+                      inputmode="numeric"
+                      placeholder="?"
+                      autocomplete="off"
+                      min="1"
+                      disabled
+                    />
+                  </label>
+                </div>
                 <button type="submit">Check</button>
               </form>
               <p class="feedback" id="feedback" aria-live="polite">You’ve got this.</p>

@@ -236,10 +236,10 @@ const gameInfo = {
     accessYear: "year11",
   },
   "y11-surds": {
-    name: "Surds",
-    shortName: "Surds",
-    description: "Simplify friendly surd expressions.",
-    cardDescription: "Reduce exact surd expressions to whole-number coefficients.",
+    name: "Simplifying Surds",
+    shortName: "Simplify Surds",
+    description: "Simplify square roots into a whole-number coefficient and a surd.",
+    cardDescription: "Break square roots into a whole-number coefficient and surd part.",
     bullets: ["Surd simplification", "Exact values"],
     icon: "√",
     cardClass: "game-card-sun",
@@ -342,7 +342,11 @@ const elements = {
   countdownMessage: document.querySelector("#countdown-message"),
   playMode: document.querySelector("#play-mode"),
   answerForm: document.querySelector("#answer-form"),
+  standardAnswerField: document.querySelector("#standard-answer-field"),
   answerInput: document.querySelector("#answer-input"),
+  surdAnswerFields: document.querySelector("#surd-answer-fields"),
+  surdCoefficientInput: document.querySelector("#surd-coefficient-input"),
+  surdRadicandInput: document.querySelector("#surd-radicand-input"),
   question: document.querySelector("#question"),
   questionCount: document.querySelector("#question-count"),
   score: document.querySelector("#score"),
@@ -426,6 +430,30 @@ function createQuestion(mode) {
   const a = randomNumber(15, 60);
   const b = randomNumber(2, a);
   return { text: `${a} − ${b} = ?`, answer: a - b };
+}
+
+function isSurdAnswer(answer) {
+  return answer?.type === "surd";
+}
+
+function getFormattedAnswer(answer) {
+  if (isSurdAnswer(answer)) {
+    return `${answer.coefficient}√${answer.radicand}`;
+  }
+
+  return String(answer);
+}
+
+function setSurdAnswerMode(enabled) {
+  elements.answerForm.classList.toggle("surd-answer-mode", enabled);
+  elements.standardAnswerField.hidden = enabled;
+  elements.answerInput.disabled = enabled;
+  elements.answerInput.required = !enabled;
+  elements.surdAnswerFields.hidden = !enabled;
+  elements.surdCoefficientInput.disabled = !enabled;
+  elements.surdCoefficientInput.required = enabled;
+  elements.surdRadicandInput.disabled = !enabled;
+  elements.surdRadicandInput.required = enabled;
 }
 
 const skillQuestionGenerators = {
@@ -699,12 +727,20 @@ const skillQuestionGenerators = {
   ])(),
   "y11-surds": () => sample([
     () => {
-      const value = randomNumber(2, 9);
-      return { text: `√${value * value * 2} ÷ √2 = ?`, answer: value };
+      const coefficient = randomNumber(2, 9);
+      const radicand = sample([2, 3, 5, 6, 7, 10, 11, 13]);
+      return {
+        text: `Simplify √${coefficient ** 2 * radicand} = ?√?`,
+        answer: { type: "surd", coefficient, radicand },
+      };
     },
     () => {
-      const value = randomNumber(2, 8);
-      return { text: `√${value * value * 3} ÷ √3 = ?`, answer: value };
+      const coefficient = randomNumber(2, 8);
+      const radicand = sample([2, 3, 5, 6, 7, 10, 11, 15]);
+      return {
+        text: `Write √${coefficient ** 2 * radicand} as a√b`,
+        answer: { type: "surd", coefficient, radicand },
+      };
     },
   ])(),
   "y12-calculus-derivatives": () => sample([
@@ -1645,6 +1681,7 @@ function resetGame() {
   elements.timerProgress.style.stroke = "var(--blue)";
   elements.feedback.textContent = "You’ve got this.";
   elements.feedback.className = "feedback";
+  setSurdAnswerMode(false);
 }
 
 function nextQuestion() {
@@ -1654,10 +1691,15 @@ function nextQuestion() {
   state.answer = question.answer;
   state.questionNumber += 1;
   state.acceptingAnswer = true;
+  const surdMode = isSurdAnswer(state.answer);
+  setSurdAnswerMode(surdMode);
+  elements.question.classList.toggle("surd-question", surdMode);
   elements.question.textContent = question.text;
   elements.questionCount.textContent = `Question ${state.questionNumber}`;
   elements.answerInput.value = "";
-  elements.answerInput.focus();
+  elements.surdCoefficientInput.value = "";
+  elements.surdRadicandInput.value = "";
+  (surdMode ? elements.surdCoefficientInput : elements.answerInput).focus();
   elements.question.classList.remove("bump");
   void elements.question.offsetWidth;
   elements.question.classList.add("bump");
@@ -1782,11 +1824,27 @@ function submitAnswer(event) {
   event.preventDefault();
   if (!state.running || !state.acceptingAnswer) return;
 
-  const guess = Number(elements.answerInput.value);
-  if (!Number.isFinite(guess)) return;
+  const surdMode = isSurdAnswer(state.answer);
+  const guess = surdMode
+    ? {
+        coefficient: Number(elements.surdCoefficientInput.value),
+        radicand: Number(elements.surdRadicandInput.value),
+      }
+    : Number(elements.answerInput.value);
+
+  if (surdMode) {
+    if (!Number.isFinite(guess.coefficient) || !Number.isFinite(guess.radicand)) return;
+  } else if (!Number.isFinite(guess)) {
+    return;
+  }
+
   state.acceptingAnswer = false;
 
-  if (guess === state.answer) {
+  const isCorrect = surdMode
+    ? guess.coefficient === state.answer.coefficient && guess.radicand === state.answer.radicand
+    : guess === state.answer;
+
+  if (isCorrect) {
     state.streak += 1;
     state.correct += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
@@ -1797,7 +1855,7 @@ function submitAnswer(event) {
     playTone(true);
   } else {
     state.streak = 0;
-    elements.feedback.textContent = `Not quite. The answer was ${state.answer}.`;
+    elements.feedback.textContent = `Not quite. The answer was ${getFormattedAnswer(state.answer)}.`;
     elements.feedback.className = "feedback incorrect";
     playTone(false);
   }

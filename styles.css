@@ -1040,11 +1040,25 @@ a {
   animation: bump 220ms ease;
 }
 
+.question.surd-question {
+  font-size: clamp(2.8rem, 7vw, 4.8rem);
+  letter-spacing: -0.04em;
+}
+
 .answer-form {
   display: flex;
   width: min(360px, 90%);
   margin: 0 auto;
   gap: 8px;
+}
+
+.answer-form.surd-answer-mode {
+  width: min(560px, 96%);
+}
+
+.standard-answer-field {
+  flex: 1;
+  min-width: 0;
 }
 
 .answer-form input {
@@ -1064,6 +1078,38 @@ a {
 .answer-form input:focus {
   background: white;
   border-color: var(--blue);
+}
+
+.surd-answer-fields {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.surd-answer-fields[hidden] {
+  display: none;
+}
+
+.surd-answer-fields label {
+  display: grid;
+  gap: 6px;
+}
+
+.surd-answer-fields label span {
+  color: var(--blue-dark);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.surd-symbol {
+  padding-bottom: 11px;
+  color: var(--navy);
+  font-size: 2rem;
+  font-weight: 900;
 }
 
 .answer-form button {
