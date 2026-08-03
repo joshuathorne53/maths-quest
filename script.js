@@ -846,6 +846,25 @@ function canAccessGame(gameId) {
   return studentRank >= 0 && requiredRank >= 0 && studentRank >= requiredRank;
 }
 
+function shouldHideInaccessibleGames() {
+  if (!state.sharedConfigured || !state.authAllowed) return false;
+  if (isTeacherTestingAsStudent()) return true;
+  return getActiveAccountType() === "student" && Boolean(state.studentYearLevel);
+}
+
+function getVisibleGameIds() {
+  return shouldHideInaccessibleGames()
+    ? GAME_IDS.filter(canAccessGame)
+    : GAME_IDS;
+}
+
+function ensureVisibleBoard() {
+  const visibleGameIds = getVisibleGameIds();
+  if (visibleGameIds.length && !visibleGameIds.includes(state.board)) {
+    state.board = visibleGameIds[0];
+  }
+}
+
 function getGameAccessMessage(gameId) {
   const requiredYear = getGameRequiredYear(gameId);
   const requiredLabel = getYearLabel(requiredYear);
@@ -1182,7 +1201,8 @@ function renderTeacherFilterControls() {
 }
 
 function renderGameCards() {
-  elements.gameGrid.innerHTML = GAME_IDS.map((gameId) => {
+  const visibleGameIds = getVisibleGameIds();
+  elements.gameGrid.innerHTML = visibleGameIds.map((gameId) => {
     const info = gameInfo[gameId];
     const locked = !canAccessGame(gameId);
     const accessMessage = getGameAccessMessage(gameId);
@@ -1206,7 +1226,8 @@ function renderGameCards() {
 }
 
 function renderBoardTabs() {
-  elements.boardTabs.innerHTML = GAME_IDS.map((gameId) => `
+  ensureVisibleBoard();
+  elements.boardTabs.innerHTML = getVisibleGameIds().map((gameId) => `
     <button class="${gameId === state.board ? "active" : ""}" type="button" data-board="${escapeHtml(gameId)}">
       ${escapeHtml(gameInfo[gameId].shortName)}
     </button>
@@ -1439,6 +1460,7 @@ function applyAuthState(authState) {
 
   renderAuthControls();
   renderGameCards();
+  renderBoardTabs();
   renderLeaderboard();
 
   if (state.authAllowed) {
@@ -1520,11 +1542,13 @@ function connectSharedLeaderboard() {
     );
     renderAuthControls();
     renderGameCards();
+    renderBoardTabs();
     return;
   }
 
   renderAuthControls();
   applyAuthState(window.sharedLeaderboard.getAuthState?.());
+  renderBoardTabs();
   listenToSharedBoard(state.board);
 }
 
@@ -1997,6 +2021,7 @@ function getScoreMeta(entry) {
 }
 
 function renderLeaderboard() {
+  ensureVisibleBoard();
   renderTeacherFilterControls();
   const scores = getVisibleScores(state.board);
   const topThree = [scores[1], scores[0], scores[2]];
@@ -2103,6 +2128,7 @@ elements.testStudentToggle.addEventListener("change", () => {
   if (state.testStudentMode) setBoardYearLevel(state.testStudentYearLevel);
   renderAuthControls();
   renderGameCards();
+  renderBoardTabs();
   renderLeaderboard();
   setLeaderboardStatus(
     "local",
@@ -2118,6 +2144,7 @@ elements.testStudentYearSelect.addEventListener("change", () => {
     setBoardYearLevel(state.testStudentYearLevel);
     renderAuthControls();
     renderGameCards();
+    renderBoardTabs();
     renderLeaderboard();
     setLeaderboardStatus("local", `${getTestStudentLabel()} is active. Test scores will not save.`);
   } else {
