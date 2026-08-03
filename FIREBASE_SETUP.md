@@ -70,10 +70,10 @@ Students can play any number of attempts, and the leaderboard keeps only their
 highest score for each game.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
-and `year12`. Students can submit scores for games at their saved year level and
-lower. For example, a `year10` student can play `year7-fluency`,
-`year8-fluency`, `year9-fluency`, and `year10-fluency`, but not the Year 11 or
-Year 12 fluency challenges.
+and `year12`. Students can submit scores for skill challenges at their saved
+year level and lower. For example, a `year10` student can play skills such as
+`y7-integers`, `y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not
+Year 11 or Year 12 skills.
 
 Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
 Teachers open **Settings**, choose the year levels they teach, and the website

@@ -1,5 +1,5 @@
 const GAME_SECONDS = 60;
-const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v4";
+const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
 const DEFAULT_YEAR_LEVEL = "year7";
 
 const YEAR_LEVELS = [
@@ -45,63 +45,243 @@ const gameInfo = {
     cardClass: "game-card-coral",
     accessYear: "year7",
   },
-  "year7-fluency": {
-    name: "Year 7 Fluency",
-    shortName: "Y7 Fluency",
-    description: "Build speed with integers, fractions, percentages, and simple equations.",
-    cardDescription: "High-school foundations: integers, fractions, percentages, and basic algebra.",
-    bullets: ["Integers and fractions", "Simple equations"],
+  "y7-integers": {
+    name: "Year 7 Integers",
+    shortName: "Y7 Integers",
+    description: "Practise adding, subtracting, and multiplying positive and negative integers.",
+    cardDescription: "Get confident with positive and negative numbers in quick mental questions.",
+    bullets: ["Integer operations", "Positive and negative numbers"],
     icon: "7",
     cardClass: "game-card-sky",
     accessYear: "year7",
   },
-  "year8-fluency": {
-    name: "Year 8 Fluency",
-    shortName: "Y8 Fluency",
-    description: "Sharpen ratios, percentages, powers, and linear equations.",
-    cardDescription: "Step up with ratios, percentages, powers, and linear equations.",
-    bullets: ["Ratios and percentages", "Powers and equations"],
+  "y7-fractions": {
+    name: "Year 7 Fractions",
+    shortName: "Y7 Fractions",
+    description: "Find fractions of quantities using common denominators.",
+    cardDescription: "Practise fraction-of-a-quantity questions built for fast recall.",
+    bullets: ["Fractions of amounts", "Common denominators"],
+    icon: "7",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "y7-percentages": {
+    name: "Year 7 Percentages",
+    shortName: "Y7 Percent",
+    description: "Calculate friendly percentages of whole numbers.",
+    cardDescription: "Work with 10%, 20%, 25%, 50%, and 75% of useful quantities.",
+    bullets: ["Percentage of amounts", "Mental strategies"],
+    icon: "%",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y7-one-step-equations": {
+    name: "Year 7 One-Step Equations",
+    shortName: "Y7 Equations",
+    description: "Solve simple one-step equations with addition and subtraction.",
+    cardDescription: "Build algebra confidence by finding x in simple equations.",
+    bullets: ["One-step algebra", "Reverse operations"],
+    icon: "x",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "y8-square-powers": {
+    name: "Year 8 Squares & Powers",
+    shortName: "Y8 Powers",
+    description: "Practise square numbers, simple powers, and square roots.",
+    cardDescription: "Strengthen square number and power facts for Year 8 skill recall.",
+    bullets: ["Square numbers", "Simple powers"],
     icon: "8",
     cardClass: "game-card-sun",
     accessYear: "year8",
   },
-  "year9-fluency": {
-    name: "Year 9 Fluency",
-    shortName: "Y9 Fluency",
-    description: "Practise gradients, index laws, expansion, and stronger algebra.",
-    cardDescription: "Tackle index laws, gradients, expansion, and stronger algebra.",
-    bullets: ["Index laws", "Linear graphs"],
+  "y8-ratios": {
+    name: "Year 8 Ratios",
+    shortName: "Y8 Ratios",
+    description: "Share quantities in a ratio and identify the larger share.",
+    cardDescription: "Split totals using ratios and keep the arithmetic sharp.",
+    bullets: ["Ratio sharing", "Proportional thinking"],
+    icon: ":",
+    cardClass: "game-card-coral",
+    accessYear: "year8",
+  },
+  "y8-percentage-change": {
+    name: "Year 8 Percentage Change",
+    shortName: "Y8 Change",
+    description: "Calculate percentage increases and decreases.",
+    cardDescription: "Practise friendly percentage changes on whole-number amounts.",
+    bullets: ["Increase and decrease", "Percent strategies"],
+    icon: "%",
+    cardClass: "game-card-sky",
+    accessYear: "year8",
+  },
+  "y8-linear-equations": {
+    name: "Year 8 Linear Equations",
+    shortName: "Y8 Linear",
+    description: "Solve simple multiplication and division equations.",
+    cardDescription: "Solve equations like 6x = 42 and x ÷ 4 = 9 at speed.",
+    bullets: ["Linear equations", "Inverse operations"],
+    icon: "x",
+    cardClass: "game-card-sun",
+    accessYear: "year8",
+  },
+  "y9-index-laws": {
+    name: "Year 9 Index Laws",
+    shortName: "Y9 Indices",
+    description: "Use index laws with multiplication and division of powers.",
+    cardDescription: "Practise exponent rules using matching bases.",
+    bullets: ["Index laws", "Same-base powers"],
     icon: "9",
     cardClass: "game-card-coral",
     accessYear: "year9",
   },
-  "year10-fluency": {
-    name: "Year 10 Fluency",
-    shortName: "Y10 Fluency",
-    description: "Train quadratics, simultaneous equations, Pythagoras, and functions.",
-    cardDescription: "Get fluent with quadratics, simultaneous equations, Pythagoras, and functions.",
-    bullets: ["Quadratics", "Pythagoras and functions"],
+  "y9-gradients": {
+    name: "Year 9 Gradients",
+    shortName: "Y9 Gradients",
+    description: "Find gradients between points on a straight line.",
+    cardDescription: "Read rise over run from simple coordinate pairs.",
+    bullets: ["Linear graphs", "Rise over run"],
+    icon: "m",
+    cardClass: "game-card-sky",
+    accessYear: "year9",
+  },
+  "y9-expanding-brackets": {
+    name: "Year 9 Expanding Brackets",
+    shortName: "Y9 Expand",
+    description: "Expand single brackets and identify coefficients or constants.",
+    cardDescription: "Practise distributive multiplication with algebraic terms.",
+    bullets: ["Expanding brackets", "Coefficients"],
+    icon: "(",
+    cardClass: "game-card-sun",
+    accessYear: "year9",
+  },
+  "y9-two-step-equations": {
+    name: "Year 9 Two-Step Equations",
+    shortName: "Y9 Equations",
+    description: "Solve two-step linear equations.",
+    cardDescription: "Find x in equations with a coefficient and a constant.",
+    bullets: ["Two-step algebra", "Linear equations"],
+    icon: "x",
+    cardClass: "game-card-coral",
+    accessYear: "year9",
+  },
+  "y10-quadratics": {
+    name: "Year 10 Quadratics",
+    shortName: "Y10 Quadratics",
+    description: "Solve factorised quadratic equations by finding a root.",
+    cardDescription: "Use simple quadratic patterns to identify roots quickly.",
+    bullets: ["Quadratic roots", "Factorising patterns"],
     icon: "10",
     cardClass: "game-card-sky",
     accessYear: "year10",
   },
-  "year11-fluency": {
-    name: "Year 11 Fluency",
-    shortName: "Y11 Fluency",
-    description: "Practise functions, logarithms, surds, sequences, and introductory calculus.",
-    cardDescription: "Senior fluency across functions, logarithms, surds, sequences, and calculus.",
-    bullets: ["Logs and surds", "Sequences and derivatives"],
+  "y10-pythagoras": {
+    name: "Year 10 Pythagoras",
+    shortName: "Y10 Pythag",
+    description: "Find missing side lengths using Pythagorean triples.",
+    cardDescription: "Practise right-triangle side lengths with classic triples.",
+    bullets: ["Pythagorean triples", "Right triangles"],
+    icon: "△",
+    cardClass: "game-card-sun",
+    accessYear: "year10",
+  },
+  "y10-simultaneous-equations": {
+    name: "Year 10 Simultaneous Equations",
+    shortName: "Y10 Simult.",
+    description: "Solve simple simultaneous equations for x or y.",
+    cardDescription: "Use paired sum and difference equations to solve quickly.",
+    bullets: ["Simultaneous equations", "Elimination thinking"],
+    icon: "2x",
+    cardClass: "game-card-coral",
+    accessYear: "year10",
+  },
+  "y10-functions": {
+    name: "Year 10 Functions",
+    shortName: "Y10 Functions",
+    description: "Substitute values into linear and quadratic functions.",
+    cardDescription: "Evaluate f(x) expressions with careful arithmetic.",
+    bullets: ["Function notation", "Substitution"],
+    icon: "f",
+    cardClass: "game-card-sky",
+    accessYear: "year10",
+  },
+  "y11-derivatives": {
+    name: "Year 11 Derivatives",
+    shortName: "Y11 Deriv.",
+    description: "Find derivative coefficients using the power rule.",
+    cardDescription: "Practise the power rule for introductory calculus.",
+    bullets: ["Power rule", "Derivative coefficients"],
     icon: "11",
     cardClass: "game-card-sun",
     accessYear: "year11",
   },
-  "year12-fluency": {
-    name: "Year 12 Fluency",
-    shortName: "Y12 Fluency",
-    description: "Refine calculus, exponentials, complex numbers, and series skills.",
-    cardDescription: "Final-year fluency with calculus, exponentials, complex numbers, and series.",
-    bullets: ["Calculus and series", "Complex numbers"],
+  "y11-logarithms": {
+    name: "Year 11 Logarithms",
+    shortName: "Y11 Logs",
+    description: "Evaluate simple logarithms with exact powers.",
+    cardDescription: "Match bases and powers to answer logarithm questions.",
+    bullets: ["Logarithms", "Exact powers"],
+    icon: "log",
+    cardClass: "game-card-coral",
+    accessYear: "year11",
+  },
+  "y11-arithmetic-sequences": {
+    name: "Year 11 Arithmetic Sequences",
+    shortName: "Y11 Seq.",
+    description: "Find terms in arithmetic sequences.",
+    cardDescription: "Use first term and common difference to calculate Tn.",
+    bullets: ["Arithmetic sequences", "nth term"],
+    icon: "Tn",
+    cardClass: "game-card-sky",
+    accessYear: "year11",
+  },
+  "y11-surds": {
+    name: "Year 11 Surds",
+    shortName: "Y11 Surds",
+    description: "Simplify friendly surd expressions.",
+    cardDescription: "Reduce exact surd expressions to whole-number coefficients.",
+    bullets: ["Surd simplification", "Exact values"],
+    icon: "√",
+    cardClass: "game-card-sun",
+    accessYear: "year11",
+  },
+  "y12-calculus-derivatives": {
+    name: "Year 12 Derivative Values",
+    shortName: "Y12 Deriv.",
+    description: "Evaluate derivatives at specific x-values.",
+    cardDescription: "Build calculus speed by finding derivative values.",
+    bullets: ["Derivative values", "Power functions"],
     icon: "12",
+    cardClass: "game-card-coral",
+    accessYear: "year12",
+  },
+  "y12-integrals": {
+    name: "Year 12 Integrals",
+    shortName: "Y12 Integrals",
+    description: "Find missing coefficients in simple antiderivatives.",
+    cardDescription: "Practise reverse power-rule thinking for integrals.",
+    bullets: ["Antiderivatives", "Power rule"],
+    icon: "∫",
+    cardClass: "game-card-sky",
+    accessYear: "year12",
+  },
+  "y12-complex-numbers": {
+    name: "Year 12 Complex Numbers",
+    shortName: "Y12 Complex",
+    description: "Find moduli of simple complex numbers.",
+    cardDescription: "Use exact right-triangle pairs to calculate complex moduli.",
+    bullets: ["Complex modulus", "Exact values"],
+    icon: "i",
+    cardClass: "game-card-sun",
+    accessYear: "year12",
+  },
+  "y12-series": {
+    name: "Year 12 Series",
+    shortName: "Y12 Series",
+    description: "Calculate sums of arithmetic series.",
+    cardDescription: "Find simple series totals using efficient formulas.",
+    bullets: ["Series sums", "Arithmetic patterns"],
+    icon: "Σ",
     cardClass: "game-card-coral",
     accessYear: "year12",
   },
@@ -220,8 +400,8 @@ function formatSigned(value) {
 }
 
 function createQuestion(mode) {
-  const fluencyGenerator = fluencyQuestionGenerators[mode];
-  if (fluencyGenerator) return fluencyGenerator();
+  const skillGenerator = skillQuestionGenerators[mode];
+  if (skillGenerator) return skillGenerator();
 
   if (mode === "times") {
     const a = randomNumber(2, 12);
@@ -248,13 +428,25 @@ function createQuestion(mode) {
   return { text: `${a} − ${b} = ?`, answer: a - b };
 }
 
-const fluencyQuestionGenerators = {
-  "year7-fluency": () => sample([
+const skillQuestionGenerators = {
+  "y7-integers": () => sample([
     () => {
       const a = randomNumber(-18, 35);
       const b = randomNumber(-15, 20);
       return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
     },
+    () => {
+      const a = randomNumber(-10, 30);
+      const b = randomNumber(-12, 18);
+      return { text: `${a} − ${formatSigned(b)} = ?`, answer: a - b };
+    },
+    () => {
+      const a = randomNumber(-9, 9) || 3;
+      const b = randomNumber(-9, 9) || -4;
+      return { text: `${a} × ${formatSigned(b)} = ?`, answer: a * b };
+    },
+  ])(),
+  "y7-fractions": () => sample([
     () => {
       const denominator = sample([4, 5, 8, 10]);
       const numerator = randomNumber(1, denominator - 1);
@@ -265,22 +457,54 @@ const fluencyQuestionGenerators = {
       };
     },
     () => {
+      const denominator = sample([3, 4, 6, 8]);
+      const multiplier = randomNumber(4, 14);
+      return {
+        text: `1/${denominator} of ${denominator * multiplier} = ?`,
+        answer: multiplier,
+      };
+    },
+  ])(),
+  "y7-percentages": () => sample([
+    () => {
       const percent = sample([10, 20, 25, 50, 75]);
       const base = sample([40, 60, 80, 100, 120, 160]);
       return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
     },
     () => {
+      const percent = sample([5, 10, 20]);
+      const base = sample([100, 200, 300, 400, 500]);
+      return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
+    },
+  ])(),
+  "y7-one-step-equations": () => sample([
+    () => {
       const answer = randomNumber(4, 24);
       const offset = randomNumber(5, 30);
       return { text: `x + ${offset} = ${answer + offset}. x = ?`, answer };
     },
+    () => {
+      const answer = randomNumber(6, 30);
+      const offset = randomNumber(2, 12);
+      return { text: `x − ${offset} = ${answer - offset}. x = ?`, answer };
+    },
   ])(),
-  "year8-fluency": () => sample([
+  "y8-square-powers": () => sample([
     () => {
       const a = randomNumber(2, 5);
       const b = randomNumber(2, 5);
       return { text: `${a}² + ${b}² = ?`, answer: a ** 2 + b ** 2 };
     },
+    () => {
+      const value = randomNumber(6, 15);
+      return { text: `${value}² = ?`, answer: value ** 2 };
+    },
+    () => {
+      const value = randomNumber(4, 14);
+      return { text: `√${value ** 2} = ?`, answer: value };
+    },
+  ])(),
+  "y8-ratios": () => sample([
     () => {
       const left = randomNumber(2, 5);
       const right = randomNumber(3, 8);
@@ -291,17 +515,40 @@ const fluencyQuestionGenerators = {
       };
     },
     () => {
+      const left = randomNumber(2, 6);
+      const right = randomNumber(2, 6);
+      const multiplier = randomNumber(5, 12);
+      return {
+        text: `Ratio ${left}:${right}, multiplier ${multiplier}. Total = ?`,
+        answer: (left + right) * multiplier,
+      };
+    },
+  ])(),
+  "y8-percentage-change": () => sample([
+    () => {
       const percent = sample([10, 20, 25]);
       const base = sample([40, 60, 80, 100, 120]);
       return { text: `${base} increased by ${percent}% = ?`, answer: base + (base * percent) / 100 };
     },
     () => {
+      const percent = sample([10, 20, 25, 50]);
+      const base = sample([40, 60, 80, 100, 120, 160]);
+      return { text: `${base} decreased by ${percent}% = ?`, answer: base - (base * percent) / 100 };
+    },
+  ])(),
+  "y8-linear-equations": () => sample([
+    () => {
       const answer = randomNumber(3, 16);
       const coefficient = randomNumber(2, 9);
       return { text: `${coefficient}x = ${coefficient * answer}. x = ?`, answer };
     },
+    () => {
+      const answer = randomNumber(3, 16);
+      const divisor = randomNumber(2, 8);
+      return { text: `x ÷ ${divisor} = ${answer}. x = ?`, answer: answer * divisor };
+    },
   ])(),
-  "year9-fluency": () => sample([
+  "y9-index-laws": () => sample([
     () => {
       const base = randomNumber(2, 5);
       const leftPower = randomNumber(2, 5);
@@ -309,29 +556,64 @@ const fluencyQuestionGenerators = {
       return { text: `${base}^${leftPower} × ${base}^${rightPower} = ${base}^?`, answer: leftPower + rightPower };
     },
     () => {
+      const base = randomNumber(2, 5);
+      const topPower = randomNumber(6, 10);
+      const bottomPower = randomNumber(2, topPower - 2);
+      return { text: `${base}^${topPower} ÷ ${base}^${bottomPower} = ${base}^?`, answer: topPower - bottomPower };
+    },
+  ])(),
+  "y9-gradients": () => sample([
+    () => {
       const gradient = randomNumber(2, 6);
       const x = randomNumber(3, 8);
       const y = gradient * x;
       return { text: `Gradient from (0, 0) to (${x}, ${y}) = ?`, answer: gradient };
     },
     () => {
+      const gradient = randomNumber(-5, 5) || 2;
+      const run = randomNumber(2, 8);
+      return { text: `Line rises ${gradient * run} for run ${run}. Gradient = ?`, answer: gradient };
+    },
+  ])(),
+  "y9-expanding-brackets": () => sample([
+    () => {
       const coefficient = randomNumber(2, 6);
       const inner = randomNumber(2, 8);
       return { text: `Expand ${coefficient}(${inner}x + 3). Coefficient of x = ?`, answer: coefficient * inner };
     },
+    () => {
+      const coefficient = randomNumber(2, 7);
+      const constant = randomNumber(2, 8);
+      return { text: `Expand ${coefficient}(x + ${constant}). Constant term = ?`, answer: coefficient * constant };
+    },
+  ])(),
+  "y9-two-step-equations": () => sample([
     () => {
       const answer = randomNumber(4, 18);
       const coefficient = randomNumber(2, 6);
       const offset = randomNumber(5, 20);
       return { text: `${coefficient}x − ${offset} = ${coefficient * answer - offset}. x = ?`, answer };
     },
+    () => {
+      const answer = randomNumber(4, 18);
+      const coefficient = randomNumber(2, 6);
+      const offset = randomNumber(5, 20);
+      return { text: `${coefficient}x + ${offset} = ${coefficient * answer + offset}. x = ?`, answer };
+    },
   ])(),
-  "year10-fluency": () => sample([
+  "y10-quadratics": () => sample([
     () => {
       const rootA = randomNumber(2, 7);
       const rootB = randomNumber(rootA + 1, 10);
       return { text: `x² − ${rootA + rootB}x + ${rootA * rootB} = 0. Smaller x = ?`, answer: rootA };
     },
+    () => {
+      const rootA = randomNumber(2, 7);
+      const rootB = randomNumber(rootA + 1, 10);
+      return { text: `x² − ${rootA + rootB}x + ${rootA * rootB} = 0. Larger x = ?`, answer: rootB };
+    },
+  ])(),
+  "y10-pythagoras": () => sample([
     () => {
       const triples = [
         [3, 4, 5],
@@ -343,28 +625,65 @@ const fluencyQuestionGenerators = {
       return { text: `Right triangle legs ${a} and ${b}. Hypotenuse = ?`, answer: c };
     },
     () => {
+      const triples = [
+        [3, 4, 5],
+        [5, 12, 13],
+        [8, 15, 17],
+        [7, 24, 25],
+      ];
+      const [a, b, c] = sample(triples);
+      return { text: `Hypotenuse ${c}, one leg ${a}. Other leg = ?`, answer: b };
+    },
+  ])(),
+  "y10-simultaneous-equations": () => sample([
+    () => {
       const x = randomNumber(3, 12);
       const y = randomNumber(1, x - 1);
       return { text: `x + y = ${x + y}, x − y = ${x - y}. x = ?`, answer: x };
     },
+    () => {
+      const x = randomNumber(3, 12);
+      const y = randomNumber(1, x - 1);
+      return { text: `x + y = ${x + y}, x − y = ${x - y}. y = ?`, answer: y };
+    },
+  ])(),
+  "y10-functions": () => sample([
     () => {
       const x = randomNumber(3, 8);
       const a = randomNumber(2, 5);
       const b = randomNumber(1, 8);
       return { text: `f(x) = ${a}x² − ${b}x. f(${x}) = ?`, answer: a * x ** 2 - b * x };
     },
+    () => {
+      const x = randomNumber(3, 12);
+      const a = randomNumber(2, 6);
+      const b = randomNumber(4, 20);
+      return { text: `f(x) = ${a}x + ${b}. f(${x}) = ?`, answer: a * x + b };
+    },
   ])(),
-  "year11-fluency": () => sample([
+  "y11-derivatives": () => sample([
     () => {
       const coefficient = randomNumber(2, 8);
       const power = randomNumber(2, 4);
       return { text: `d/dx (${coefficient}x^${power}) = ?x^${power - 1}`, answer: coefficient * power };
     },
     () => {
+      const coefficient = randomNumber(2, 8);
+      return { text: `d/dx (${coefficient}x²) = ?x`, answer: coefficient * 2 };
+    },
+  ])(),
+  "y11-logarithms": () => sample([
+    () => {
       const base = sample([2, 3, 5]);
       const power = randomNumber(2, 5);
       return { text: `log_${base}(${base ** power}) = ?`, answer: power };
     },
+    () => {
+      const base = sample([2, 3, 4]);
+      return { text: `log_${base}(${base}) = ?`, answer: 1 };
+    },
+  ])(),
+  "y11-arithmetic-sequences": () => sample([
     () => {
       const a = randomNumber(2, 7);
       const d = randomNumber(2, 8);
@@ -372,34 +691,73 @@ const fluencyQuestionGenerators = {
       return { text: `Arithmetic sequence a=${a}, d=${d}. T${n} = ?`, answer: a + (n - 1) * d };
     },
     () => {
+      const a = randomNumber(3, 12);
+      const d = randomNumber(2, 9);
+      const n = randomNumber(4, 9);
+      return { text: `${a}, ${a + d}, ${a + 2 * d}, ... T${n} = ?`, answer: a + (n - 1) * d };
+    },
+  ])(),
+  "y11-surds": () => sample([
+    () => {
       const value = randomNumber(2, 9);
       return { text: `√${value * value * 2} ÷ √2 = ?`, answer: value };
     },
+    () => {
+      const value = randomNumber(2, 8);
+      return { text: `√${value * value * 3} ÷ √3 = ?`, answer: value };
+    },
   ])(),
-  "year12-fluency": () => sample([
+  "y12-calculus-derivatives": () => sample([
     () => {
       const power = randomNumber(3, 5);
       const x = randomNumber(2, 4);
       return { text: `If f(x)=x^${power}, f′(${x}) = ?`, answer: power * x ** (power - 1) };
     },
     () => {
+      const coefficient = randomNumber(2, 5);
+      const x = randomNumber(2, 4);
+      return { text: `If f(x)=${coefficient}x², f′(${x}) = ?`, answer: 2 * coefficient * x };
+    },
+  ])(),
+  "y12-integrals": () => sample([
+    () => {
       const coefficient = randomNumber(2, 9);
       const power = randomNumber(1, 3);
       return { text: `∫ ${coefficient * (power + 1)}x^${power} dx = ?x^${power + 1} + C`, answer: coefficient };
     },
     () => {
-      const real = randomNumber(3, 8);
-      const imaginary = randomNumber(4, 10);
-      const magnitudeSquared = real ** 2 + imaginary ** 2;
-      const magnitude = Math.sqrt(magnitudeSquared);
-      if (Number.isInteger(magnitude)) {
-        return { text: `|${real} + ${imaginary}i| = ?`, answer: magnitude };
-      }
-      return { text: `|3 + 4i| = ?`, answer: 5 };
+      const coefficient = randomNumber(2, 8);
+      return { text: `∫ ${coefficient} dx = ?x + C`, answer: coefficient };
     },
+  ])(),
+  "y12-complex-numbers": () => sample([
+    () => {
+      const triples = [
+        [3, 4, 5],
+        [5, 12, 13],
+        [8, 15, 17],
+      ];
+      const [real, imaginary, magnitude] = sample(triples);
+      return { text: `|${real} + ${imaginary}i| = ?`, answer: magnitude };
+    },
+    () => {
+      const triples = [
+        [3, 4, 5],
+        [5, 12, 13],
+        [8, 15, 17],
+      ];
+      const [real, imaginary, magnitude] = sample(triples);
+      return { text: `|${real} − ${imaginary}i| = ?`, answer: magnitude };
+    },
+  ])(),
+  "y12-series": () => sample([
     () => {
       const n = randomNumber(8, 18);
       return { text: `1 + 2 + ... + ${n} = ?`, answer: (n * (n + 1)) / 2 };
+    },
+    () => {
+      const n = randomNumber(5, 12);
+      return { text: `2 + 4 + ... + ${2 * n} = ?`, answer: n * (n + 1) };
     },
   ])(),
 };
