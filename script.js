@@ -79,9 +79,9 @@ const gameInfo = {
   "y7-one-step-equations": {
     name: "One-Step Equations",
     shortName: "One-Step",
-    description: "Solve simple one-step equations with addition and subtraction.",
-    cardDescription: "Build algebra confidence by finding x in simple equations.",
-    bullets: ["One-step algebra", "Reverse operations"],
+    description: "Solve simple one-step equations using addition, subtraction, multiplication, and division.",
+    cardDescription: "Build algebra confidence by finding x with all four operations.",
+    bullets: ["One-step algebra", "Four operations"],
     icon: "x",
     cardClass: "game-card-sky",
     accessYear: "year7",
@@ -523,6 +523,16 @@ const skillQuestionGenerators = {
       const answer = randomNumber(6, 30);
       const offset = randomNumber(2, 12);
       return { text: `x − ${offset} = ${answer - offset}. x = ?`, answer };
+    },
+    () => {
+      const answer = randomNumber(3, 12);
+      const factor = randomNumber(2, 12);
+      return { text: `${factor}x = ${answer * factor}. x = ?`, answer };
+    },
+    () => {
+      const answer = randomNumber(3, 12);
+      const divisor = randomNumber(2, 12);
+      return { text: `x ÷ ${divisor} = ${answer}. x = ?`, answer: answer * divisor };
     },
   ])(),
   "y8-square-powers": () => sample([
