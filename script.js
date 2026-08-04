@@ -620,35 +620,35 @@ const skillQuestionGenerators = {
       };
     },
   ])(),
-  "y7-simplifying-fractions": () => sample([
-    () => {
-      const simplifiedDenominator = sample([2, 3, 4, 5, 6, 7, 8]);
-      const simplifiedNumerator = randomNumber(1, simplifiedDenominator - 1);
-      const factor = randomNumber(2, 8);
-      return {
-        text: `Simplify ${simplifiedNumerator * factor}/${simplifiedDenominator * factor}`,
-        answer: createSimplifiedFractionAnswer(simplifiedNumerator * factor, simplifiedDenominator * factor),
-      };
-    },
-    () => {
-      const simplifiedNumerator = randomNumber(2, 9);
-      const simplifiedDenominator = sample([2, 3, 4, 5, 6, 8]);
-      const factor = randomNumber(2, 7);
-      return {
-        text: `Simplify ${simplifiedNumerator * factor}/${simplifiedDenominator * factor}`,
-        answer: createSimplifiedFractionAnswer(simplifiedNumerator * factor, simplifiedDenominator * factor),
-      };
-    },
-    () => {
-      const denominator = sample([3, 4, 5, 6, 8, 10]);
-      const wholeNumber = randomNumber(2, 9);
-      const factor = randomNumber(2, 6);
-      return {
-        text: `Simplify ${wholeNumber * denominator * factor}/${denominator * factor}`,
-        answer: createSimplifiedFractionAnswer(wholeNumber * denominator * factor, denominator * factor),
-      };
-    },
-  ])(),
+  "y7-simplifying-fractions": () => {
+    const [simplifiedNumerator, simplifiedDenominator] = sample([
+      [1, 2],
+      [1, 3],
+      [2, 3],
+      [1, 4],
+      [3, 4],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5],
+      [1, 6],
+      [5, 6],
+      [2, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [3, 8],
+      [5, 8],
+    ]);
+    const factor = sample([2, 3, 4]);
+    const numerator = simplifiedNumerator * factor;
+    const denominator = simplifiedDenominator * factor;
+
+    return {
+      text: `Simplify ${numerator}/${denominator}`,
+      answer: createSimplifiedFractionAnswer(numerator, denominator),
+    };
+  },
   "y7-add-subtract-fractions": () => sample([
     () => {
       const denominator = sample([4, 5, 6, 8, 10, 12]);
