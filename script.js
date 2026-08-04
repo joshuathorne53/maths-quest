@@ -66,6 +66,16 @@ const gameInfo = {
     cardClass: "game-card-sun",
     accessYear: "year7",
   },
+  "y7-simplifying-fractions": {
+    name: "Simplifying Fractions",
+    shortName: "Simplify Fractions",
+    description: "Simplify fractions by dividing the numerator and denominator by their highest common factor.",
+    cardDescription: "Reduce fractions to their simplest form.",
+    bullets: ["Highest common factor", "Simplest form"],
+    icon: "↓/",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
   "y7-add-subtract-fractions": {
     name: "Adding & Subtracting Fractions",
     shortName: "Add/Sub Fractions",
@@ -496,6 +506,11 @@ function createFractionAnswer(numerator, denominator) {
   };
 }
 
+function createSimplifiedFractionAnswer(numerator, denominator) {
+  const answer = createFractionAnswer(numerator, denominator);
+  return answer ? { ...answer, requireSimplified: true } : null;
+}
+
 function isSurdAnswer(answer) {
   return answer?.type === "surd";
 }
@@ -522,12 +537,26 @@ function parseFractionInput(value) {
   const cleanValue = String(value || "").trim();
   const fractionMatch = cleanValue.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
   if (fractionMatch) {
-    return createFractionAnswer(Number(fractionMatch[1]), Number(fractionMatch[2]));
+    const enteredNumerator = Number(fractionMatch[1]);
+    const enteredDenominator = Number(fractionMatch[2]);
+    const answer = createFractionAnswer(enteredNumerator, enteredDenominator);
+
+    return answer
+      ? {
+          ...answer,
+          enteredNumerator,
+          enteredDenominator,
+        }
+      : null;
   }
 
   const wholeNumberMatch = cleanValue.match(/^-?\d+$/);
   if (wholeNumberMatch) {
-    return createFractionAnswer(Number(cleanValue), 1);
+    return {
+      ...createFractionAnswer(Number(cleanValue), 1),
+      enteredNumerator: Number(cleanValue),
+      enteredDenominator: 1,
+    };
   }
 
   return null;
@@ -535,6 +564,11 @@ function parseFractionInput(value) {
 
 function fractionsMatch(guess, answer) {
   return guess.numerator * answer.denominator === answer.numerator * guess.denominator;
+}
+
+function isSimplifiedFractionGuess(guess) {
+  return guess.enteredDenominator > 0
+    && greatestCommonDivisor(guess.enteredNumerator, guess.enteredDenominator) === 1;
 }
 
 function setSurdAnswerMode(enabled) {
@@ -583,6 +617,35 @@ const skillQuestionGenerators = {
       return {
         text: `1/${denominator} of ${denominator * multiplier} = ?`,
         answer: multiplier,
+      };
+    },
+  ])(),
+  "y7-simplifying-fractions": () => sample([
+    () => {
+      const simplifiedDenominator = sample([2, 3, 4, 5, 6, 7, 8]);
+      const simplifiedNumerator = randomNumber(1, simplifiedDenominator - 1);
+      const factor = randomNumber(2, 8);
+      return {
+        text: `Simplify ${simplifiedNumerator * factor}/${simplifiedDenominator * factor}`,
+        answer: createSimplifiedFractionAnswer(simplifiedNumerator * factor, simplifiedDenominator * factor),
+      };
+    },
+    () => {
+      const simplifiedNumerator = randomNumber(2, 9);
+      const simplifiedDenominator = sample([2, 3, 4, 5, 6, 8]);
+      const factor = randomNumber(2, 7);
+      return {
+        text: `Simplify ${simplifiedNumerator * factor}/${simplifiedDenominator * factor}`,
+        answer: createSimplifiedFractionAnswer(simplifiedNumerator * factor, simplifiedDenominator * factor),
+      };
+    },
+    () => {
+      const denominator = sample([3, 4, 5, 6, 8, 10]);
+      const wholeNumber = randomNumber(2, 9);
+      const factor = randomNumber(2, 6);
+      return {
+        text: `Simplify ${wholeNumber * denominator * factor}/${denominator * factor}`,
+        answer: createSimplifiedFractionAnswer(wholeNumber * denominator * factor, denominator * factor),
       };
     },
   ])(),
@@ -2206,7 +2269,7 @@ function submitAnswer(event) {
   const isCorrect = surdMode
     ? guess.coefficient === state.answer.coefficient && guess.radicand === state.answer.radicand
     : fractionMode
-      ? fractionsMatch(guess, state.answer)
+      ? fractionsMatch(guess, state.answer) && (!state.answer.requireSimplified || isSimplifiedFractionGuess(guess))
       : guess === state.answer;
 
   if (isCorrect) {
