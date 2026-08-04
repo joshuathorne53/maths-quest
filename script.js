@@ -76,6 +76,16 @@ const gameInfo = {
     cardClass: "game-card-coral",
     accessYear: "year7",
   },
+  "y7-bidmas": {
+    name: "BIDMAS",
+    shortName: "BIDMAS",
+    description: "Use the order of operations with brackets, indices, division, multiplication, addition, and subtraction.",
+    cardDescription: "Practise choosing the correct operation order before calculating.",
+    bullets: ["Order of operations", "Brackets and indices"],
+    icon: "()",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
   "y7-one-step-equations": {
     name: "One-Step Equations",
     shortName: "One-Step",
@@ -511,6 +521,39 @@ const skillQuestionGenerators = {
       const percent = sample([5, 10, 20]);
       const base = sample([100, 200, 300, 400, 500]);
       return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
+    },
+  ])(),
+  "y7-bidmas": () => sample([
+    () => {
+      const a = randomNumber(2, 20);
+      const b = randomNumber(2, 12);
+      const c = randomNumber(2, 10);
+      return { text: `${a} + ${b} × ${c} = ?`, answer: a + b * c };
+    },
+    () => {
+      const a = randomNumber(2, 10);
+      const b = randomNumber(2, 10);
+      const c = randomNumber(2, 8);
+      return { text: `(${a} + ${b}) × ${c} = ?`, answer: (a + b) * c };
+    },
+    () => {
+      const base = randomNumber(2, 8);
+      const multiplier = randomNumber(2, 9);
+      const addend = randomNumber(2, 20);
+      return { text: `${base}² + ${multiplier} × ${addend} = ?`, answer: base ** 2 + multiplier * addend };
+    },
+    () => {
+      const start = randomNumber(2, 20);
+      const divisor = randomNumber(2, 6);
+      const quotient = randomNumber(3, 12);
+      return { text: `${start} + ${quotient * divisor} ÷ ${divisor} = ?`, answer: start + quotient };
+    },
+    () => {
+      const multiplier = randomNumber(2, 6);
+      const a = randomNumber(2, 8);
+      const b = randomNumber(2, 8);
+      const subtract = randomNumber(1, 15);
+      return { text: `${multiplier} × (${a} + ${b}) − ${subtract} = ?`, answer: multiplier * (a + b) - subtract };
     },
   ])(),
   "y7-one-step-equations": () => sample([

@@ -10,8 +10,8 @@ year level, and appear on a shared live leaderboard.
 - **Times Table Dash:** multiplication from 2 to 12
 - **Missing Number:** reverse-operation multiplication puzzles
 - **Year 7-12 skill challenges:** individual leaderboards for skills such as
-  integers, fractions, ratios, gradients, quadratics, functions, calculus,
-  complex numbers, and series
+  integers, fractions, BIDMAS, ratios, gradients, quadratics, functions,
+  calculus, complex numbers, and series
 
 ## Run locally
 

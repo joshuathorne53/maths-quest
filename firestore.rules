@@ -62,6 +62,7 @@ service cloud.firestore {
         'y7-integers',
         'y7-fractions',
         'y7-percentages',
+        'y7-bidmas',
         'y7-one-step-equations',
         'y8-square-powers',
         'y8-ratios',
