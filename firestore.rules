@@ -61,6 +61,8 @@ service cloud.firestore {
         'missing',
         'y7-integers',
         'y7-fractions',
+        'y7-add-subtract-fractions',
+        'y7-multiplying-fractions',
         'y7-percentages',
         'y7-bidmas',
         'y7-one-step-equations',

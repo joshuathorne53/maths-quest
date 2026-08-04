@@ -66,6 +66,26 @@ const gameInfo = {
     cardClass: "game-card-sun",
     accessYear: "year7",
   },
+  "y7-add-subtract-fractions": {
+    name: "Adding & Subtracting Fractions",
+    shortName: "Add/Sub Fractions",
+    description: "Add and subtract fractions, including questions with different denominators.",
+    cardDescription: "Build speed with fraction addition and subtraction.",
+    bullets: ["Common denominators", "Equivalent fractions"],
+    icon: "±/",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y7-multiplying-fractions": {
+    name: "Multiplying Fractions",
+    shortName: "Multiply Fractions",
+    description: "Multiply fractions and simplify the result.",
+    cardDescription: "Practise multiplying fractions and whole numbers with fractions.",
+    bullets: ["Fraction products", "Simplifying answers"],
+    icon: "×/",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
   "y7-percentages": {
     name: "Percentages",
     shortName: "Percentages",
@@ -450,8 +470,38 @@ function createQuestion(mode) {
   return { text: `${a} − ${b} = ?`, answer: a - b };
 }
 
+function greatestCommonDivisor(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+
+  while (y) {
+    const remainder = x % y;
+    x = y;
+    y = remainder;
+  }
+
+  return x || 1;
+}
+
+function createFractionAnswer(numerator, denominator) {
+  if (denominator === 0) return null;
+
+  const sign = denominator < 0 ? -1 : 1;
+  const divisor = greatestCommonDivisor(numerator, denominator);
+
+  return {
+    type: "fraction",
+    numerator: (numerator / divisor) * sign,
+    denominator: Math.abs(denominator / divisor),
+  };
+}
+
 function isSurdAnswer(answer) {
   return answer?.type === "surd";
+}
+
+function isFractionAnswer(answer) {
+  return answer?.type === "fraction";
 }
 
 function getFormattedAnswer(answer) {
@@ -459,7 +509,32 @@ function getFormattedAnswer(answer) {
     return `${answer.coefficient}√${answer.radicand}`;
   }
 
+  if (isFractionAnswer(answer)) {
+    return answer.denominator === 1
+      ? String(answer.numerator)
+      : `${answer.numerator}/${answer.denominator}`;
+  }
+
   return String(answer);
+}
+
+function parseFractionInput(value) {
+  const cleanValue = String(value || "").trim();
+  const fractionMatch = cleanValue.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
+  if (fractionMatch) {
+    return createFractionAnswer(Number(fractionMatch[1]), Number(fractionMatch[2]));
+  }
+
+  const wholeNumberMatch = cleanValue.match(/^-?\d+$/);
+  if (wholeNumberMatch) {
+    return createFractionAnswer(Number(cleanValue), 1);
+  }
+
+  return null;
+}
+
+function fractionsMatch(guess, answer) {
+  return guess.numerator * answer.denominator === answer.numerator * guess.denominator;
 }
 
 function setSurdAnswerMode(enabled) {
@@ -508,6 +583,77 @@ const skillQuestionGenerators = {
       return {
         text: `1/${denominator} of ${denominator * multiplier} = ?`,
         answer: multiplier,
+      };
+    },
+  ])(),
+  "y7-add-subtract-fractions": () => sample([
+    () => {
+      const denominator = sample([4, 5, 6, 8, 10, 12]);
+      const left = randomNumber(1, denominator - 2);
+      const right = randomNumber(1, denominator - left - 1);
+      return {
+        text: `${left}/${denominator} + ${right}/${denominator} = ?`,
+        answer: createFractionAnswer(left + right, denominator),
+      };
+    },
+    () => {
+      const denominator = sample([4, 5, 6, 8, 10, 12]);
+      const left = randomNumber(2, denominator - 1);
+      const right = randomNumber(1, left - 1);
+      return {
+        text: `${left}/${denominator} − ${right}/${denominator} = ?`,
+        answer: createFractionAnswer(left - right, denominator),
+      };
+    },
+    () => {
+      const smallerDenominator = sample([3, 4, 5, 6]);
+      const largerDenominator = smallerDenominator * sample([2, 3]);
+      const left = randomNumber(1, smallerDenominator - 1);
+      const right = randomNumber(1, largerDenominator - 1);
+      return {
+        text: `${left}/${smallerDenominator} + ${right}/${largerDenominator} = ?`,
+        answer: createFractionAnswer(left * (largerDenominator / smallerDenominator) + right, largerDenominator),
+      };
+    },
+    () => {
+      const smallerDenominator = sample([3, 4, 5, 6]);
+      const largerDenominator = smallerDenominator * sample([2, 3]);
+      const left = randomNumber(2, smallerDenominator - 1);
+      const scaledLeft = left * (largerDenominator / smallerDenominator);
+      const right = randomNumber(1, scaledLeft - 1);
+      return {
+        text: `${left}/${smallerDenominator} − ${right}/${largerDenominator} = ?`,
+        answer: createFractionAnswer(scaledLeft - right, largerDenominator),
+      };
+    },
+  ])(),
+  "y7-multiplying-fractions": () => sample([
+    () => {
+      const leftDenominator = sample([3, 4, 5, 6, 8]);
+      const rightDenominator = sample([3, 4, 5, 6, 8]);
+      const left = randomNumber(1, leftDenominator - 1);
+      const right = randomNumber(1, rightDenominator - 1);
+      return {
+        text: `${left}/${leftDenominator} × ${right}/${rightDenominator} = ?`,
+        answer: createFractionAnswer(left * right, leftDenominator * rightDenominator),
+      };
+    },
+    () => {
+      const denominator = sample([3, 4, 5, 6, 8, 10]);
+      const numerator = randomNumber(1, denominator - 1);
+      const wholeNumber = randomNumber(2, 9);
+      return {
+        text: `${wholeNumber} × ${numerator}/${denominator} = ?`,
+        answer: createFractionAnswer(wholeNumber * numerator, denominator),
+      };
+    },
+    () => {
+      const denominator = sample([3, 4, 5, 6, 8, 10]);
+      const numerator = randomNumber(1, denominator - 1);
+      const wholeNumber = randomNumber(2, 9);
+      return {
+        text: `${numerator}/${denominator} of ${wholeNumber} = ?`,
+        answer: createFractionAnswer(numerator * wholeNumber, denominator),
       };
     },
   ])(),
@@ -1879,6 +2025,8 @@ function resetGame() {
   elements.timerProgress.style.stroke = "var(--blue)";
   elements.feedback.textContent = "You’ve got this.";
   elements.feedback.className = "feedback";
+  elements.answerInput.placeholder = "?";
+  elements.answerInput.inputMode = "decimal";
   setSurdAnswerMode(false);
 }
 
@@ -1890,7 +2038,10 @@ function nextQuestion() {
   state.questionNumber += 1;
   state.acceptingAnswer = true;
   const surdMode = isSurdAnswer(state.answer);
+  const fractionMode = isFractionAnswer(state.answer);
   setSurdAnswerMode(surdMode);
+  elements.answerInput.placeholder = fractionMode ? "e.g. 3/4" : "?";
+  elements.answerInput.inputMode = fractionMode ? "text" : "decimal";
   elements.question.classList.toggle("surd-question", surdMode);
   elements.question.textContent = question.text;
   elements.questionCount.textContent = `Question ${state.questionNumber}`;
@@ -2032,15 +2183,20 @@ function submitAnswer(event) {
   if (!state.running || !state.acceptingAnswer) return;
 
   const surdMode = isSurdAnswer(state.answer);
+  const fractionMode = isFractionAnswer(state.answer);
   const guess = surdMode
     ? {
         coefficient: Number(elements.surdCoefficientInput.value),
         radicand: Number(elements.surdRadicandInput.value),
       }
-    : Number(elements.answerInput.value);
+    : fractionMode
+      ? parseFractionInput(elements.answerInput.value)
+      : Number(elements.answerInput.value);
 
   if (surdMode) {
     if (!Number.isFinite(guess.coefficient) || !Number.isFinite(guess.radicand)) return;
+  } else if (fractionMode) {
+    if (!guess) return;
   } else if (!Number.isFinite(guess)) {
     return;
   }
@@ -2049,7 +2205,9 @@ function submitAnswer(event) {
 
   const isCorrect = surdMode
     ? guess.coefficient === state.answer.coefficient && guess.radicand === state.answer.radicand
-    : guess === state.answer;
+    : fractionMode
+      ? fractionsMatch(guess, state.answer)
+      : guess === state.answer;
 
   if (isCorrect) {
     state.streak += 1;
