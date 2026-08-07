@@ -632,6 +632,11 @@ a {
   padding: 100px 0 110px;
 }
 
+.page-section {
+  min-height: 100vh;
+  padding-top: 145px;
+}
+
 .section-heading {
   display: flex;
   margin-bottom: 44px;
@@ -765,6 +770,33 @@ a {
   line-height: 1.7;
 }
 
+.game-card-meta {
+  display: flex;
+  margin-top: 16px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.game-card-meta span,
+.prep-note,
+.goal-status {
+  padding: 8px 11px;
+  color: var(--blue-dark);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(23, 33, 59, 0.07);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.game-paper-note {
+  min-height: 0 !important;
+  margin-top: 10px !important;
+  color: #8a5732 !important;
+  font-size: 0.68rem !important;
+}
+
 .game-card ul {
   display: grid;
   margin: 20px 0 25px;
@@ -800,6 +832,7 @@ a {
   border-radius: 14px;
   font-size: 0.76rem;
   font-weight: 900;
+  text-decoration: none;
   transition: background 180ms ease, transform 180ms ease;
 }
 
@@ -808,11 +841,179 @@ a {
   transform: translateY(-2px);
 }
 
-.play-button:disabled {
+.play-button:disabled,
+.play-button.disabled {
   cursor: not-allowed;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(23, 33, 59, 0.55);
   transform: none;
+  pointer-events: none;
+  text-decoration: none;
+}
+
+.game-page-section {
+  padding-bottom: 95px;
+  background:
+    radial-gradient(circle at 0 0, rgba(93, 124, 255, 0.12), transparent 28%),
+    var(--cream);
+}
+
+.page-back-link {
+  display: inline-flex;
+  margin-bottom: 24px;
+}
+
+.game-page-hero {
+  display: grid;
+  grid-template-columns: 0.78fr 1.22fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.game-page-card,
+.game-page-details,
+.game-page-leaderboard,
+.leaderboard-grid-card {
+  border: 1px solid rgba(23, 33, 59, 0.07);
+  box-shadow: var(--shadow);
+}
+
+.game-page-card {
+  padding: 28px;
+  border-radius: 32px;
+  background: white;
+}
+
+.game-page-card h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+}
+
+.game-page-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.game-page-card ul {
+  display: grid;
+  margin: 22px 0 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.game-page-card li::before {
+  margin-right: 8px;
+  color: var(--blue-dark);
+  content: "✓";
+}
+
+.game-page-details {
+  display: grid;
+  align-content: center;
+  padding: 36px;
+  gap: 20px;
+  background: white;
+  border-radius: 32px;
+}
+
+.game-page-details h2 {
+  max-width: 640px;
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.98;
+}
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.goal-grid div {
+  display: grid;
+  padding: 18px;
+  gap: 4px;
+  background: #f6f8fd;
+  border-radius: 18px;
+}
+
+.goal-grid span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.goal-grid strong {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.prep-note,
+.goal-status {
+  display: block;
+  width: fit-content;
+  border-radius: 16px;
+}
+
+.prep-note {
+  color: #855516;
+  background: #fff3c7;
+}
+
+.goal-status {
+  color: #236e58;
+  background: #e8fff6;
+}
+
+.result-goal-status {
+  margin: -12px auto 24px;
+}
+
+.game-page-leaderboard {
+  margin-top: 28px;
+  padding: 26px;
+  background: white;
+  border-radius: 30px;
+}
+
+.compact-leaderboard-head,
+.leaderboard-grid-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.compact-leaderboard-head h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.compact-score-list {
+  display: grid;
+  margin: 22px 0 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.dark-note {
+  color: var(--muted);
 }
 
 .play-section {
@@ -1674,6 +1875,70 @@ a {
   background: var(--yellow);
 }
 
+.leaderboards-grid {
+  display: grid;
+  margin-top: 28px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.leaderboard-grid-card {
+  display: grid;
+  align-content: start;
+  min-height: 360px;
+  padding: 22px;
+  color: var(--navy);
+  background: white;
+  border-radius: 24px;
+}
+
+.total-leaderboard-card {
+  min-height: 0;
+  grid-column: 1 / -1;
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 205, 75, 0.26), transparent 28%),
+    white;
+}
+
+.leaderboard-grid-card-head p {
+  margin: 0 0 8px;
+  color: var(--blue-dark);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.leaderboard-grid-card-head h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.mini-game-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  color: white;
+  background: var(--navy);
+  border-radius: 16px;
+  place-items: center;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.leaderboard-grid-description {
+  min-height: 48px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
 .leaderboard-note {
   display: flex;
   margin: 20px 0 0;
@@ -1745,6 +2010,15 @@ footer > a:last-child {
 
   .game-grid {
     grid-template-columns: 1fr;
+  }
+
+  .game-page-hero,
+  .leaderboards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .total-leaderboard-card {
+    grid-column: auto;
   }
 
   .game-card {
@@ -1838,6 +2112,10 @@ footer > a:last-child {
     padding-top: 75px;
   }
 
+  .page-section {
+    padding-top: 115px;
+  }
+
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1850,6 +2128,26 @@ footer > a:last-child {
 
   .game-card {
     min-height: 455px;
+  }
+
+  .game-page-card,
+  .game-page-details,
+  .game-page-leaderboard {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .goal-grid,
+  .compact-leaderboard-head {
+    grid-template-columns: 1fr;
+  }
+
+  .goal-grid {
+    display: grid;
+  }
+
+  .compact-leaderboard-head {
+    display: grid;
   }
 
   .play-section {
