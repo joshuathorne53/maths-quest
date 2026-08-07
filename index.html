@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
-    <script src="script.js?v=pages-goals-total-20260807" defer></script>
+    <script src="script.js?v=game-teacher-filter-20260807" defer></script>
     <script type="module" src="firebase-leaderboard.js"></script>
   </head>
   <body>
@@ -224,6 +224,11 @@
                 <span>Year level</span>
                 <select id="game-board-year-select"></select>
               </label>
+            </div>
+            <div class="teacher-filter-tabs teacher-filter-tabs-light" role="group" aria-label="Show teacher scores on this game leaderboard">
+              <button class="active" type="button" data-teacher-filter="none">No teachers</button>
+              <button type="button" data-teacher-filter="year">Teachers for this year</button>
+              <button type="button" data-teacher-filter="all">All teachers</button>
             </div>
             <ol class="compact-score-list" id="game-board-list"></ol>
             <p class="leaderboard-note dark-note" id="game-board-status" data-status="connecting" aria-live="polite">

@@ -1875,6 +1875,21 @@ a {
   background: var(--yellow);
 }
 
+.teacher-filter-tabs-light {
+  margin: 18px 0 0;
+  background: #f6f8fd;
+  border-color: rgba(23, 33, 59, 0.08);
+}
+
+.teacher-filter-tabs-light button {
+  color: var(--muted);
+}
+
+.teacher-filter-tabs-light button.active {
+  color: white;
+  background: var(--navy);
+}
+
 .leaderboards-grid {
   display: grid;
   margin-top: 28px;
