@@ -1882,12 +1882,17 @@ a {
 }
 
 .teacher-filter-tabs-light button {
-  color: var(--muted);
+  color: var(--navy);
+  background: white;
+  border: 1px solid rgba(23, 33, 59, 0.12);
+  box-shadow: 0 4px 12px rgba(23, 33, 59, 0.06);
 }
 
 .teacher-filter-tabs-light button.active {
   color: white;
   background: var(--navy);
+  border-color: var(--navy);
+  box-shadow: none;
 }
 
 .leaderboards-grid {
