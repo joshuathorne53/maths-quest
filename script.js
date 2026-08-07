@@ -1706,7 +1706,6 @@ function renderGameCards() {
       ? `<span class="game-access">${escapeHtml(accessMessage)}</span>`
       : "";
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
-    const penNote = getPenAndPaperNote(gameId);
 
     return `
       <article class="game-card ${info.cardClass} ${locked ? "game-card-locked" : ""}">
@@ -1718,7 +1717,6 @@ function renderGameCards() {
           <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
           <span>Goal ${getGameGoal(gameId).toLocaleString()} pts</span>
         </div>
-        ${penNote ? `<p class="game-paper-note">${escapeHtml(penNote)}</p>` : ""}
         <ul>
           ${info.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}
         </ul>
