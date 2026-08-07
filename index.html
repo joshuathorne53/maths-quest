@@ -15,8 +15,8 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=leaderboard-year-lock-20260807" />
-    <script src="script.js?v=unlimited-best-scores-20260807" defer></script>
+    <link rel="stylesheet" href="styles.css?v=leaderboard-ui-cleanup-20260807" />
+    <script src="script.js?v=leaderboard-ui-cleanup-20260807" defer></script>
     <script type="module" src="firebase-leaderboard.js?v=leaderboard-year-lock-20260807"></script>
   </head>
   <body>
@@ -111,10 +111,6 @@
           </button>
           <strong id="auth-title" class="sr-only">Sign in for shared scores</strong>
         </div>
-        <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true">
-          <span aria-hidden="true">♪</span>
-          <span class="sound-label">Sound on</span>
-        </button>
       </nav>
     </header>
 
@@ -228,7 +224,7 @@
             <div class="teacher-filter-tabs teacher-filter-tabs-light" role="group" aria-label="Show teacher scores on this game leaderboard">
               <button class="active" type="button" data-teacher-filter="none">No teachers</button>
               <button type="button" data-teacher-filter="year">Teachers for this year</button>
-              <button type="button" data-teacher-filter="all">All teachers</button>
+              <button type="button" data-teacher-filter="all" hidden>All teachers</button>
             </div>
             <ol class="compact-score-list" id="game-board-list"></ol>
             <p class="leaderboard-note dark-note" id="game-board-status" data-status="connecting" aria-live="polite">
@@ -374,7 +370,7 @@
           <div class="teacher-filter-tabs" role="group" aria-label="Show teacher scores">
             <button class="active" type="button" data-teacher-filter="none">No teachers</button>
             <button type="button" data-teacher-filter="year">Year level teachers</button>
-            <button type="button" data-teacher-filter="all">All teachers</button>
+            <button type="button" data-teacher-filter="all" hidden>All teachers</button>
           </div>
           <div class="leaderboards-grid" id="leaderboards-grid"></div>
           <p class="leaderboard-note" id="leaderboard-status" data-status="connecting" aria-live="polite">

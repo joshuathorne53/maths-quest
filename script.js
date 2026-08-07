@@ -365,7 +365,7 @@ const state = {
   countdownTimeoutId: null,
   running: false,
   acceptingAnswer: false,
-  sound: true,
+  sound: false,
   sharedInitialized: false,
   sharedConfigured: false,
   authUid: "",
@@ -442,7 +442,6 @@ const elements = {
   resultLeaderboardLink: document.querySelector("#result-leaderboard-link"),
   gameGrid: document.querySelector("#game-grid"),
   boardYearSelect: document.querySelector("#board-year-select"),
-  soundToggle: document.querySelector("#sound-toggle"),
   leaderboardStatus: document.querySelector("#leaderboard-status"),
   authCard: document.querySelector("#auth-card"),
   authTitle: document.querySelector("#auth-title"),
@@ -1230,9 +1229,8 @@ function getLeaderboardAccessMessage() {
 }
 
 function canUseAllTeacherFilter() {
-  if (!state.sharedConfigured || !state.authAllowed) return true;
   if (isTeacherTestingAsStudent()) return false;
-  return getActiveAccountType() !== "student";
+  return state.sharedConfigured && state.authAllowed && getActiveAccountType() === "teacher";
 }
 
 function cleanAllowedTeacherFilter(filter) {
@@ -2932,13 +2930,6 @@ document.querySelector("#play-again").addEventListener("click", requestStartGame
 elements.signInButton.addEventListener("click", signInForLeaderboard);
 elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
 elements.resultSignIn.addEventListener("click", signInForLeaderboard);
-
-elements.soundToggle.addEventListener("click", () => {
-  state.sound = !state.sound;
-  elements.soundToggle.setAttribute("aria-pressed", String(state.sound));
-  elements.soundToggle.querySelector(".sound-label").textContent = state.sound ? "Sound on" : "Sound off";
-  elements.soundToggle.firstElementChild.textContent = state.sound ? "♪" : "×";
-});
 
 window.addEventListener("leaderboard-auth-changed", (event) => applyAuthState(event.detail));
 
