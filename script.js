@@ -1281,7 +1281,7 @@ function getGameAccessMessage(gameId) {
   }
 
   if (getActiveAccountType() === "teacher") {
-    return `Teacher access: ${requiredLabel} and up.`;
+    return "Available for teacher accounts.";
   }
 
   if (!state.studentYearLevel) {
@@ -1690,18 +1690,27 @@ function renderTeacherFilterControls() {
   });
 }
 
+function shouldShowGameCardAccessMessage() {
+  if (!state.sharedConfigured || !state.authAllowed) return true;
+  if (isTeacherTestingAsStudent()) return true;
+  return getActiveAccountType() !== "teacher";
+}
+
 function renderGameCards() {
   const visibleGameIds = getVisibleGameIds();
   elements.gameGrid.innerHTML = visibleGameIds.map((gameId) => {
     const info = gameInfo[gameId];
     const locked = !canAccessGame(gameId);
     const accessMessage = getGameAccessMessage(gameId);
+    const accessBadge = shouldShowGameCardAccessMessage()
+      ? `<span class="game-access">${escapeHtml(accessMessage)}</span>`
+      : "";
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
     const penNote = getPenAndPaperNote(gameId);
 
     return `
       <article class="game-card ${info.cardClass} ${locked ? "game-card-locked" : ""}">
-        <span class="game-access">${escapeHtml(accessMessage)}</span>
+        ${accessBadge}
         <div class="game-icon" aria-hidden="true">${escapeHtml(info.icon)}</div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.cardDescription)}</p>
