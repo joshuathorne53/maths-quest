@@ -119,19 +119,29 @@ a {
   color: var(--blue-dark);
 }
 
+body.leaderboards-page-active .site-header {
+  top: 16px;
+  width: min(1180px, calc(100% - 32px));
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 18px 42px rgba(4, 10, 27, 0.16);
+}
+
 body.leaderboards-page-active .brand,
 body.leaderboards-page-active .main-nav a {
-  color: white;
-  text-shadow: 0 2px 12px rgba(4, 10, 27, 0.25);
+  color: var(--navy);
+  text-shadow: none;
 }
 
 body.leaderboards-page-active .brand-mark {
-  color: var(--navy);
-  background: white;
+  color: white;
+  background: var(--navy);
 }
 
 body.leaderboards-page-active .main-nav a:hover {
-  color: var(--yellow);
+  color: var(--blue-dark);
 }
 
 .header-auth {
@@ -1019,11 +1029,6 @@ body.leaderboards-page-active .main-nav a:hover {
   padding: 0;
   gap: 8px;
   list-style: none;
-}
-
-.leaderboard-note.dark-note {
-  color: var(--navy);
-  font-weight: 900;
 }
 
 .play-section {
@@ -1984,6 +1989,24 @@ body.leaderboards-page-active .main-nav a:hover {
   font-size: 0.66rem;
   font-weight: 700;
   text-align: center;
+}
+
+.game-page-leaderboard .leaderboard-note,
+#game-board-status {
+  color: var(--navy);
+  font-weight: 900;
+}
+
+#leaderboard-status {
+  width: fit-content;
+  max-width: min(100%, 760px);
+  margin: 24px auto 0;
+  padding: 10px 14px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(23, 33, 59, 0.08);
+  border-radius: 999px;
+  font-weight: 900;
 }
 
 .leaderboard-note span {
