@@ -769,22 +769,22 @@ const skillQuestionGenerators = {
     () => {
       const answer = randomNumber(4, 24);
       const offset = randomNumber(5, 30);
-      return { text: `x + ${offset} = ${answer + offset}. x = ?`, answer };
+      return { text: `Solve x + ${offset} = ${answer + offset}`, answer };
     },
     () => {
       const answer = randomNumber(6, 30);
       const offset = randomNumber(2, 12);
-      return { text: `x − ${offset} = ${answer - offset}. x = ?`, answer };
+      return { text: `Solve x − ${offset} = ${answer - offset}`, answer };
     },
     () => {
       const answer = randomNumber(3, 12);
       const factor = randomNumber(2, 12);
-      return { text: `${factor}x = ${answer * factor}. x = ?`, answer };
+      return { text: `Solve ${factor}x = ${answer * factor}`, answer };
     },
     () => {
       const answer = randomNumber(3, 12);
       const divisor = randomNumber(2, 12);
-      return { text: `x ÷ ${divisor} = ${answer}. x = ?`, answer: answer * divisor };
+      return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
     },
   ])(),
   "y8-square-powers": () => sample([
@@ -838,12 +838,12 @@ const skillQuestionGenerators = {
     () => {
       const answer = randomNumber(3, 16);
       const coefficient = randomNumber(2, 9);
-      return { text: `${coefficient}x = ${coefficient * answer}. x = ?`, answer };
+      return { text: `Solve ${coefficient}x = ${coefficient * answer}`, answer };
     },
     () => {
       const answer = randomNumber(3, 16);
       const divisor = randomNumber(2, 8);
-      return { text: `x ÷ ${divisor} = ${answer}. x = ?`, answer: answer * divisor };
+      return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
     },
   ])(),
   "y9-index-laws": () => sample([
@@ -877,7 +877,7 @@ const skillQuestionGenerators = {
     () => {
       const coefficient = randomNumber(2, 6);
       const inner = randomNumber(2, 8);
-      return { text: `Expand ${coefficient}(${inner}x + 3). Coefficient of x = ?`, answer: coefficient * inner };
+      return { text: `Find the coefficient of x in ${coefficient}(${inner}x + 3)`, answer: coefficient * inner };
     },
     () => {
       const coefficient = randomNumber(2, 7);
@@ -890,25 +890,25 @@ const skillQuestionGenerators = {
       const answer = randomNumber(4, 18);
       const coefficient = randomNumber(2, 6);
       const offset = randomNumber(5, 20);
-      return { text: `${coefficient}x − ${offset} = ${coefficient * answer - offset}. x = ?`, answer };
+      return { text: `Solve ${coefficient}x − ${offset} = ${coefficient * answer - offset}`, answer };
     },
     () => {
       const answer = randomNumber(4, 18);
       const coefficient = randomNumber(2, 6);
       const offset = randomNumber(5, 20);
-      return { text: `${coefficient}x + ${offset} = ${coefficient * answer + offset}. x = ?`, answer };
+      return { text: `Solve ${coefficient}x + ${offset} = ${coefficient * answer + offset}`, answer };
     },
   ])(),
   "y10-quadratics": () => sample([
     () => {
       const rootA = randomNumber(2, 7);
       const rootB = randomNumber(rootA + 1, 10);
-      return { text: `x² − ${rootA + rootB}x + ${rootA * rootB} = 0. Smaller x = ?`, answer: rootA };
+      return { text: `Find the smaller solution: x² − ${rootA + rootB}x + ${rootA * rootB} = 0`, answer: rootA };
     },
     () => {
       const rootA = randomNumber(2, 7);
       const rootB = randomNumber(rootA + 1, 10);
-      return { text: `x² − ${rootA + rootB}x + ${rootA * rootB} = 0. Larger x = ?`, answer: rootB };
+      return { text: `Find the larger solution: x² − ${rootA + rootB}x + ${rootA * rootB} = 0`, answer: rootB };
     },
   ])(),
   "y10-pythagoras": () => sample([
@@ -937,12 +937,12 @@ const skillQuestionGenerators = {
     () => {
       const x = randomNumber(3, 12);
       const y = randomNumber(1, x - 1);
-      return { text: `x + y = ${x + y}, x − y = ${x - y}. x = ?`, answer: x };
+      return { text: `Find x: x + y = ${x + y}, x − y = ${x - y}`, answer: x };
     },
     () => {
       const x = randomNumber(3, 12);
       const y = randomNumber(1, x - 1);
-      return { text: `x + y = ${x + y}, x − y = ${x - y}. y = ?`, answer: y };
+      return { text: `Find y: x + y = ${x + y}, x − y = ${x - y}`, answer: y };
     },
   ])(),
   "y10-functions": () => sample([
@@ -1029,11 +1029,11 @@ const skillQuestionGenerators = {
     () => {
       const coefficient = randomNumber(2, 9);
       const power = randomNumber(1, 3);
-      return { text: `∫ ${coefficient * (power + 1)}x^${power} dx = ?x^${power + 1} + C`, answer: coefficient };
+      return { text: `Find k: ∫ ${coefficient * (power + 1)}x^${power} dx = kx^${power + 1} + C`, answer: coefficient };
     },
     () => {
       const coefficient = randomNumber(2, 8);
-      return { text: `∫ ${coefficient} dx = ?x + C`, answer: coefficient };
+      return { text: `Find k: ∫ ${coefficient} dx = kx + C`, answer: coefficient };
     },
   ])(),
   "y12-complex-numbers": () => sample([
