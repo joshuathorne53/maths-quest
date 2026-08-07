@@ -184,6 +184,32 @@ service cloud.firestore {
         && get(studentProfilePath()).data.yearLevel == yearLevel;
     }
 
+    function savedStudentYearLevel() {
+      return get(studentProfilePath()).data.yearLevel;
+    }
+
+    function canStudentReadScore(game) {
+      return isStudentUser()
+        && exists(studentProfilePath())
+        && canStudentAccessGame(game, savedStudentYearLevel())
+        && (
+          (
+            resource.data.role == 'student'
+            && resource.data.yearLevel == savedStudentYearLevel()
+          )
+          || (
+            resource.data.role == 'teacher'
+            && resource.data.teacherYearLevels is list
+            && savedStudentYearLevel() in resource.data.teacherYearLevels
+          )
+        );
+    }
+
+    function canTeacherReadScore() {
+      return isTeacherUser()
+        && isApprovedTeacher();
+    }
+
     function hasValidBaseScoreFields(game) {
       return isValidName(request.resource.data.name)
         && request.resource.data.score is int
@@ -261,7 +287,8 @@ service cloud.firestore {
     }
 
     match /leaderboards/{game}/scores/{scoreId} {
-      allow read: if isValidGame(game);
+      allow read: if isValidGame(game)
+        && (canStudentReadScore(game) || canTeacherReadScore());
 
       allow create: if isAllowedSchoolGoogleUser()
         && isValidGame(game)

@@ -1178,9 +1178,67 @@ function canAccessGame(gameId) {
   return canYearAccessGame(state.studentYearLevel, gameId);
 }
 
+function getForcedLeaderboardYearLevel() {
+  if (!state.sharedConfigured || !state.authAllowed) return "";
+  if (isTeacherTestingAsStudent()) return cleanYearLevel(state.testStudentYearLevel);
+  if (getActiveAccountType() === "student") return cleanYearLevel(state.studentYearLevel);
+  return "";
+}
+
 function canChangeLeaderboardYear() {
-  if (!state.sharedConfigured || !state.authAllowed) return true;
+  if (!state.sharedConfigured) return true;
+  if (getForcedLeaderboardYearLevel()) return false;
   return getActiveAccountType() === "teacher";
+}
+
+function canReadSharedLeaderboards() {
+  if (!state.sharedConfigured) return true;
+  if (!state.authAllowed || !state.accountType) return false;
+  if (isTeacherTestingAsStudent()) return Boolean(cleanYearLevel(state.testStudentYearLevel));
+  if (getActiveAccountType() === "teacher") return state.teacherYearLevels.length > 0;
+  return Boolean(state.studentYearLevel);
+}
+
+function canReadGameLeaderboard(gameId) {
+  if (!canReadSharedLeaderboards()) return false;
+  const forcedYearLevel = getForcedLeaderboardYearLevel();
+  return !forcedYearLevel || canYearAccessGame(forcedYearLevel, gameId);
+}
+
+function getLeaderboardAccessMessage() {
+  if (!state.sharedConfigured) {
+    return "Firebase setup needed. Until then, this leaderboard uses scores saved on this device.";
+  }
+
+  if (!state.authAllowed) {
+    return `Sign in with a ${getAllowedDomainLabel()} account to view shared leaderboards.`;
+  }
+
+  if (getActiveAccountType() === "teacher" && !state.teacherYearLevels.length) {
+    return "Choose your teaching year levels before viewing shared leaderboards.";
+  }
+
+  if (getActiveAccountType() === "student" && !state.studentYearLevel) {
+    return "Choose and save your year level before viewing shared leaderboards.";
+  }
+
+  const forcedYearLevel = getForcedLeaderboardYearLevel();
+  if (forcedYearLevel && !canYearAccessGame(forcedYearLevel, state.game)) {
+    return `This skill leaderboard is locked for ${getYearLabel(forcedYearLevel)} students.`;
+  }
+
+  return "Leaderboards are locked to your account setup.";
+}
+
+function canUseAllTeacherFilter() {
+  if (!state.sharedConfigured || !state.authAllowed) return true;
+  if (isTeacherTestingAsStudent()) return false;
+  return getActiveAccountType() !== "student";
+}
+
+function cleanAllowedTeacherFilter(filter) {
+  const cleanFilter = cleanTeacherFilter(filter);
+  return cleanFilter === "all" && !canUseAllTeacherFilter() ? "year" : cleanFilter;
 }
 
 function shouldHideInaccessibleGames() {
@@ -1249,10 +1307,21 @@ function createYearOptions({ includePlaceholder = false } = {}) {
   return `<option value="">Choose your year level</option>${options}`;
 }
 
+function createLeaderboardYearOptions() {
+  const forcedYearLevel = getForcedLeaderboardYearLevel();
+  const yearLevels = forcedYearLevel
+    ? YEAR_LEVELS.filter((yearLevel) => yearLevel.id === forcedYearLevel)
+    : YEAR_LEVELS;
+
+  return yearLevels.map(
+    (yearLevel) => `<option value="${yearLevel.id}">${yearLevel.label}</option>`,
+  ).join("");
+}
+
 function setupYearControls() {
-  elements.boardYearSelect.innerHTML = createYearOptions();
+  elements.boardYearSelect.innerHTML = createLeaderboardYearOptions();
   elements.boardYearSelect.value = state.boardYearLevel;
-  elements.gameBoardYearSelect.innerHTML = createYearOptions();
+  elements.gameBoardYearSelect.innerHTML = createLeaderboardYearOptions();
   elements.gameBoardYearSelect.value = state.boardYearLevel;
   elements.studentYearSelect.innerHTML = createYearOptions({ includePlaceholder: true });
   elements.testStudentYearSelect.innerHTML = createYearOptions();
@@ -1461,6 +1530,15 @@ function getVisibleScores(game = state.board, options = {}) {
   return filterScoresForBoard(rawScores, state.boardYearLevel, state.teacherFilter, options);
 }
 
+function stopSharedBoardListeners({ clearScores = false } = {}) {
+  state.boardUnsubscribes.forEach((unsubscribe) => unsubscribe());
+  state.boardUnsubscribes.clear();
+
+  if (clearScores) {
+    state.sharedScores = cloneSharedScores();
+  }
+}
+
 function getScoreKey(entry) {
   return entry.uid || entry.id || `${entry.role}:${entry.name}:${entry.yearLevel || entry.teacherYearLevels?.join("-") || "teacher"}`;
 }
@@ -1607,8 +1685,11 @@ function updateStartPanel() {
 }
 
 function renderTeacherFilterControls() {
+  state.teacherFilter = cleanAllowedTeacherFilter(state.teacherFilter);
   document.querySelectorAll("[data-teacher-filter]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.teacherFilter === state.teacherFilter);
+    const filter = cleanTeacherFilter(button.dataset.teacherFilter);
+    button.hidden = filter === "all" && !canUseAllTeacherFilter();
+    button.classList.toggle("active", filter === state.teacherFilter);
   });
 }
 
@@ -1696,6 +1777,12 @@ function renderGamePage() {
 }
 
 function renderGameLeaderboard() {
+  if (!canReadGameLeaderboard(state.game)) {
+    elements.gameBoardList.innerHTML = renderScoreRows([], getLeaderboardAccessMessage(), { scoreLimit: 10 });
+    setGameBoardStatus("local", getLeaderboardAccessMessage());
+    return;
+  }
+
   const scores = getVisibleScores(state.game, { scoreLimit: 10 });
   elements.gameBoardList.innerHTML = renderScoreRows(
     scores,
@@ -1745,6 +1832,12 @@ function renderLeaderboardGridCard({ gameId, title, description, scores, total =
 }
 
 function renderAllLeaderboards() {
+  if (!canReadSharedLeaderboards()) {
+    elements.leaderboardsGrid.innerHTML = "";
+    setLeaderboardStatus("local", getLeaderboardAccessMessage());
+    return;
+  }
+
   const gameIds = getVisibleBoardGameIds();
   if (state.sharedConfigured) listenToSharedBoards(gameIds);
 
@@ -1776,7 +1869,20 @@ function renderAllLeaderboards() {
 }
 
 function renderBoardTabs() {
+  const forcedYearLevel = getForcedLeaderboardYearLevel();
+  if (forcedYearLevel) {
+    state.boardYearLevel = forcedYearLevel;
+  }
+
   ensureVisibleBoard();
+  const boardOptions = createLeaderboardYearOptions();
+  if (elements.gameBoardYearSelect.innerHTML !== boardOptions) {
+    elements.gameBoardYearSelect.innerHTML = boardOptions;
+  }
+  if (elements.boardYearSelect.innerHTML !== boardOptions) {
+    elements.boardYearSelect.innerHTML = boardOptions;
+  }
+
   elements.gameBoardYearSelect.value = state.boardYearLevel;
   elements.boardYearSelect.value = state.boardYearLevel;
   const canChangeYear = canChangeLeaderboardYear();
@@ -1977,7 +2083,12 @@ function getFirebaseMessage(error, fallback) {
 }
 
 function setBoardYearLevel(yearLevel) {
-  const cleanLevel = cleanYearLevel(yearLevel) || DEFAULT_YEAR_LEVEL;
+  const cleanLevel = getForcedLeaderboardYearLevel() || cleanYearLevel(yearLevel) || DEFAULT_YEAR_LEVEL;
+  const yearChanged = state.boardYearLevel !== cleanLevel;
+  if (yearChanged) {
+    stopSharedBoardListeners({ clearScores: true });
+  }
+
   state.boardYearLevel = cleanLevel;
   elements.boardYearSelect.value = cleanLevel;
   elements.gameBoardYearSelect.value = cleanLevel;
@@ -1993,6 +2104,8 @@ function setBoardYearLevel(yearLevel) {
 }
 
 function applyAuthState(authState) {
+  const oldAuthUid = state.authUid;
+  const oldAuthAllowed = state.authAllowed;
   const oldAccountType = state.accountType;
   const oldStudentYearLevel = state.studentYearLevel;
   const oldTeacherYears = state.teacherYearLevels.join(",");
@@ -2011,6 +2124,18 @@ function applyAuthState(authState) {
   if (state.accountType !== "teacher" || !canUseTestStudentMode()) {
     state.testStudentMode = false;
   }
+
+  if (
+    oldAuthUid !== state.authUid
+    || oldAuthAllowed !== state.authAllowed
+    || oldAccountType !== state.accountType
+    || oldStudentYearLevel !== state.studentYearLevel
+    || oldTeacherYears !== state.teacherYearLevels.join(",")
+  ) {
+    stopSharedBoardListeners({ clearScores: true });
+  }
+
+  state.teacherFilter = cleanAllowedTeacherFilter(state.teacherFilter);
 
   if (state.authAllowed) {
     state.player = getGooglePlayerName();
@@ -2068,6 +2193,7 @@ function updateSharedResultRank() {
 
 function listenToSharedBoard(game) {
   if (!state.sharedConfigured) return;
+  if (!canReadGameLeaderboard(game)) return;
   if (state.boardUnsubscribes.has(game)) return;
 
   state.boardUnsubscribes.set(game, window.sharedLeaderboard.listen(
@@ -2083,6 +2209,10 @@ function listenToSharedBoard(game) {
       if (state.game === game) renderGameLeaderboard();
       if (state.page === "leaderboards") renderAllLeaderboards();
       setLeaderboardStatus("local", "Shared leaderboard unavailable. Check Firestore database setup and rules.");
+    },
+    {
+      yearLevel: state.boardYearLevel,
+      teacherFilter: state.teacherFilter,
     },
   ));
 }
@@ -2612,6 +2742,10 @@ function renderLeaderboard() {
   renderTeacherFilterControls();
   if (state.page === "game") renderGameLeaderboard();
   if (state.page === "leaderboards") renderAllLeaderboards();
+  if (state.sharedConfigured && canReadSharedLeaderboards()) {
+    if (state.page === "game") listenToSharedBoard(state.game);
+    if (state.page === "leaderboards") listenToSharedBoards(getVisibleBoardGameIds());
+  }
 }
 
 function renderCurrentDataViews() {
@@ -2731,7 +2865,11 @@ elements.gameGrid.addEventListener("click", (event) => {
 
 document.querySelectorAll("[data-teacher-filter]").forEach((button) => {
   button.addEventListener("click", () => {
-    state.teacherFilter = cleanTeacherFilter(button.dataset.teacherFilter);
+    const nextFilter = cleanAllowedTeacherFilter(button.dataset.teacherFilter);
+    if (state.teacherFilter !== nextFilter) {
+      stopSharedBoardListeners({ clearScores: true });
+    }
+    state.teacherFilter = nextFilter;
     renderTeacherFilterControls();
     renderLeaderboard();
     updateSharedResultRank();

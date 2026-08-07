@@ -20,6 +20,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import {
   allowedEmailDomain,
@@ -70,6 +71,7 @@ const validYearLevels = new Set([
   "year11",
   "year12",
 ]);
+const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameAccessYears = new Map([
   ["quick", "year7"],
   ["times", "year7"],
@@ -160,6 +162,11 @@ function cleanYearLevels(yearLevels) {
   return yearLevels
     .map(cleanYearLevel)
     .filter((yearLevel, index, levels) => yearLevel && levels.indexOf(yearLevel) === index);
+}
+
+function cleanTeacherFilter(filter) {
+  const value = String(filter || "").trim().toLowerCase();
+  return validTeacherFilters.has(value) ? value : "none";
 }
 
 function getYearRank(yearLevel) {
@@ -322,6 +329,69 @@ if (!isConfigured) {
     return collection(db, "leaderboards", game, "scores");
   }
 
+  function scoreRowsFromSnapshot(snapshot) {
+    return snapshot.docs.map((document) => ({
+      id: document.id,
+      ...document.data(),
+    }));
+  }
+
+  function sortLeaderboardRows(scores) {
+    return scores
+      .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
+      .slice(0, 300);
+  }
+
+  function listenToStudentAllowedScores(game, teacherFilter, onScores, onError) {
+    const yearLevel = cleanYearLevel(studentProfile?.yearLevel);
+    if (!yearLevel) {
+      onScores([]);
+      return () => {};
+    }
+
+    const latestRows = {
+      students: [],
+      teachers: [],
+    };
+    const emitRows = () => onScores(sortLeaderboardRows([
+      ...latestRows.students,
+      ...latestRows.teachers,
+    ]));
+    const unsubscribes = [
+      onSnapshot(
+        query(
+          scoreCollection(game),
+          where("role", "==", "student"),
+          where("yearLevel", "==", yearLevel),
+        ),
+        (snapshot) => {
+          latestRows.students = scoreRowsFromSnapshot(snapshot);
+          emitRows();
+        },
+        onError,
+      ),
+    ];
+
+    if (teacherFilter !== "none") {
+      unsubscribes.push(
+        onSnapshot(
+          query(
+            scoreCollection(game),
+            where("role", "==", "teacher"),
+            where("teacherYearLevels", "array-contains", yearLevel),
+          ),
+          (snapshot) => {
+            latestRows.teachers = scoreRowsFromSnapshot(snapshot);
+            emitRows();
+          },
+          onError,
+        ),
+      );
+    }
+
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }
+
   async function saveStudentYearLevel(yearLevel) {
     const user = getAllowedUser();
     if (getAccountTypeForEmail(user.email) !== "student") {
@@ -474,18 +544,23 @@ if (!isConfigured) {
     saveStudentYearLevel,
     saveTeacherYearLevels,
 
-    listen(game, onScores, onError) {
+    listen(game, onScores, onError, context = {}) {
+      const accountType = getAccountTypeForEmail(auth.currentUser?.email);
+      if (accountType === "student") {
+        return listenToStudentAllowedScores(game, cleanTeacherFilter(context.teacherFilter), onScores, onError);
+      }
+
+      if (accountType !== "teacher") {
+        onScores([]);
+        return () => {};
+      }
+
       const topScores = query(scoreCollection(game), orderBy("score", "desc"), limit(300));
 
       return onSnapshot(
         topScores,
         (snapshot) => {
-          onScores(
-            snapshot.docs.map((document) => ({
-              id: document.id,
-              ...document.data(),
-            })),
-          );
+          onScores(scoreRowsFromSnapshot(snapshot));
         },
         onError,
       );
