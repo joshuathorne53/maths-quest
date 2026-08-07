@@ -1,6 +1,5 @@
 const GAME_SECONDS = 60;
 const PAPER_GAME_SECONDS = 300;
-const MAX_SCORE = 10000;
 const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
 const DEFAULT_YEAR_LEVEL = "year7";
 const TEST_STUDENT_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
@@ -2690,7 +2689,7 @@ function submitAnswer(event) {
     state.correct += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     const points = 100 + Math.min(state.streak - 1, 5) * 20;
-    state.score = Math.min(MAX_SCORE, state.score + points);
+    state.score += points;
     elements.feedback.textContent = state.streak > 2 ? `Correct! ${state.streak} answer streak!` : "Correct! Keep going.";
     elements.feedback.className = "feedback correct";
     playTone(true);

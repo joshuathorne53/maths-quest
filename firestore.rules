@@ -214,7 +214,6 @@ service cloud.firestore {
       return isValidName(request.resource.data.name)
         && request.resource.data.score is int
         && request.resource.data.score >= 0
-        && request.resource.data.score <= 10000
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.game == game;
     }
