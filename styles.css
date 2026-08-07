@@ -119,6 +119,21 @@ a {
   color: var(--blue-dark);
 }
 
+body.leaderboards-page-active .brand,
+body.leaderboards-page-active .main-nav a {
+  color: white;
+  text-shadow: 0 2px 12px rgba(4, 10, 27, 0.25);
+}
+
+body.leaderboards-page-active .brand-mark {
+  color: var(--navy);
+  background: white;
+}
+
+body.leaderboards-page-active .main-nav a:hover {
+  color: var(--yellow);
+}
+
 .header-auth {
   display: flex;
   padding: 5px;
@@ -1006,8 +1021,9 @@ a {
   list-style: none;
 }
 
-.dark-note {
-  color: var(--muted);
+.leaderboard-note.dark-note {
+  color: var(--navy);
+  font-weight: 900;
 }
 
 .play-section {

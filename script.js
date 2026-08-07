@@ -2813,6 +2813,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   const route = parsePageHash();
   const leavingGamePage = state.page === "game" && route.page !== "game";
   state.page = route.page;
+  document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
   if (leavingGamePage) {
     cancelActiveGame();
