@@ -115,6 +115,10 @@ a {
   font-weight: 800;
 }
 
+.main-nav:has(#auth-card[hidden]) {
+  display: none;
+}
+
 .main-nav a {
   text-decoration: none;
 }
