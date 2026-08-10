@@ -128,7 +128,7 @@ a {
 }
 
 body.app-page-active .site-header {
-  top: 18px;
+  top: 0;
   left: calc(max(18px, calc((100vw - 1440px) / 2)) + 274px);
   right: max(18px, calc((100vw - 1440px) / 2));
   width: auto;
@@ -141,6 +141,7 @@ body.app-page-active .brand {
 }
 
 body.app-page-active .main-nav {
+  margin-left: auto;
   padding: 10px 12px;
   gap: 18px;
   background: rgba(255, 255, 255, 0.86);
@@ -687,7 +688,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 
 .dashboard-home {
   min-height: 100vh;
-  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 34px;
+  padding: 0 max(18px, calc((100vw - 1440px) / 2)) 34px;
   gap: 24px;
   grid-template-columns: 250px minmax(0, 1fr) 320px;
   align-items: stretch;
@@ -703,7 +704,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 .app-dashboard-page {
   display: grid;
   min-height: 100vh;
-  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+  padding: 0 max(18px, calc((100vw - 1440px) / 2)) 58px;
   gap: 24px;
   grid-template-columns: 250px minmax(0, 1fr) 320px;
   align-items: start;
@@ -798,7 +799,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 }
 
 .dashboard-sidebar {
-  min-height: calc(100vh - 52px);
+  min-height: calc(100vh - 34px);
   padding: 22px;
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(23, 43, 77, 0.08);
@@ -890,13 +891,17 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 
 .dashboard-main {
   display: grid;
-  padding-top: 74px;
+  padding-top: 0;
   align-content: start;
   gap: 20px;
 }
 
 .dashboard-rail {
   padding-top: 74px;
+}
+
+body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
+  margin-top: 74px;
 }
 
 .hero-card,
@@ -1499,7 +1504,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 .games-section.app-dashboard-page,
 .progress-section.app-dashboard-page,
 .leaderboard-section.app-dashboard-page {
-  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+  padding: 0 max(18px, calc((100vw - 1440px) / 2)) 58px;
 }
 
 .games-section.app-dashboard-page {
@@ -1783,7 +1788,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 }
 
 .game-page-section.app-dashboard-page {
-  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+  padding: 0 max(18px, calc((100vw - 1440px) / 2)) 58px;
   background:
     radial-gradient(circle at 92% 8%, rgba(140, 198, 230, 0.24), transparent 24%),
     linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
@@ -3189,6 +3194,10 @@ footer > a:last-child {
 
   .dashboard-main-wide {
     grid-column: auto;
+  }
+
+  body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
+    margin-top: 0;
   }
 
   .page-hero-card {
