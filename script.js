@@ -394,7 +394,6 @@ const state = {
   boardUnsubscribes: new Map(),
   pendingSharedScore: null,
   savingSharedScore: false,
-  latestSharedScoreId: null,
   sharedScores: cloneSharedScores(),
   boardListenerContexts: new Map(),
 };
@@ -454,10 +453,10 @@ const elements = {
   finalScore: document.querySelector("#final-score"),
   correctTotal: document.querySelector("#correct-total"),
   bestStreak: document.querySelector("#best-streak"),
-  resultRank: document.querySelector("#result-rank"),
-  resultRankCallout: document.querySelector("#result-rank-callout"),
-  resultRankCalloutValue: document.querySelector("#result-rank-callout-value"),
-  resultRankCalloutDetail: document.querySelector("#result-rank-callout-detail"),
+  resultMedal: document.querySelector("#result-medal"),
+  resultMedalCallout: document.querySelector("#result-medal-callout"),
+  resultMedalCalloutValue: document.querySelector("#result-medal-callout-value"),
+  resultMedalCalloutDetail: document.querySelector("#result-medal-callout-detail"),
   resultGoalStatus: document.querySelector("#result-goal-status"),
   resultLeaderboardLink: document.querySelector("#result-leaderboard-link"),
   gameGrid: document.querySelector("#game-grid"),
@@ -1913,20 +1912,53 @@ function getGameRankStatusMessage(gameId) {
   return "Play this game to earn a leaderboard rank.";
 }
 
-function setResultRankDisplay(rankText, detailText, status = "waiting") {
-  elements.resultRank.textContent = rankText;
+function getMedalResultForScore(gameId, score) {
+  const goals = getMedalGoalsForGame(gameId);
+  return {
+    goals,
+    medal: getBestMedalForScore(score, goals),
+    nextGoal: goals.find((goal) => score < goal.score) || null,
+  };
+}
+
+function getResultMedalDetail(gameId, score, extraDetail = "") {
+  const { goals, medal, nextGoal } = getMedalResultForScore(gameId, score);
+  const gameName = gameInfo[gameId]?.name || "this game";
+  let detail = "";
+
+  if (medal) {
+    detail = nextGoal
+      ? `You earned ${medal.label} for ${gameName}. Next medal: ${nextGoal.label} at ${nextGoal.score.toLocaleString()} pts.`
+      : `You earned ${medal.label} for ${gameName}. You have reached the top medal target.`;
+  } else {
+    const bronzeGoal = goals.find((goal) => goal.id === "bronze") || goals[0];
+    detail = bronzeGoal
+      ? `Reach ${bronzeGoal.score.toLocaleString()} pts to earn Bronze for ${gameName}.`
+      : `Play ${gameName} again to earn a medal.`;
+  }
+
+  return extraDetail ? `${detail} ${extraDetail}` : detail;
+}
+
+function setResultMedalDisplay(score = state.score, gameId = state.game, { extraDetail = "", statusOverride = "" } = {}) {
+  const { medal } = getMedalResultForScore(gameId, score);
+  const medalText = medal?.label || "No medal yet";
+  const status = statusOverride || medal?.id || "none";
+  const detailText = getResultMedalDetail(gameId, score, extraDetail);
+
+  elements.resultMedal.textContent = medalText;
   elements.resultGoalStatus.textContent = detailText;
 
-  if (elements.resultRankCallout) {
-    elements.resultRankCallout.dataset.status = status;
+  if (elements.resultMedalCallout) {
+    elements.resultMedalCallout.dataset.status = status;
   }
 
-  if (elements.resultRankCalloutValue) {
-    elements.resultRankCalloutValue.textContent = rankText;
+  if (elements.resultMedalCalloutValue) {
+    elements.resultMedalCalloutValue.textContent = medalText;
   }
 
-  if (elements.resultRankCalloutDetail) {
-    elements.resultRankCalloutDetail.textContent = detailText;
+  if (elements.resultMedalCalloutDetail) {
+    elements.resultMedalCalloutDetail.textContent = detailText;
   }
 }
 
@@ -2663,7 +2695,7 @@ function setBoardYearLevel(yearLevel) {
   if (state.page === "leaderboards") {
     renderAllLeaderboards();
   }
-  updateSharedResultRank();
+  updateResultMedal();
 }
 
 function applyAuthState(authState) {
@@ -2740,26 +2772,9 @@ function applyAuthState(authState) {
   }
 }
 
-function updateSharedResultRank() {
-  if (!state.latestSharedScoreId) return;
-
-  const rank = getVisibleScores(state.game, { scoreLimit: null }).findIndex(
-    (entry) => entry.id === state.latestSharedScoreId || entry.uid === state.latestSharedScoreId,
-  );
-
-  if (rank >= 0) {
-    setResultRankDisplay(
-      `#${rank + 1}`,
-      `You are ranked #${rank + 1} for ${gameInfo[state.game].name}.`,
-      "ranked",
-    );
-  } else if (state.sharedScores[state.game]) {
-    setResultRankDisplay(
-      "No rank",
-      "Your score has not appeared on this leaderboard yet.",
-      "waiting",
-    );
-  }
+function updateResultMedal() {
+  if (elements.resultPanel.hidden) return;
+  setResultMedalDisplay();
 }
 
 function listenToSharedBoard(game, { teacherFilterOverride = state.teacherFilter } = {}) {
@@ -2783,7 +2798,7 @@ function listenToSharedBoard(game, { teacherFilterOverride = state.teacherFilter
       if (state.game === game) renderGameLeaderboard();
       if (state.page === "progress") renderProgressPage();
       if (state.page === "leaderboards") renderAllLeaderboards();
-      updateSharedResultRank();
+      updateResultMedal();
     },
     () => {
       state.sharedScores[game] = null;
@@ -2844,10 +2859,13 @@ async function saveSharedScore() {
       bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
-    setResultRankDisplay(
-      "Sign in needed",
-      `Sign in with a ${getAllowedDomainLabel()} account to add this score to the shared leaderboard.`,
-      "blocked",
+    setResultMedalDisplay(
+      state.score,
+      state.game,
+      {
+        extraDetail: `Sign in with a ${getAllowedDomainLabel()} account to save this score.`,
+        statusOverride: "blocked",
+      },
     );
     renderAuthControls();
     setLeaderboardStatus(
@@ -2864,7 +2882,14 @@ async function saveSharedScore() {
       bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
-    setResultRankDisplay("Setup needed", getAccountSetupMessage(), "blocked");
+    setResultMedalDisplay(
+      state.score,
+      state.game,
+      {
+        extraDetail: getAccountSetupMessage(),
+        statusOverride: "blocked",
+      },
+    );
     renderAuthControls();
     setSettingsOpen(true, { userAction: true });
     setLeaderboardStatus("local", getAccountSetupMessage());
@@ -2895,7 +2920,6 @@ async function saveSharedScore() {
       scoreToSave.score,
       scoreToSave.context,
     );
-    state.latestSharedScoreId = savedScore.id;
     state.pendingSharedScore = null;
 
     if (savedScore.role === "teacher" && state.teacherFilter === "none") {
@@ -2906,7 +2930,7 @@ async function saveSharedScore() {
 
     renderAuthControls();
     renderCurrentDataViews();
-    updateSharedResultRank();
+    updateResultMedal();
 
     if (savedScore.improved) {
       const previous = savedScore.previousScore;
@@ -3221,26 +3245,25 @@ function finishGame() {
     renderTeacherFilterControls();
   }
 
-  const localScore = saveScore ? saveLocalScore() : { rank: 0, saved: false };
   if (saveScore) {
+    saveLocalScore();
     recordProgressAttempt(state.game, state.score, scoreContext);
   }
-  state.latestSharedScoreId = null;
-
   elements.gamePanel.hidden = true;
   elements.resultPanel.hidden = false;
   elements.resultName.textContent = state.player;
   elements.finalScore.textContent = state.score.toLocaleString();
   elements.correctTotal.textContent = String(state.correct);
   elements.bestStreak.textContent = String(state.bestStreak);
-  setResultRankDisplay(
-    saveScore ? (localScore.rank > 0 ? `#${localScore.rank}` : "No rank") : "Test only",
+  setResultMedalDisplay(
+    state.score,
+    state.game,
     saveScore
-      ? (localScore.rank > 0
-        ? `You are ranked #${localScore.rank} for ${gameInfo[state.game].name}.`
-        : "Your score has not appeared on this leaderboard yet.")
-      : "Test score only. It did not count towards a leaderboard rank.",
-    saveScore && localScore.rank > 0 ? "ranked" : (saveScore ? "waiting" : "test"),
+      ? {}
+      : {
+          extraDetail: "Test score only. It did not save to progress or leaderboards.",
+          statusOverride: "test",
+        },
   );
   state.board = state.game;
   setActiveBoardTab();
@@ -3540,7 +3563,7 @@ document.querySelectorAll("[data-teacher-filter]").forEach((button) => {
     state.teacherFilter = nextFilter;
     renderTeacherFilterControls();
     renderLeaderboard();
-    updateSharedResultRank();
+    updateResultMedal();
   });
 });
 

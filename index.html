@@ -16,8 +16,8 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=result-game-rank-20260810" />
-    <script src="script.js?v=result-game-rank-20260810" defer></script>
+    <link rel="stylesheet" href="styles.css?v=result-game-medal-20260811" />
+    <script src="script.js?v=result-game-medal-20260811" defer></script>
     <script type="module" src="firebase-leaderboard.js?v=streak-leaderboard-20260810"></script>
   </head>
   <body>
@@ -485,15 +485,15 @@
             <p class="eyebrow centered"><span></span> Time's up</p>
             <h2>Great work, <span id="result-name">player</span>!</h2>
             <p class="result-score"><span id="final-score">0</span> points</p>
-            <div class="result-rank-callout" id="result-rank-callout" data-status="waiting" aria-live="polite">
-              <span>Your game leaderboard rank</span>
-              <strong id="result-rank-callout-value">No rank yet</strong>
-              <small id="result-rank-callout-detail">Finish a game to see your rank.</small>
+            <div class="result-medal-callout" id="result-medal-callout" data-status="none" aria-live="polite">
+              <span>Your game medal</span>
+              <strong id="result-medal-callout-value">No medal yet</strong>
+              <small id="result-medal-callout-detail">Finish a game to see your medal.</small>
             </div>
             <div class="result-details">
               <div><strong id="correct-total">0</strong><span>correct answers</span></div>
               <div><strong id="best-streak">0</strong><span>best streak</span></div>
-              <div><strong id="result-rank">#1</strong><span>game rank</span></div>
+              <div><strong id="result-medal">No medal yet</strong><span>game medal</span></div>
             </div>
             <p class="goal-status result-goal-status" id="result-goal-status"></p>
             <div class="result-actions">
