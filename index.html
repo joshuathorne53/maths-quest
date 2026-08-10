@@ -17,7 +17,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css?v=top-spacing-20260810" />
-    <script src="script.js?v=dashboard-home-20260810" defer></script>
+    <script src="script.js?v=rank-status-20260810" defer></script>
     <script type="module" src="firebase-leaderboard.js?v=leaderboard-year-lock-20260807"></script>
   </head>
   <body>
@@ -207,8 +207,8 @@
                 </div>
               </div>
               <div class="example-question">
-                <p id="featured-game-goal-label">Reach the goal to show your teacher.</p>
-                <strong id="featured-game-goal">1,200 pts</strong>
+                <p id="featured-game-goal-label">Play this game to earn a leaderboard rank.</p>
+                <strong id="featured-game-goal">No rank</strong>
               </div>
             </div>
           </section>
@@ -216,7 +216,7 @@
           <section class="dashboard-progress" id="home-progress" aria-label="Your progress">
             <div><span aria-hidden="true">↗</span><strong id="home-games-played">0</strong><small>games played</small></div>
             <div><span aria-hidden="true">▥</span><strong id="home-best-score">0</strong><small>best score</small></div>
-            <div><span aria-hidden="true">🔥</span><strong id="home-current-goal">1,200</strong><small>term goal</small></div>
+            <div><span aria-hidden="true">🔥</span><strong id="home-current-goal">No rank</strong><small>game rank</small></div>
             <div id="home-badges"><span aria-hidden="true">★</span><strong>31</strong><small>skills to master</small></div>
           </section>
         </div>
@@ -242,7 +242,7 @@
             <div class="signin-avatar" aria-hidden="true">♙</div>
             <div>
               <h2 id="home-auth-title">Sign in to BMC</h2>
-              <p id="home-auth-summary">Save your progress, compete on leaderboards, and track your term goals.</p>
+              <p id="home-auth-summary">Save your progress, compete on leaderboards, and track your rankings.</p>
             </div>
             <ul>
               <li>Save your best scores</li>
@@ -339,19 +339,19 @@
             </div>
             <div class="game-page-details">
               <p class="eyebrow"><span></span> Skill page</p>
-              <h2>Practise, improve, and chase the term goal.</h2>
+              <h2>Practise, improve, and climb the ranks.</h2>
               <div class="goal-grid">
                 <div>
                   <span>Time limit</span>
                   <strong id="game-page-duration">1 minute</strong>
                 </div>
                 <div>
-                  <span>Term prize goal</span>
-                  <strong id="game-page-goal">1,200 pts</strong>
+                  <span>Your rank</span>
+                  <strong id="game-page-goal">No rank</strong>
                 </div>
               </div>
               <p class="prep-note" id="game-page-prep" hidden></p>
-              <p class="goal-status" id="game-goal-status">Reach the goal score this term to show your teacher.</p>
+              <p class="goal-status" id="game-goal-status">Play this game to earn a leaderboard rank.</p>
               <div class="hero-actions">
                 <button class="button button-primary" id="game-page-start" type="button">
                   Start challenge <span aria-hidden="true">→</span>
@@ -489,7 +489,7 @@
             <div class="result-details">
               <div><strong id="correct-total">0</strong><span>correct answers</span></div>
               <div><strong id="best-streak">0</strong><span>best streak</span></div>
-              <div><strong id="result-rank">#1</strong><span>current rank</span></div>
+              <div><strong id="result-rank">#1</strong><span>game rank</span></div>
             </div>
             <p class="goal-status result-goal-status" id="result-goal-status"></p>
             <div class="result-actions">

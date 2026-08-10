@@ -1182,10 +1182,6 @@ function getGameDurationLabel(gameId) {
   return minutes === 1 ? "1 minute" : `${minutes} minutes`;
 }
 
-function getGameGoal(gameId) {
-  return PEN_AND_PAPER_GAME_IDS.has(gameId) ? 3000 : 1200;
-}
-
 function getPenAndPaperNote(gameId) {
   return PEN_AND_PAPER_GAME_IDS.has(gameId)
     ? "Pen and paper recommended. This challenge gives 5 minutes so you can write working out."
@@ -1551,7 +1547,7 @@ function saveLocalScore() {
     .slice(0, 300);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
 
-  const visibleScores = filterScoresForBoard(scores[state.game], state.boardYearLevel, state.teacherFilter);
+  const visibleScores = filterScoresForBoard(scores[state.game], state.boardYearLevel, state.teacherFilter, { scoreLimit: null });
 
   return {
     rank: visibleScores.findIndex(scoreMatchesCurrentPlayer) + 1,
@@ -1838,19 +1834,41 @@ function renderProgressPage() {
   }
 }
 
-function getGoalStatusMessage(gameId) {
-  const goal = getGameGoal(gameId);
+function getCurrentPlayerGameRank(gameId) {
+  const rankIndex = filterScoresForBoard(
+    getRawScores(gameId),
+    state.boardYearLevel,
+    state.teacherFilter,
+    { scoreLimit: null },
+  ).findIndex(scoreMatchesCurrentPlayer);
+  return rankIndex >= 0 ? rankIndex + 1 : 0;
+}
+
+function formatGameRank(rank) {
+  return rank > 0 ? `#${rank}` : "No rank";
+}
+
+function getGameRankLabel(gameId) {
+  return formatGameRank(getCurrentPlayerGameRank(gameId));
+}
+
+function getGameRankStatusMessage(gameId) {
+  if (!canReadGameLeaderboard(gameId) && state.sharedConfigured) {
+    return getLeaderboardAccessMessage();
+  }
+
+  const rank = getCurrentPlayerGameRank(gameId);
   const bestScore = getCurrentPlayerBestScore(gameId);
 
-  if (bestScore >= goal) {
-    return `Prize goal reached: ${bestScore.toLocaleString()} / ${goal.toLocaleString()} pts. Show your teacher this term.`;
+  if (rank > 0) {
+    return `You are ranked #${rank} for ${gameInfo[gameId].name} with ${bestScore.toLocaleString()} pts.`;
   }
 
   if (bestScore > 0) {
-    return `${(goal - bestScore).toLocaleString()} pts to go for the term prize goal. Best so far: ${bestScore.toLocaleString()} pts.`;
+    return `Your best score is ${bestScore.toLocaleString()} pts. Check the leaderboard once it updates to see your rank.`;
   }
 
-  return `Reach ${goal.toLocaleString()} pts this term to qualify for the prize goal.`;
+  return "Play this game to earn a leaderboard rank.";
 }
 
 function setLeaderboardStatus(status, message) {
@@ -1979,7 +1997,7 @@ function renderGameCards() {
         <p>${escapeHtml(info.cardDescription)}</p>
         <div class="game-card-meta">
           <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
-          <span>Goal ${getGameGoal(gameId).toLocaleString()} pts</span>
+          <span>Rank ${escapeHtml(getGameRankLabel(gameId))}</span>
         </div>
         <ul>
           ${info.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}
@@ -2094,8 +2112,8 @@ function renderHomeFeaturedGame() {
     elements.featuredGamePlay.classList.add("disabled");
     elements.featuredGamePlay.setAttribute("aria-disabled", "true");
     elements.featuredGameLeaderboard.href = "#leaderboards";
-    elements.featuredGameGoal.textContent = "0 pts";
-    elements.featuredGameGoalLabel.textContent = "Pick a game to see its term goal.";
+    elements.featuredGameGoal.textContent = "No rank";
+    elements.featuredGameGoalLabel.textContent = "Pick a game to see your rank.";
     return;
   }
 
@@ -2111,7 +2129,7 @@ function renderHomeFeaturedGame() {
   elements.featuredGameMeta.innerHTML = `
     <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
     <span>Unlocks from ${escapeHtml(requiredYear)}</span>
-    <span>Goal ${getGameGoal(gameId).toLocaleString()} pts</span>
+    <span>Rank ${escapeHtml(getGameRankLabel(gameId))}</span>
   `;
   elements.featuredGameBullets.innerHTML = info.bullets
     .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
@@ -2121,8 +2139,8 @@ function renderHomeFeaturedGame() {
   elements.featuredGamePlay.classList.toggle("disabled", locked);
   elements.featuredGamePlay.setAttribute("aria-disabled", String(locked));
   elements.featuredGameLeaderboard.href = getGameHash(gameId, { view: "leaderboard" });
-  elements.featuredGameGoal.textContent = `${getGameGoal(gameId).toLocaleString()} pts`;
-  elements.featuredGameGoalLabel.textContent = getGoalStatusMessage(gameId);
+  elements.featuredGameGoal.textContent = getGameRankLabel(gameId);
+  elements.featuredGameGoalLabel.textContent = getGameRankStatusMessage(gameId);
 }
 
 function renderHomeLeaderboard() {
@@ -2178,7 +2196,7 @@ function renderHomeProgress() {
 
   elements.homeGamesPlayed.textContent = String(gamesPlayed);
   elements.homeBestScore.textContent = bestScore.toLocaleString();
-  elements.homeCurrentGoal.textContent = getGameGoal(state.homeFeaturedGame || "quick").toLocaleString();
+  elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "quick");
 }
 
 function renderHomeAuthCard() {
@@ -2196,7 +2214,7 @@ function renderHomeAuthCard() {
   }
 
   elements.homeAuthTitle.textContent = "Sign in to BMC";
-  elements.homeAuthSummary.textContent = "Save your progress, compete on leaderboards, and track your term goals.";
+  elements.homeAuthSummary.textContent = "Save your progress, compete on leaderboards, and track your rankings.";
   elements.homeSignInButton.hidden = false;
   elements.homeSettingsButton.hidden = true;
 }
@@ -2224,10 +2242,10 @@ function renderGamePage() {
     .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
     .join("");
   elements.gamePageDuration.textContent = getGameDurationLabel(state.game);
-  elements.gamePageGoal.textContent = `${getGameGoal(state.game).toLocaleString()} pts`;
+  elements.gamePageGoal.textContent = getGameRankLabel(state.game);
   elements.gamePagePrep.hidden = !penNote;
   elements.gamePagePrep.textContent = penNote;
-  elements.gameGoalStatus.textContent = getGoalStatusMessage(state.game);
+  elements.gameGoalStatus.textContent = getGameRankStatusMessage(state.game);
   elements.gamePageStart.disabled = !canAccessGame(state.game);
   elements.gamePageStart.textContent = canAccessGame(state.game) ? "Start challenge →" : "Locked for now";
   elements.gamePageLeaderboardTitle.textContent = `${info.name} leaderboard`;
@@ -2248,7 +2266,7 @@ function renderGameLeaderboard() {
     `No ${getYearLabel(state.boardYearLevel)} scores yet for ${gameInfo[state.game].name}.`,
     { scoreLimit: 10 },
   );
-  elements.gameGoalStatus.textContent = getGoalStatusMessage(state.game);
+  elements.gameGoalStatus.textContent = getGameRankStatusMessage(state.game);
 
   if (!state.sharedConfigured) {
     setGameBoardStatus("local", "Firebase setup needed. Until then, this leaderboard uses scores saved on this device.");
@@ -2267,7 +2285,7 @@ function renderLeaderboardGridCard({ gameId, title, description, scores, total =
   const classes = total ? "leaderboard-grid-card total-leaderboard-card" : "leaderboard-grid-card";
   const meta = total
     ? `${scores.length ? "Combined best scores" : "Waiting for scores"} • ${getVisibleBoardGameIds().length} games`
-    : `${getGameDurationLabel(gameId)} • Goal ${getGameGoal(gameId).toLocaleString()} pts`;
+    : `${getGameDurationLabel(gameId)} • Rank ${getGameRankLabel(gameId)}`;
 
   return `
     <article class="${classes}">
@@ -2645,14 +2663,16 @@ function applyAuthState(authState) {
 function updateSharedResultRank() {
   if (!state.latestSharedScoreId) return;
 
-  const rank = getVisibleScores(state.game).findIndex(
+  const rank = getVisibleScores(state.game, { scoreLimit: null }).findIndex(
     (entry) => entry.id === state.latestSharedScoreId || entry.uid === state.latestSharedScoreId,
   );
 
   if (rank >= 0) {
     elements.resultRank.textContent = `#${rank + 1}`;
+    elements.resultGoalStatus.textContent = `You achieved #${rank + 1} for ${gameInfo[state.game].name}.`;
   } else if (state.sharedScores[state.game]) {
-    elements.resultRank.textContent = "Top 20+";
+    elements.resultRank.textContent = "No rank";
+    elements.resultGoalStatus.textContent = "Your score has not appeared on this leaderboard yet.";
   }
 }
 
@@ -3115,12 +3135,14 @@ function finishGame() {
   elements.finalScore.textContent = state.score.toLocaleString();
   elements.correctTotal.textContent = String(state.correct);
   elements.bestStreak.textContent = String(state.bestStreak);
-  elements.resultGoalStatus.textContent = state.score >= getGameGoal(state.game)
-    ? `Term prize goal reached for ${gameInfo[state.game].name}!`
-    : `${(getGameGoal(state.game) - state.score).toLocaleString()} pts short of this game's term prize goal.`;
   elements.resultRank.textContent = saveScore
-    ? (localScore.rank > 0 ? `#${localScore.rank}` : "Top 20+")
+    ? (localScore.rank > 0 ? `#${localScore.rank}` : "No rank")
     : "Test only";
+  elements.resultGoalStatus.textContent = saveScore
+    ? (localScore.rank > 0
+      ? `You achieved #${localScore.rank} for ${gameInfo[state.game].name}.`
+      : "Your score has not appeared on this leaderboard yet.")
+    : "Test score only. It did not count towards a leaderboard rank.";
   state.board = state.game;
   setActiveBoardTab();
   renderGamePage();
