@@ -16,8 +16,8 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=school-brand-20260810" />
-    <script src="script.js?v=result-leaderboard-link-20260810" defer></script>
+    <link rel="stylesheet" href="styles.css?v=dashboard-home-20260810" />
+    <script src="script.js?v=dashboard-home-20260810" defer></script>
     <script type="module" src="firebase-leaderboard.js?v=leaderboard-year-lock-20260807"></script>
   </head>
   <body>
@@ -122,52 +122,150 @@
     </header>
 
     <main>
-      <section class="hero" id="home">
-        <div class="hero-copy">
-          <p class="eyebrow"><span></span> Daily brain training</p>
-          <h1>Ready, set,<br /><em>solve!</em></h1>
-          <p class="hero-text">
-            Pick a challenge, sharpen your maths skills, and race your classmates
-            to the top of the high-school leaderboard.
-          </p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="#games">
-              Choose a game <span aria-hidden="true">→</span>
-            </a>
-            <a class="text-link" href="#leaderboards">View top scores</a>
+      <section class="hero dashboard-home" id="home">
+        <aside class="dashboard-sidebar" aria-label="Dashboard navigation">
+          <a class="dashboard-logo" href="#home" aria-label="Bayside Maths Challenge dashboard">
+            <img src="assets/bcc-logo-square.png?v=school-brand-20260810" alt="" width="512" height="512" />
+            <strong>Bayside Maths Challenge</strong>
+          </a>
+          <nav class="dashboard-menu" aria-label="Dashboard shortcuts">
+            <a class="active" href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
+            <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
+            <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
+            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+          </nav>
+          <div class="dashboard-side-note">
+            <span aria-hidden="true">√</span>
+            <p>Sharpen your skills. Climb the leaderboard. Have fun!</p>
+          </div>
+        </aside>
+
+        <div class="dashboard-main">
+          <div class="hero-card">
+            <div class="hero-copy">
+              <p class="eyebrow"><span></span> Daily brain training</p>
+              <h1>Ready, set, solve!</h1>
+              <p class="hero-text">
+                Pick a challenge, sharpen your maths skills, and race your classmates
+                to the top of your year-level leaderboard.
+              </p>
+
+              <div class="hero-stats" aria-label="Game highlights">
+                <div><strong>31</strong><span>skill challenges</span></div>
+                <div><strong>1-5</strong><span>minute games</span></div>
+                <div><strong>7-12</strong><span>year levels</span></div>
+              </div>
+            </div>
+
+            <div class="hero-visual" aria-label="Bayside Maths Challenge illustration">
+              <div class="math-doodle doodle-one">a² + b² = c²</div>
+              <div class="math-doodle doodle-two">√x</div>
+              <div class="math-doodle doodle-three">2x - 3 = 7</div>
+              <div class="orbit orbit-one"></div>
+              <div class="orbit orbit-two"></div>
+              <div class="floating-symbol symbol-plus">+</div>
+              <div class="floating-symbol symbol-times">×</div>
+              <div class="floating-symbol symbol-equals">=</div>
+              <div class="mascot-card">
+                <span class="mascot-glow"></span>
+                <div class="mascot-face">
+                  <span class="mascot-eye"></span>
+                  <span class="mascot-eye"></span>
+                  <span class="mascot-smile"></span>
+                </div>
+                <div class="mascot-screen">
+                  <span>8 × 7</span>
+                  <strong>56</strong>
+                </div>
+                <div class="mascot-feet"><span></span><span></span></div>
+              </div>
+              <div class="score-sticker">
+                <span>New best!</span>
+                <strong>1,240</strong>
+              </div>
+            </div>
           </div>
 
-          <div class="hero-stats" aria-label="Game highlights">
-            <div><strong>31</strong><span>skill challenges</span></div>
-            <div><strong>1-5</strong><span>minute games</span></div>
-            <div><strong>7-12</strong><span>year levels</span></div>
-          </div>
+          <section class="dashboard-section dashboard-game-picks" aria-labelledby="home-games-heading">
+            <div class="dashboard-section-head">
+              <h2 id="home-games-heading">Pick a game</h2>
+              <a class="text-link" href="#games">View all games →</a>
+            </div>
+            <div class="home-game-strip" id="home-game-strip"></div>
+          </section>
+
+          <section class="featured-game-card" aria-labelledby="featured-game-heading">
+            <p class="eyebrow"><span></span> Featured game</p>
+            <div class="featured-game-layout">
+              <div class="featured-game-icon" aria-hidden="true">🔥</div>
+              <div>
+                <h2 id="featured-game-heading">Quick Fire</h2>
+                <p>Answer as many questions as you can in 1 minute. Every correct answer earns points.</p>
+                <div class="featured-meta">
+                  <span>◷ 1 min</span>
+                  <span>Years 7-12</span>
+                  <span>Goal 1,200 pts</span>
+                </div>
+                <div class="featured-actions">
+                  <a class="button button-primary" href="#game/quick">Play Quick Fire</a>
+                  <a class="button button-secondary" href="#game/quick/leaderboard">View leaderboard</a>
+                </div>
+              </div>
+              <div class="example-question">
+                <span>Example question</span>
+                <p>Simplify:</p>
+                <strong>34 + 27</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-progress" id="home-progress" aria-label="Your progress">
+            <div><span aria-hidden="true">↗</span><strong id="home-games-played">0</strong><small>games played</small></div>
+            <div><span aria-hidden="true">▥</span><strong id="home-best-score">0</strong><small>best score</small></div>
+            <div><span aria-hidden="true">🔥</span><strong id="home-current-goal">1,200</strong><small>term goal</small></div>
+            <div id="home-badges"><span aria-hidden="true">★</span><strong>31</strong><small>skills to master</small></div>
+          </section>
         </div>
 
-        <div class="hero-visual" aria-label="Bayside Maths Challenge illustration">
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-          <div class="floating-symbol symbol-plus">+</div>
-          <div class="floating-symbol symbol-times">×</div>
-          <div class="floating-symbol symbol-equals">=</div>
-          <div class="mascot-card">
-            <span class="mascot-glow"></span>
-            <div class="mascot-face">
-              <span class="mascot-eye"></span>
-              <span class="mascot-eye"></span>
-              <span class="mascot-smile"></span>
+        <aside class="dashboard-rail" aria-label="Dashboard leaderboard and sign in">
+          <section class="dashboard-card home-leaderboard-card" aria-labelledby="home-leaderboard-title">
+            <div class="rail-card-title">
+              <span aria-hidden="true">🏆</span>
+              <h2 id="home-leaderboard-title">Leaderboard</h2>
             </div>
-            <div class="mascot-screen">
-              <span>8 × 7</span>
-              <strong>56</strong>
+            <div class="home-leaderboard-tabs" role="group" aria-label="Choose leaderboard group">
+              <button class="active" type="button" data-home-leaderboard="students">Students</button>
+              <button type="button" data-home-leaderboard="teachers">Teachers</button>
             </div>
-            <div class="mascot-feet"><span></span><span></span></div>
-          </div>
-          <div class="score-sticker">
-            <span>New best!</span>
-            <strong>1,240</strong>
-          </div>
-        </div>
+            <ol class="home-leaderboard-list" id="home-leaderboard-list"></ol>
+            <p class="home-leaderboard-status" id="home-leaderboard-status" aria-live="polite">
+              Sign in to see your year-level leaderboard.
+            </p>
+            <a class="home-full-link" href="#leaderboards">View full leaderboard →</a>
+          </section>
+
+          <section class="dashboard-card dashboard-signin-card" aria-labelledby="home-auth-title">
+            <div class="signin-avatar" aria-hidden="true">♙</div>
+            <div>
+              <h2 id="home-auth-title">Sign in to BMC</h2>
+              <p id="home-auth-summary">Save your progress, compete on leaderboards, and track your term goals.</p>
+            </div>
+            <ul>
+              <li>Save your best scores</li>
+              <li>Only see students in your year level</li>
+              <li>Compare against teachers separately</li>
+            </ul>
+            <button class="button button-primary" id="home-sign-in-button" type="button">Sign in</button>
+            <button class="button button-secondary" id="home-settings-button" type="button" hidden>Open settings</button>
+          </section>
+
+          <section class="dashboard-card quote-card">
+            <span aria-hidden="true">“</span>
+            <p>Maths is not about numbers, equations, or algorithms: it’s about understanding.</p>
+            <small>William Paul Thurston</small>
+          </section>
+        </aside>
       </section>
 
       <section class="games-section section-shell" id="games">

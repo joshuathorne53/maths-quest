@@ -351,6 +351,7 @@ const state = {
   board: "quick",
   boardYearLevel: DEFAULT_YEAR_LEVEL,
   teacherFilter: "none",
+  homeLeaderboardView: "students",
   player: "",
   score: 0,
   streak: 0,
@@ -442,6 +443,16 @@ const elements = {
   resultGoalStatus: document.querySelector("#result-goal-status"),
   resultLeaderboardLink: document.querySelector("#result-leaderboard-link"),
   gameGrid: document.querySelector("#game-grid"),
+  homeGameStrip: document.querySelector("#home-game-strip"),
+  homeLeaderboardList: document.querySelector("#home-leaderboard-list"),
+  homeLeaderboardStatus: document.querySelector("#home-leaderboard-status"),
+  homeAuthTitle: document.querySelector("#home-auth-title"),
+  homeAuthSummary: document.querySelector("#home-auth-summary"),
+  homeSignInButton: document.querySelector("#home-sign-in-button"),
+  homeSettingsButton: document.querySelector("#home-settings-button"),
+  homeGamesPlayed: document.querySelector("#home-games-played"),
+  homeBestScore: document.querySelector("#home-best-score"),
+  homeCurrentGoal: document.querySelector("#home-current-goal"),
   boardYearSelect: document.querySelector("#board-year-select"),
   leaderboardStatus: document.querySelector("#leaderboard-status"),
   authCard: document.querySelector("#auth-card"),
@@ -1757,6 +1768,138 @@ function renderScoreRows(scores, emptyMessage, { scoreLimit = 7, showGameCount =
     .join("");
 }
 
+function getHomeLeaderboardScores(view = state.homeLeaderboardView) {
+  const totals = new Map();
+  const gameIds = getVisibleBoardGameIds();
+
+  gameIds.forEach((gameId) => {
+    normalizeScores(getRawScores(gameId)).forEach((entry) => {
+      if (view === "teachers") {
+        if (entry.role !== "teacher" || !entry.teacherYearLevels.includes(state.boardYearLevel)) return;
+      } else if (entry.role !== "student" || entry.yearLevel !== state.boardYearLevel) {
+        return;
+      }
+
+      const key = getScoreKey(entry);
+      const existing = totals.get(key) || {
+        id: key,
+        uid: key,
+        name: entry.name,
+        score: 0,
+        role: entry.role,
+        yearLevel: entry.yearLevel,
+        teacherYearLevels: entry.teacherYearLevels,
+        games: 0,
+      };
+
+      existing.score += entry.score;
+      existing.games += 1;
+      totals.set(key, existing);
+    });
+  });
+
+  return [...totals.values()]
+    .sort((a, b) => b.score - a.score || b.games - a.games)
+    .slice(0, 5);
+}
+
+function renderHomeGameStrip() {
+  const gameIds = getVisibleGameIds().slice(0, 5);
+  elements.homeGameStrip.innerHTML = gameIds.map((gameId) => {
+    const info = gameInfo[gameId];
+    const locked = !canAccessGame(gameId);
+    return `
+      <a class="home-game-tile ${gameId === "quick" ? "active" : ""} ${locked ? "locked" : ""}" href="${locked ? "#games" : getGameHash(gameId)}" data-game="${escapeHtml(gameId)}" aria-disabled="${locked}">
+        <span aria-hidden="true">${escapeHtml(info.icon)}</span>
+        <strong>${escapeHtml(info.shortName)}</strong>
+      </a>
+    `;
+  }).join("");
+}
+
+function renderHomeLeaderboard() {
+  const canRead = canReadSharedLeaderboards();
+  document.querySelectorAll("[data-home-leaderboard]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.homeLeaderboard === state.homeLeaderboardView);
+  });
+
+  if (!canRead) {
+    elements.homeLeaderboardList.innerHTML = `<li class="home-empty-row">${escapeHtml(getLeaderboardAccessMessage())}</li>`;
+    elements.homeLeaderboardStatus.textContent = "Sign in and save your profile to see your year-level leaderboard.";
+    return;
+  }
+
+  const scores = getHomeLeaderboardScores();
+  const viewLabel = state.homeLeaderboardView === "teachers" ? "teachers" : "students";
+  const emptyMessage = state.homeLeaderboardView === "teachers"
+    ? `No teacher scores yet for ${getYearLabel(state.boardYearLevel)}.`
+    : `No ${getYearLabel(state.boardYearLevel)} student scores yet.`;
+
+  elements.homeLeaderboardList.innerHTML = scores.length
+    ? scores.map((entry, index) => `
+        <li class="home-leaderboard-row ${entry.role === "teacher" ? "teacher-score" : ""}">
+          <span class="home-rank">${index + 1}</span>
+          <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
+          <span>
+            <strong>${escapeHtml(entry.name)}</strong>
+            <small>${escapeHtml(`${getScoreMeta(entry)} • ${entry.games} ${entry.games === 1 ? "game" : "games"}`)}</small>
+          </span>
+          <b>${entry.score.toLocaleString()}</b>
+        </li>
+      `).join("")
+    : `<li class="home-empty-row">${escapeHtml(emptyMessage)}</li>`;
+
+  elements.homeLeaderboardStatus.textContent = state.homeLeaderboardView === "teachers"
+    ? `Showing ${getYearLabel(state.boardYearLevel)} teachers separately.`
+    : `Showing ${getYearLabel(state.boardYearLevel)} students only.`;
+
+  if (!state.sharedConfigured) {
+    elements.homeLeaderboardStatus.textContent += " Local scores are shown until Firebase is connected.";
+  } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
+    elements.homeLeaderboardStatus.textContent += " Shared scores are still loading.";
+  }
+}
+
+function renderHomeProgress() {
+  const visibleGameIds = getVisibleBoardGameIds();
+  const bestScores = visibleGameIds
+    .map(getCurrentPlayerBestScore)
+    .filter((score) => score > 0);
+  const bestScore = bestScores.length ? Math.max(...bestScores) : 0;
+  const gamesPlayed = bestScores.length;
+
+  elements.homeGamesPlayed.textContent = String(gamesPlayed);
+  elements.homeBestScore.textContent = bestScore.toLocaleString();
+  elements.homeCurrentGoal.textContent = getGameGoal("quick").toLocaleString();
+}
+
+function renderHomeAuthCard() {
+  if (state.authAllowed) {
+    const roleLabel = getActiveAccountType() === "teacher"
+      ? `Teacher • ${getTeacherYearLabel()}`
+      : state.studentYearLevel
+        ? `Student • ${getYearLabel(state.studentYearLevel)}`
+        : "Student profile needed";
+    elements.homeAuthTitle.textContent = "Signed in to BMC";
+    elements.homeAuthSummary.textContent = `${getGooglePlayerName()} • ${roleLabel}`;
+    elements.homeSignInButton.hidden = true;
+    elements.homeSettingsButton.hidden = false;
+    return;
+  }
+
+  elements.homeAuthTitle.textContent = "Sign in to BMC";
+  elements.homeAuthSummary.textContent = "Save your progress, compete on leaderboards, and track your term goals.";
+  elements.homeSignInButton.hidden = false;
+  elements.homeSettingsButton.hidden = true;
+}
+
+function renderHomeDashboard() {
+  renderHomeGameStrip();
+  renderHomeLeaderboard();
+  renderHomeProgress();
+  renderHomeAuthCard();
+}
+
 function renderGamePage() {
   const info = gameInfo[state.game] || gameInfo.quick;
   const accessMessage = getGameAccessMessage(state.game);
@@ -2103,6 +2246,9 @@ function setBoardYearLevel(yearLevel) {
     renderGamePage();
     listenToSharedBoard(state.game);
   }
+  if (state.page === "home") {
+    renderHomeDashboard();
+  }
   if (state.page === "leaderboards") {
     renderAllLeaderboards();
   }
@@ -2206,12 +2352,14 @@ function listenToSharedBoard(game) {
     game,
     (scores) => {
       state.sharedScores[game] = normalizeScores(scores);
+      if (state.page === "home") renderHomeDashboard();
       if (state.game === game) renderGameLeaderboard();
       if (state.page === "leaderboards") renderAllLeaderboards();
       updateSharedResultRank();
     },
     () => {
       state.sharedScores[game] = null;
+      if (state.page === "home") renderHomeDashboard();
       if (state.game === game) renderGameLeaderboard();
       if (state.page === "leaderboards") renderAllLeaderboards();
       setLeaderboardStatus("local", "Shared leaderboard unavailable. Check Firestore database setup and rules.");
@@ -2746,9 +2894,11 @@ function getScoreMeta(entry) {
 function renderLeaderboard() {
   ensureVisibleBoard();
   renderTeacherFilterControls();
+  if (state.page === "home") renderHomeDashboard();
   if (state.page === "game") renderGameLeaderboard();
   if (state.page === "leaderboards") renderAllLeaderboards();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
+    if (state.page === "home") listenToSharedBoards(getVisibleBoardGameIds());
     if (state.page === "game") listenToSharedBoard(state.game);
     if (state.page === "leaderboards") listenToSharedBoards(getVisibleBoardGameIds());
   }
@@ -2757,6 +2907,7 @@ function renderLeaderboard() {
 function renderCurrentDataViews() {
   renderGameCards();
   renderBoardTabs();
+  if (state.page === "home") renderHomeDashboard();
   if (state.page === "game") renderGamePage();
   if (state.page === "leaderboards") renderAllLeaderboards();
   renderLeaderboard();
@@ -2834,6 +2985,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
   const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
+  document.body.classList.toggle("dashboard-page-active", route.page === "home");
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
   if (leavingGamePage || switchingGamePage || showingGameLeaderboard) {
@@ -2842,7 +2994,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   }
 
   elements.heroSection.hidden = route.page !== "home";
-  elements.gamesSection.hidden = !(route.page === "home" || route.page === "games");
+  elements.gamesSection.hidden = route.page !== "games";
   elements.gamePageSection.hidden = route.page !== "game";
   elements.allLeaderboardsSection.hidden = route.page !== "leaderboards";
 
@@ -2859,6 +3011,12 @@ function renderCurrentPage({ scroll = false } = {}) {
     renderAllLeaderboards();
   } else {
     renderGameCards();
+    if (route.page === "home") {
+      renderHomeDashboard();
+      if (state.sharedConfigured && canReadSharedLeaderboards()) {
+        listenToSharedBoards(getVisibleBoardGameIds());
+      }
+    }
   }
 
   if (scroll) {
@@ -2889,6 +3047,24 @@ elements.gameGrid.addEventListener("click", (event) => {
     setLeaderboardStatus("local", getGameAccessMessage(gameId));
     renderGameCards();
   }
+});
+
+elements.homeGameStrip.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-game]");
+  if (!link) return;
+  const gameId = link.dataset.game;
+  if (!canAccessGame(gameId)) {
+    event.preventDefault();
+    setLeaderboardStatus("local", getGameAccessMessage(gameId));
+    renderHomeDashboard();
+  }
+});
+
+document.querySelectorAll("[data-home-leaderboard]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.homeLeaderboardView = button.dataset.homeLeaderboard === "teachers" ? "teachers" : "students";
+    renderHomeDashboard();
+  });
 });
 
 document.querySelectorAll("[data-teacher-filter]").forEach((button) => {
@@ -2960,6 +3136,8 @@ document.querySelector("#quit-button").addEventListener("click", quitGame);
 document.querySelector("#play-again").addEventListener("click", requestStartGame);
 elements.resultLeaderboardLink.addEventListener("click", openResultLeaderboard);
 elements.signInButton.addEventListener("click", signInForLeaderboard);
+elements.homeSignInButton.addEventListener("click", signInForLeaderboard);
+elements.homeSettingsButton.addEventListener("click", () => setSettingsOpen(true, { userAction: true }));
 elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
 elements.resultSignIn.addEventListener("click", signInForLeaderboard);
 
