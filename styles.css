@@ -2310,6 +2310,45 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   font-size: 2.3rem;
 }
 
+.result-rank-callout {
+  display: grid;
+  width: min(420px, 100%);
+  margin: -10px auto 24px;
+  padding: 18px 22px;
+  border: 1px solid rgba(18, 90, 181, 0.2);
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  border-radius: 22px;
+  box-shadow: 0 16px 34px rgba(9, 39, 85, 0.1);
+  gap: 4px;
+}
+
+.result-rank-callout span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.result-rank-callout strong {
+  color: var(--blue-dark);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.result-rank-callout small {
+  color: var(--navy);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.result-rank-callout[data-status="blocked"],
+.result-rank-callout[data-status="test"] {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, #fff7df, #ffffff);
+}
+
 .result-details {
   display: grid;
   width: min(520px, 100%);

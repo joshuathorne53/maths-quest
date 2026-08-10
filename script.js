@@ -455,6 +455,9 @@ const elements = {
   correctTotal: document.querySelector("#correct-total"),
   bestStreak: document.querySelector("#best-streak"),
   resultRank: document.querySelector("#result-rank"),
+  resultRankCallout: document.querySelector("#result-rank-callout"),
+  resultRankCalloutValue: document.querySelector("#result-rank-callout-value"),
+  resultRankCalloutDetail: document.querySelector("#result-rank-callout-detail"),
   resultGoalStatus: document.querySelector("#result-goal-status"),
   resultLeaderboardLink: document.querySelector("#result-leaderboard-link"),
   gameGrid: document.querySelector("#game-grid"),
@@ -1910,6 +1913,23 @@ function getGameRankStatusMessage(gameId) {
   return "Play this game to earn a leaderboard rank.";
 }
 
+function setResultRankDisplay(rankText, detailText, status = "waiting") {
+  elements.resultRank.textContent = rankText;
+  elements.resultGoalStatus.textContent = detailText;
+
+  if (elements.resultRankCallout) {
+    elements.resultRankCallout.dataset.status = status;
+  }
+
+  if (elements.resultRankCalloutValue) {
+    elements.resultRankCalloutValue.textContent = rankText;
+  }
+
+  if (elements.resultRankCalloutDetail) {
+    elements.resultRankCalloutDetail.textContent = detailText;
+  }
+}
+
 function setLeaderboardStatus(status, message) {
   elements.leaderboardStatus.dataset.status = status;
   elements.leaderboardStatus.lastChild.textContent = message;
@@ -2728,11 +2748,17 @@ function updateSharedResultRank() {
   );
 
   if (rank >= 0) {
-    elements.resultRank.textContent = `#${rank + 1}`;
-    elements.resultGoalStatus.textContent = `You achieved #${rank + 1} for ${gameInfo[state.game].name}.`;
+    setResultRankDisplay(
+      `#${rank + 1}`,
+      `You are ranked #${rank + 1} for ${gameInfo[state.game].name}.`,
+      "ranked",
+    );
   } else if (state.sharedScores[state.game]) {
-    elements.resultRank.textContent = "No rank";
-    elements.resultGoalStatus.textContent = "Your score has not appeared on this leaderboard yet.";
+    setResultRankDisplay(
+      "No rank",
+      "Your score has not appeared on this leaderboard yet.",
+      "waiting",
+    );
   }
 }
 
@@ -2818,7 +2844,11 @@ async function saveSharedScore() {
       bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
-    elements.resultRank.textContent = "Sign in needed";
+    setResultRankDisplay(
+      "Sign in needed",
+      `Sign in with a ${getAllowedDomainLabel()} account to add this score to the shared leaderboard.`,
+      "blocked",
+    );
     renderAuthControls();
     setLeaderboardStatus(
       "local",
@@ -2834,7 +2864,7 @@ async function saveSharedScore() {
       bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
-    elements.resultRank.textContent = "Setup needed";
+    setResultRankDisplay("Setup needed", getAccountSetupMessage(), "blocked");
     renderAuthControls();
     setSettingsOpen(true, { userAction: true });
     setLeaderboardStatus("local", getAccountSetupMessage());
@@ -3203,14 +3233,15 @@ function finishGame() {
   elements.finalScore.textContent = state.score.toLocaleString();
   elements.correctTotal.textContent = String(state.correct);
   elements.bestStreak.textContent = String(state.bestStreak);
-  elements.resultRank.textContent = saveScore
-    ? (localScore.rank > 0 ? `#${localScore.rank}` : "No rank")
-    : "Test only";
-  elements.resultGoalStatus.textContent = saveScore
-    ? (localScore.rank > 0
-      ? `You achieved #${localScore.rank} for ${gameInfo[state.game].name}.`
-      : "Your score has not appeared on this leaderboard yet.")
-    : "Test score only. It did not count towards a leaderboard rank.";
+  setResultRankDisplay(
+    saveScore ? (localScore.rank > 0 ? `#${localScore.rank}` : "No rank") : "Test only",
+    saveScore
+      ? (localScore.rank > 0
+        ? `You are ranked #${localScore.rank} for ${gameInfo[state.game].name}.`
+        : "Your score has not appeared on this leaderboard yet.")
+      : "Test score only. It did not count towards a leaderboard rank.",
+    saveScore && localScore.rank > 0 ? "ranked" : (saveScore ? "waiting" : "test"),
+  );
   state.board = state.game;
   setActiveBoardTab();
   renderGamePage();
