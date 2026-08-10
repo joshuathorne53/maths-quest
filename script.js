@@ -404,7 +404,6 @@ const elements = {
   gamesSection: document.querySelector("#games"),
   playSection: document.querySelector("#play"),
   gamePageSection: document.querySelector("#game-page"),
-  gamePageAccess: document.querySelector("#game-page-access"),
   gamePageIcon: document.querySelector("#game-page-icon"),
   gamePageTitle: document.querySelector("#game-page-title"),
   gamePageDescription: document.querySelector("#game-page-description"),
@@ -1321,11 +1320,8 @@ function ensureVisibleBoard() {
 }
 
 function getGameAccessMessage(gameId) {
-  const requiredYear = getGameRequiredYear(gameId);
-  const requiredLabel = getYearLabel(requiredYear);
-
   if (!state.sharedConfigured || !state.authAllowed) {
-    return `Unlocks from ${requiredLabel}. Sign in to check your access.`;
+    return "Sign in to see the games available to you.";
   }
 
   if (isTeacherTestingAsStudent()) {
@@ -1333,7 +1329,7 @@ function getGameAccessMessage(gameId) {
       return `Available to ${getYearLabel(state.testStudentYearLevel)} test student.`;
     }
 
-    return `Unlocks from ${requiredLabel}. Pick a higher test year to play this challenge.`;
+    return "Pick a higher test year to play this challenge.";
   }
 
   if (getActiveAccountType() === "teacher") {
@@ -1341,14 +1337,14 @@ function getGameAccessMessage(gameId) {
   }
 
   if (!state.studentYearLevel) {
-    return `Save your year level to unlock ${requiredLabel} and lower challenges.`;
+    return "Save your year level to see available challenges.";
   }
 
   if (canAccessGame(gameId)) {
     return `Available to ${getYearLabel(state.studentYearLevel)} students.`;
   }
 
-  return `Unlocks from ${requiredLabel}. Higher year levels can play lower challenges.`;
+  return "This challenge is not available for your year level.";
 }
 
 function createYearOptions({ includePlaceholder = false } = {}) {
@@ -2015,26 +2011,15 @@ function renderTeacherFilterControls() {
   });
 }
 
-function shouldShowGameCardAccessMessage() {
-  if (!state.sharedConfigured || !state.authAllowed) return true;
-  if (isTeacherTestingAsStudent()) return true;
-  return getActiveAccountType() !== "teacher";
-}
-
 function renderGameCards() {
   const visibleGameIds = getVisibleGameIds();
   elements.gameGrid.innerHTML = visibleGameIds.map((gameId) => {
     const info = gameInfo[gameId];
     const locked = !canAccessGame(gameId);
-    const accessMessage = getGameAccessMessage(gameId);
-    const accessBadge = shouldShowGameCardAccessMessage()
-      ? `<span class="game-access">${escapeHtml(accessMessage)}</span>`
-      : "";
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
 
     return `
       <article class="game-card ${info.cardClass} ${locked ? "game-card-locked" : ""}">
-        ${accessBadge}
         <div class="game-icon" aria-hidden="true">${escapeHtml(info.icon)}</div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.cardDescription)}</p>
@@ -2175,7 +2160,6 @@ function renderHomeFeaturedGame() {
   const gameId = state.homeFeaturedGame;
   const info = gameInfo[gameId];
   const locked = !canAccessGame(gameId);
-  const requiredYear = getYearLabel(getGameRequiredYear(gameId));
   const playLabel = locked ? "Locked for now" : `Play ${info.name}`;
 
   elements.featuredGameIcon.textContent = info.icon;
@@ -2183,7 +2167,6 @@ function renderHomeFeaturedGame() {
   elements.featuredGameDescription.textContent = info.description;
   elements.featuredGameMeta.innerHTML = `
     <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
-    <span>Unlocks from ${escapeHtml(requiredYear)}</span>
     <span>Rank ${escapeHtml(getGameRankLabel(gameId))}</span>
   `;
   elements.featuredGameBullets.innerHTML = info.bullets
@@ -2285,11 +2268,9 @@ function renderHomeDashboard() {
 
 function renderGamePage() {
   const info = gameInfo[state.game] || gameInfo.quick;
-  const accessMessage = getGameAccessMessage(state.game);
   const penNote = getPenAndPaperNote(state.game);
 
   elements.gamePageSection.className = `game-page-section app-dashboard-page ${info.cardClass}`;
-  elements.gamePageAccess.textContent = accessMessage;
   elements.gamePageIcon.textContent = info.icon;
   elements.gamePageTitle.textContent = info.name;
   elements.gamePageDescription.textContent = info.description;

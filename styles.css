@@ -1645,20 +1645,6 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   background: #f0f5f8;
 }
 
-.game-access {
-  display: inline-flex;
-  min-height: 28px;
-  padding: 6px 10px;
-  align-items: center;
-  color: var(--blue-dark);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(23, 43, 77, 0.07);
-  border-radius: 999px;
-  font-size: 0.58rem;
-  font-weight: 900;
-  line-height: 1.25;
-}
-
 .game-icon {
   display: grid;
   width: 88px;
