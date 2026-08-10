@@ -412,6 +412,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   text-transform: uppercase;
 }
 
+.select-field input,
 .select-field select {
   min-width: 170px;
   height: 46px;
@@ -427,6 +428,11 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   text-transform: none;
 }
 
+.select-field input {
+  padding-right: 14px;
+}
+
+.select-field input:focus,
 .select-field select:focus {
   border-color: var(--blue);
   box-shadow: 0 0 0 4px rgba(53, 143, 208, 0.14);

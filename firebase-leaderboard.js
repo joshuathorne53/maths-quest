@@ -152,6 +152,20 @@ function getAccountName(user) {
   return user?.displayName || user?.email?.split("@")[0] || "Student";
 }
 
+function cleanLeaderboardName(name) {
+  return String(name || "").replace(/\s+/g, " ").trim();
+}
+
+function isValidLeaderboardName(name) {
+  const cleanName = cleanLeaderboardName(name);
+  return cleanName.length >= 1 && cleanName.length <= 80;
+}
+
+function getTeacherLeaderboardName(user, profile = teacherProfile) {
+  const profileName = cleanLeaderboardName(profile?.name);
+  return isValidLeaderboardName(profileName) ? profileName : getAccountName(user);
+}
+
 function cleanYearLevel(yearLevel) {
   const value = String(yearLevel || "").trim().toLowerCase();
   return validYearLevels.has(value) ? value : "";
@@ -203,13 +217,16 @@ function getPublicAuthState(user) {
   const email = user?.email || "";
   const accountType = getAccountTypeForEmail(email);
   const teacherYearLevels = cleanYearLevels(teacherProfile?.yearLevels);
+  const publicName = user
+    ? (accountType === "teacher" ? getTeacherLeaderboardName(user) : getAccountName(user))
+    : "";
 
   return {
     signedIn: Boolean(user),
     allowed: emailIsAllowed(email),
     uid: user?.uid || "",
     email,
-    name: user ? getAccountName(user) : "",
+    name: publicName,
     allowedEmailDomain: cleanAllowedDomain,
     allowedEmailDomains: cleanAllowedDomains,
     accountType,
@@ -445,10 +462,38 @@ if (!isConfigured) {
     return getPublicAuthState(user);
   }
 
-  async function saveTeacherYearLevels(yearLevels) {
+  async function syncTeacherScoreMetadata(user, name, yearLevels) {
+    const scoreUpdates = [...validGames].map(async (game) => {
+      const scoreDocument = doc(scoreCollection(game), user.uid);
+      const scoreSnapshot = await getDoc(scoreDocument);
+      if (!scoreSnapshot.exists()) return;
+
+      const scoreData = scoreSnapshot.data();
+      if (scoreData.uid !== user.uid || scoreData.role !== "teacher") return;
+
+      await updateDoc(scoreDocument, {
+        name,
+        teacherYearLevels: yearLevels,
+        bestStreak: cleanBestStreak(scoreData.bestStreak),
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    const results = await Promise.allSettled(scoreUpdates);
+    results
+      .filter((result) => result.status === "rejected")
+      .forEach((result) => console.warn("Could not update teacher score name.", result.reason));
+  }
+
+  async function saveTeacherYearLevels(yearLevels, displayName = "") {
     const user = getAllowedUser();
     if (getAccountTypeForEmail(user.email) !== "teacher") {
       throw makeError("teacher/domain-required", "Only baysidecc.vic.edu.au accounts can save teacher year levels.");
+    }
+
+    const cleanName = cleanLeaderboardName(displayName);
+    if (!isValidLeaderboardName(cleanName)) {
+      throw makeError("teacher/name-needed", "Enter a leaderboard name up to 80 characters.");
     }
 
     const cleanLevels = cleanYearLevels(yearLevels);
@@ -461,7 +506,7 @@ if (!isConfigured) {
     const currentTeacherProfile = teacherSnapshot.exists() ? teacherSnapshot.data() : null;
     const profileData = {
       uid: user.uid,
-      name: getAccountName(user),
+      name: cleanName,
       email: cleanEmail(user.email),
       approved: true,
       yearLevels: cleanLevels,
@@ -478,6 +523,7 @@ if (!isConfigured) {
       });
     }
 
+    await syncTeacherScoreMetadata(user, cleanName, cleanLevels);
     await readAccountDocuments(user);
     announceAuth(user);
     return getPublicAuthState(user);
@@ -526,7 +572,7 @@ if (!isConfigured) {
 
     teacherProfile = currentTeacherProfile;
     return {
-      name: getAccountName(user),
+      name: getTeacherLeaderboardName(user, currentTeacherProfile),
       score,
       uid: user.uid,
       role: "teacher",

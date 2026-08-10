@@ -502,6 +502,7 @@ const elements = {
   teacherBadge: document.querySelector("#teacher-badge"),
   teacherStatus: document.querySelector("#teacher-status"),
   teacherYearPanel: document.querySelector("#teacher-year-panel"),
+  teacherNameInput: document.querySelector("#teacher-name-input"),
   teacherYearOptions: document.querySelector("#teacher-year-options"),
   teacherYearsSave: document.querySelector("#teacher-years-save"),
   testStudentPanel: document.querySelector("#teacher-test-panel"),
@@ -1562,6 +1563,39 @@ function saveLocalScore() {
   };
 }
 
+function updateLocalTeacherScoreMetadata(name, teacherYearLevels) {
+  if (!state.authUid) return;
+
+  const cleanName = cleanLeaderboardName(name);
+  const cleanLevels = teacherYearLevels.map(cleanYearLevel).filter(Boolean);
+  if (!cleanName || !cleanLevels.length) return;
+
+  const scores = getLocalScores();
+  let changed = false;
+
+  GAME_IDS.forEach((gameId) => {
+    scores[gameId] = normalizeScores(scores[gameId])
+      .map((entry) => {
+        if (entry.role !== "teacher" || (entry.uid || entry.id) !== state.authUid) {
+          return entry;
+        }
+
+        changed = true;
+        return {
+          ...entry,
+          name: cleanName,
+          teacherYearLevels: cleanLevels,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 300);
+  });
+
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+  }
+}
+
 function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
   const filteredScores = normalizeScores(scores)
     .filter((entry) => {
@@ -1986,6 +2020,17 @@ function getAllowedDomainLabel() {
 
 function getGooglePlayerName() {
   return state.authName || state.authEmail.split("@")[0] || "Student";
+}
+
+function cleanLeaderboardName(name) {
+  return String(name || "").replace(/\s+/g, " ").trim();
+}
+
+function validateLeaderboardName(name) {
+  const cleanName = cleanLeaderboardName(name);
+  if (!cleanName) return "Enter a leaderboard name.";
+  if (cleanName.length > 80) return "Keep the leaderboard name to 80 characters or fewer.";
+  return "";
 }
 
 function getTeacherYearLabel() {
@@ -2538,12 +2583,15 @@ function renderAccountPanel() {
     elements.teacherYearPanel.hidden = true;
   } else if (accountType === "teacher") {
     elements.accountRoleNote.textContent = "@baysidecc.vic.edu.au accounts are teacher accounts.";
-    elements.accountMessage.textContent = "Pick the year levels you teach. Your teacher scores can appear in the teacher leaderboard views for those year levels.";
+    elements.accountMessage.textContent = "Choose the name shown on leaderboards and pick the year levels you teach.";
     elements.teacherBadge.textContent = "Teacher";
     elements.teacherStatus.textContent = state.teacherYearLevels.length
       ? `Teaching years saved: ${getTeacherYearLabel()}.`
       : "Choose the year level(s) you teach before playing.";
     elements.teacherYearPanel.hidden = false;
+    if (document.activeElement !== elements.teacherNameInput) {
+      elements.teacherNameInput.value = getGooglePlayerName();
+    }
   } else {
     elements.accountRoleNote.textContent = "@bcc.vic.edu.au accounts are student accounts.";
     elements.accountMessage.textContent = "Save your student year level. It stays saved for this Google account until you change it here.";
@@ -2658,6 +2706,10 @@ function getFirebaseMessage(error, fallback) {
 
   if (code.includes("teacher/year-levels-needed")) {
     return "Choose at least one teaching year level before playing as a teacher.";
+  }
+
+  if (code.includes("teacher/name-needed")) {
+    return "Enter the teacher name you want shown on leaderboards.";
   }
 
   if (code.includes("permission-denied")) {
@@ -3011,8 +3063,15 @@ async function saveStudentProfile(event) {
 }
 
 async function saveTeacherYears() {
+  const teacherName = cleanLeaderboardName(elements.teacherNameInput.value);
+  const nameError = validateLeaderboardName(teacherName);
   const yearLevels = [...elements.teacherYearOptions.querySelectorAll("input:checked")]
     .map((checkbox) => checkbox.value);
+
+  if (nameError) {
+    setProfileStatus(nameError);
+    return;
+  }
 
   if (!yearLevels.length) {
     setProfileStatus("Choose at least one teaching year level.");
@@ -3020,13 +3079,19 @@ async function saveTeacherYears() {
   }
 
   try {
-    setProfileStatus("Saving teaching year levels...");
-    applyAuthState(await window.sharedLeaderboard.saveTeacherYearLevels(yearLevels));
-    setLeaderboardStatus("shared", `Teacher scores can now appear for ${getTeacherYearLabel()}.`);
+    setProfileStatus("Saving teacher details...");
+    const authState = await window.sharedLeaderboard.saveTeacherYearLevels(yearLevels, teacherName);
+    applyAuthState(authState);
+    updateLocalTeacherScoreMetadata(getGooglePlayerName(), state.teacherYearLevels);
+    renderCurrentDataViews();
+    setLeaderboardStatus(
+      "shared",
+      `${getGooglePlayerName()} will now show on teacher leaderboards for ${getTeacherYearLabel()}.`,
+    );
     setSettingsOpen(false, { userAction: true });
   } catch (error) {
     console.error(error);
-    setProfileStatus(getFirebaseMessage(error, "Could not save teaching year levels."));
+    setProfileStatus(getFirebaseMessage(error, "Could not save teacher details."));
   }
 }
 

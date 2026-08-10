@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=result-game-medal-20260811" />
-    <script src="script.js?v=result-game-medal-20260811" defer></script>
-    <script type="module" src="firebase-leaderboard.js?v=streak-leaderboard-20260810"></script>
+    <link rel="stylesheet" href="styles.css?v=teacher-names-20260811" />
+    <script src="script.js?v=teacher-names-20260811" defer></script>
+    <script type="module" src="firebase-leaderboard.js?v=teacher-names-20260811"></script>
   </head>
   <body>
     <header class="site-header">
@@ -83,10 +83,20 @@
                     </div>
                     <p id="teacher-status">Teacher accounts are automatic for the teacher email domain.</p>
                     <div class="teacher-year-panel" id="teacher-year-panel">
+                      <label class="select-field" for="teacher-name-input">
+                        <span>Leaderboard name</span>
+                        <input
+                          id="teacher-name-input"
+                          type="text"
+                          maxlength="80"
+                          autocomplete="name"
+                          placeholder="Name shown on leaderboards"
+                        />
+                      </label>
                       <p>Pick the year level(s) you teach.</p>
                       <div class="teacher-year-options" id="teacher-year-options"></div>
                       <button class="button button-primary button-compact" id="teacher-years-save" type="button">
-                        Save teaching years
+                        Save teacher details
                       </button>
                     </div>
                     <div class="teacher-test-panel" id="teacher-test-panel">
