@@ -123,7 +123,7 @@ a {
   color: var(--blue-dark);
 }
 
-body.dashboard-page-active .site-header {
+body.app-page-active .site-header {
   top: 18px;
   left: calc(max(18px, calc((100vw - 1440px) / 2)) + 274px);
   right: max(18px, calc((100vw - 1440px) / 2));
@@ -132,11 +132,11 @@ body.dashboard-page-active .site-header {
   transform: none;
 }
 
-body.dashboard-page-active .brand {
+body.app-page-active .brand {
   display: none;
 }
 
-body.dashboard-page-active .main-nav {
+body.app-page-active .main-nav {
   padding: 10px 12px;
   gap: 18px;
   background: rgba(255, 255, 255, 0.86);
@@ -146,12 +146,12 @@ body.dashboard-page-active .main-nav {
   backdrop-filter: blur(16px);
 }
 
-body.dashboard-page-active .main-nav a {
+body.app-page-active .main-nav a {
   color: var(--navy);
   font-weight: 900;
 }
 
-body.leaderboards-page-active .site-header {
+body.leaderboards-page-active:not(.app-page-active) .site-header {
   top: 16px;
   width: min(1180px, calc(100% - 32px));
   padding: 12px 16px;
@@ -161,17 +161,17 @@ body.leaderboards-page-active .site-header {
   box-shadow: 0 18px 42px rgba(4, 10, 27, 0.16);
 }
 
-body.leaderboards-page-active .brand,
-body.leaderboards-page-active .main-nav a {
+body.leaderboards-page-active:not(.app-page-active) .brand,
+body.leaderboards-page-active:not(.app-page-active) .main-nav a {
   color: var(--navy);
   text-shadow: none;
 }
 
-body.leaderboards-page-active .brand-product {
+body.leaderboards-page-active:not(.app-page-active) .brand-product {
   color: var(--blue-dark);
 }
 
-body.leaderboards-page-active .main-nav a:hover {
+body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   color: var(--blue-dark);
 }
 
@@ -686,6 +686,96 @@ body.leaderboards-page-active .main-nav a:hover {
 
 .dashboard-home::before {
   display: none;
+}
+
+.app-dashboard-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+  gap: 24px;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  align-items: start;
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 80% 8%, rgba(140, 198, 230, 0.24), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
+.dashboard-main-wide {
+  grid-column: 2 / 4;
+}
+
+.page-hero-card {
+  display: grid;
+  min-height: 300px;
+  padding: 42px;
+  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.44fr);
+  gap: 28px;
+  align-items: center;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.95), transparent 14%),
+    linear-gradient(135deg, #eef7fc 0%, #ffffff 58%, #dff1fa 100%);
+  border: 1px solid rgba(53, 143, 208, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 20px 55px rgba(23, 43, 77, 0.08);
+}
+
+.page-hero-card h1 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(2.9rem, 5vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.065em;
+  line-height: 0.94;
+}
+
+.page-hero-card p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 22px 0 0;
+  color: var(--navy);
+  font-size: 0.98rem;
+  font-weight: 750;
+  line-height: 1.65;
+}
+
+.page-hero-stats {
+  display: grid;
+  gap: 12px;
+}
+
+.page-hero-stats div {
+  display: grid;
+  padding: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(53, 143, 208, 0.12);
+  border-radius: 18px;
+}
+
+.page-hero-stats strong {
+  color: var(--blue-dark);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.page-hero-stats span {
+  color: var(--navy);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.catalog-card,
+.leaderboard-toolbar-card {
+  display: grid;
+  padding: 24px;
+  gap: 20px;
 }
 
 .dashboard-sidebar,
@@ -1348,6 +1438,39 @@ body.leaderboards-page-active .main-nav a:hover {
   padding: 165px 0 110px;
 }
 
+.games-section.app-dashboard-page,
+.leaderboard-section.app-dashboard-page {
+  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+}
+
+.games-section.app-dashboard-page {
+  background:
+    radial-gradient(circle at 92% 6%, rgba(53, 143, 208, 0.14), transparent 25%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
+.leaderboard-section.app-dashboard-page {
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 8% 88%, rgba(140, 198, 230, 0.24), transparent 25%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
+.catalog-card .dashboard-section-head,
+.leaderboard-toolbar-card .dashboard-section-head {
+  padding: 0 2px;
+}
+
+.catalog-card .dashboard-section-head h2,
+.leaderboard-toolbar-card .dashboard-section-head h2 {
+  color: var(--navy);
+  font-size: 1.45rem;
+}
+
+.catalog-card .game-grid {
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+
 .page-section {
   min-height: 100vh;
   padding-top: 145px;
@@ -1393,6 +1516,22 @@ body.leaderboards-page-active .main-nav a:hover {
   border: 1px solid rgba(23, 43, 77, 0.07);
   border-radius: 28px;
   transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.app-dashboard-page .game-card {
+  min-height: 438px;
+  background:
+    radial-gradient(circle at 100% 100%, rgba(140, 198, 230, 0.18), transparent 28%),
+    white;
+  box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
+}
+
+.app-dashboard-page .game-card-sky,
+.app-dashboard-page .game-card-sun,
+.app-dashboard-page .game-card-coral {
+  background:
+    radial-gradient(circle at 100% 100%, rgba(140, 198, 230, 0.18), transparent 28%),
+    white;
 }
 
 .game-card:hover {
@@ -2158,6 +2297,10 @@ body.leaderboards-page-active .main-nav a:hover {
   justify-content: flex-end;
 }
 
+.leaderboard-page-hero .leaderboard-controls {
+  justify-content: flex-start;
+}
+
 .account-panel {
   display: grid;
   margin: 0;
@@ -2598,6 +2741,10 @@ body.leaderboards-page-active .main-nav a:hover {
   border-color: rgba(23, 43, 77, 0.08);
 }
 
+.leaderboard-toolbar-card .teacher-filter-tabs-light {
+  margin: 0;
+}
+
 .teacher-filter-tabs-light button {
   color: var(--navy);
   background: white;
@@ -2619,6 +2766,11 @@ body.leaderboards-page-active .main-nav a:hover {
   gap: 18px;
 }
 
+.leaderboard-section.app-dashboard-page .leaderboards-grid {
+  margin-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
 .leaderboard-grid-card {
   display: grid;
   align-content: start;
@@ -2629,12 +2781,24 @@ body.leaderboards-page-active .main-nav a:hover {
   border-radius: 24px;
 }
 
+.leaderboard-section.app-dashboard-page .leaderboard-grid-card {
+  min-height: 340px;
+  border: 1px solid rgba(53, 143, 208, 0.14);
+  box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
+}
+
 .total-leaderboard-card {
   min-height: 0;
   grid-column: 1 / -1;
   background:
     radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.32), transparent 28%),
     white;
+}
+
+.leaderboard-section.app-dashboard-page .total-leaderboard-card {
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.34), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #eef7fc 100%);
 }
 
 .leaderboard-grid-card-head p {
@@ -2755,22 +2919,25 @@ footer > a:last-child {
 }
 
 @media (max-width: 900px) {
-  body.dashboard-page-active .site-header {
+  body.app-page-active .site-header {
     top: 18px;
     left: 18px;
     right: 18px;
   }
 
-  body.dashboard-page-active .brand {
+  body.app-page-active .brand {
     display: inline-flex;
   }
 
-  body.dashboard-page-active .main-nav {
+  body.app-page-active .main-nav {
     width: 100%;
     justify-content: flex-end;
   }
 
-  .dashboard-home {
+  .dashboard-home,
+  .app-dashboard-page,
+  .games-section.app-dashboard-page,
+  .leaderboard-section.app-dashboard-page {
     padding: 120px 18px 34px;
     grid-template-columns: 1fr;
   }
@@ -2778,6 +2945,14 @@ footer > a:last-child {
   .dashboard-main,
   .dashboard-rail {
     padding-top: 0;
+  }
+
+  .dashboard-main-wide {
+    grid-column: auto;
+  }
+
+  .page-hero-card {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-sidebar {
@@ -2867,7 +3042,10 @@ footer > a:last-child {
 }
 
 @media (max-width: 650px) {
-  .dashboard-home {
+  .dashboard-home,
+  .app-dashboard-page,
+  .games-section.app-dashboard-page,
+  .leaderboard-section.app-dashboard-page {
     padding: 108px 14px 28px;
     gap: 16px;
   }
@@ -2902,7 +3080,8 @@ footer > a:last-child {
   .dashboard-card,
   .featured-game-card,
   .dashboard-progress,
-  .hero-card {
+  .hero-card,
+  .page-hero-card {
     border-radius: 20px;
   }
 
@@ -2938,6 +3117,18 @@ footer > a:last-child {
 
   .dashboard-home h1 {
     font-size: clamp(3.1rem, 16vw, 4rem);
+  }
+
+  .page-hero-card {
+    padding: 26px;
+  }
+
+  .page-hero-card h1 {
+    font-size: clamp(2.8rem, 15vw, 3.8rem);
+  }
+
+  .page-hero-stats {
+    grid-template-columns: 1fr;
   }
 
   .hero-card .hero-stats {

@@ -2985,6 +2985,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
   const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
+  document.body.classList.toggle("app-page-active", ["home", "games", "leaderboards"].includes(route.page));
   document.body.classList.toggle("dashboard-page-active", route.page === "home");
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
