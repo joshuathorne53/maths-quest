@@ -352,6 +352,7 @@ const state = {
   boardYearLevel: DEFAULT_YEAR_LEVEL,
   teacherFilter: "none",
   homeLeaderboardView: "students",
+  homeFeaturedGame: "quick",
   player: "",
   score: 0,
   streak: 0,
@@ -444,6 +445,15 @@ const elements = {
   resultLeaderboardLink: document.querySelector("#result-leaderboard-link"),
   gameGrid: document.querySelector("#game-grid"),
   homeGameStrip: document.querySelector("#home-game-strip"),
+  featuredGameIcon: document.querySelector("#featured-game-icon"),
+  featuredGameHeading: document.querySelector("#featured-game-heading"),
+  featuredGameDescription: document.querySelector("#featured-game-description"),
+  featuredGameMeta: document.querySelector("#featured-game-meta"),
+  featuredGameBullets: document.querySelector("#featured-game-bullets"),
+  featuredGamePlay: document.querySelector("#featured-game-play"),
+  featuredGameLeaderboard: document.querySelector("#featured-game-leaderboard"),
+  featuredGameGoal: document.querySelector("#featured-game-goal"),
+  featuredGameGoalLabel: document.querySelector("#featured-game-goal-label"),
   homeLeaderboardList: document.querySelector("#home-leaderboard-list"),
   homeLeaderboardStatus: document.querySelector("#home-leaderboard-status"),
   homeAuthTitle: document.querySelector("#home-auth-title"),
@@ -1803,18 +1813,75 @@ function getHomeLeaderboardScores(view = state.homeLeaderboardView) {
     .slice(0, 5);
 }
 
+function ensureHomeFeaturedGame() {
+  const gameIds = getVisibleGameIds();
+  if (!gameIds.length) {
+    state.homeFeaturedGame = "";
+    return;
+  }
+
+  if (!state.homeFeaturedGame || !gameIds.includes(state.homeFeaturedGame)) {
+    state.homeFeaturedGame = gameIds[0];
+  }
+}
+
 function renderHomeGameStrip() {
   const gameIds = getVisibleGameIds().slice(0, 5);
   elements.homeGameStrip.innerHTML = gameIds.map((gameId) => {
     const info = gameInfo[gameId];
     const locked = !canAccessGame(gameId);
     return `
-      <a class="home-game-tile ${gameId === "quick" ? "active" : ""} ${locked ? "locked" : ""}" href="${locked ? "#games" : getGameHash(gameId)}" data-game="${escapeHtml(gameId)}" aria-disabled="${locked}">
+      <button class="home-game-tile ${gameId === state.homeFeaturedGame ? "active" : ""} ${locked ? "locked" : ""}" type="button" data-game="${escapeHtml(gameId)}" ${locked ? "disabled" : ""} aria-pressed="${gameId === state.homeFeaturedGame}">
         <span aria-hidden="true">${escapeHtml(info.icon)}</span>
         <strong>${escapeHtml(info.shortName)}</strong>
-      </a>
+      </button>
     `;
   }).join("");
+}
+
+function renderHomeFeaturedGame() {
+  ensureHomeFeaturedGame();
+
+  if (!state.homeFeaturedGame) {
+    elements.featuredGameHeading.textContent = "No games available yet";
+    elements.featuredGameDescription.textContent = "Sign in and save your profile to see the games available for your year level.";
+    elements.featuredGameIcon.textContent = "?";
+    elements.featuredGameMeta.innerHTML = "";
+    elements.featuredGameBullets.innerHTML = "";
+    elements.featuredGamePlay.href = "#home";
+    elements.featuredGamePlay.textContent = "Choose a game";
+    elements.featuredGamePlay.classList.add("disabled");
+    elements.featuredGamePlay.setAttribute("aria-disabled", "true");
+    elements.featuredGameLeaderboard.href = "#leaderboards";
+    elements.featuredGameGoal.textContent = "0 pts";
+    elements.featuredGameGoalLabel.textContent = "Pick a game to see its term goal.";
+    return;
+  }
+
+  const gameId = state.homeFeaturedGame;
+  const info = gameInfo[gameId];
+  const locked = !canAccessGame(gameId);
+  const requiredYear = getYearLabel(getGameRequiredYear(gameId));
+  const playLabel = locked ? "Locked for now" : `Play ${info.name}`;
+
+  elements.featuredGameIcon.textContent = info.icon;
+  elements.featuredGameHeading.textContent = info.name;
+  elements.featuredGameDescription.textContent = info.description;
+  elements.featuredGameMeta.innerHTML = `
+    <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
+    <span>Unlocks from ${escapeHtml(requiredYear)}</span>
+    <span>Goal ${getGameGoal(gameId).toLocaleString()} pts</span>
+  `;
+  elements.featuredGameBullets.innerHTML = info.bullets
+    .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
+    .join("");
+  elements.featuredGamePlay.href = locked ? "#home" : getGameHash(gameId);
+  elements.featuredGamePlay.textContent = playLabel;
+  elements.featuredGamePlay.classList.toggle("disabled", locked);
+  elements.featuredGamePlay.setAttribute("aria-disabled", String(locked));
+  elements.featuredGameLeaderboard.href = getGameHash(gameId, { view: "leaderboard" });
+  elements.featuredGameGoal.textContent = `${getGameGoal(gameId).toLocaleString()} pts`;
+  elements.featuredGameGoalLabel.textContent = getGoalStatusMessage(gameId);
 }
 
 function renderHomeLeaderboard() {
@@ -1870,7 +1937,7 @@ function renderHomeProgress() {
 
   elements.homeGamesPlayed.textContent = String(gamesPlayed);
   elements.homeBestScore.textContent = bestScore.toLocaleString();
-  elements.homeCurrentGoal.textContent = getGameGoal("quick").toLocaleString();
+  elements.homeCurrentGoal.textContent = getGameGoal(state.homeFeaturedGame || "quick").toLocaleString();
 }
 
 function renderHomeAuthCard() {
@@ -1894,7 +1961,9 @@ function renderHomeAuthCard() {
 }
 
 function renderHomeDashboard() {
+  ensureHomeFeaturedGame();
   renderHomeGameStrip();
+  renderHomeFeaturedGame();
   renderHomeLeaderboard();
   renderHomeProgress();
   renderHomeAuthCard();
@@ -1905,7 +1974,7 @@ function renderGamePage() {
   const accessMessage = getGameAccessMessage(state.game);
   const penNote = getPenAndPaperNote(state.game);
 
-  elements.gamePageSection.className = `game-page-section page-section ${info.cardClass}`;
+  elements.gamePageSection.className = `game-page-section app-dashboard-page ${info.cardClass}`;
   elements.gamePageAccess.textContent = accessMessage;
   elements.gamePageIcon.textContent = info.icon;
   elements.gamePageTitle.textContent = info.name;
@@ -2985,7 +3054,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
   const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
-  document.body.classList.toggle("app-page-active", ["home", "games", "leaderboards"].includes(route.page));
+  document.body.classList.toggle("app-page-active", ["home", "games", "game", "leaderboards"].includes(route.page));
   document.body.classList.toggle("dashboard-page-active", route.page === "home");
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
@@ -3053,12 +3122,15 @@ elements.gameGrid.addEventListener("click", (event) => {
 elements.homeGameStrip.addEventListener("click", (event) => {
   const link = event.target.closest("[data-game]");
   if (!link) return;
+  event.preventDefault();
   const gameId = link.dataset.game;
   if (!canAccessGame(gameId)) {
-    event.preventDefault();
     setLeaderboardStatus("local", getGameAccessMessage(gameId));
     renderHomeDashboard();
+    return;
   }
+  state.homeFeaturedGame = gameId;
+  renderHomeDashboard();
 });
 
 document.querySelectorAll("[data-home-leaderboard]").forEach((button) => {

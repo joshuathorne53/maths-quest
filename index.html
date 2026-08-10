@@ -195,27 +195,24 @@
             <div class="home-game-strip" id="home-game-strip"></div>
           </section>
 
-          <section class="featured-game-card" aria-labelledby="featured-game-heading">
-            <p class="eyebrow"><span></span> Featured game</p>
+          <section class="featured-game-card selected-game-card" aria-labelledby="featured-game-heading">
+            <p class="eyebrow"><span></span> Selected game</p>
             <div class="featured-game-layout">
-              <div class="featured-game-icon" aria-hidden="true">🔥</div>
+              <div class="featured-game-icon" id="featured-game-icon" aria-hidden="true">+</div>
               <div>
                 <h2 id="featured-game-heading">Quick Fire</h2>
-                <p>Answer as many questions as you can in 1 minute. Every correct answer earns points.</p>
-                <div class="featured-meta">
-                  <span>◷ 1 min</span>
-                  <span>Years 7-12</span>
-                  <span>Goal 1,200 pts</span>
-                </div>
+                <p id="featured-game-description">Answer as many questions as you can in 1 minute.</p>
+                <div class="featured-meta" id="featured-game-meta"></div>
+                <ul class="featured-bullets" id="featured-game-bullets"></ul>
                 <div class="featured-actions">
-                  <a class="button button-primary" href="#game/quick">Play Quick Fire</a>
-                  <a class="button button-secondary" href="#game/quick/leaderboard">View leaderboard</a>
+                  <a class="button button-primary" id="featured-game-play" href="#game/quick">Play Quick Fire</a>
+                  <a class="button button-secondary" id="featured-game-leaderboard" href="#game/quick/leaderboard">View leaderboard</a>
                 </div>
               </div>
               <div class="example-question">
-                <span>Example question</span>
-                <p>Simplify:</p>
-                <strong>34 + 27</strong>
+                <span>Term target</span>
+                <p id="featured-game-goal-label">Reach the goal to show your teacher.</p>
+                <strong id="featured-game-goal">1,200 pts</strong>
               </div>
             </div>
           </section>
@@ -317,8 +314,26 @@
         </div>
       </section>
 
-      <section class="game-page-section page-section" id="game-page" hidden>
-        <div class="section-shell">
+      <section class="game-page-section app-dashboard-page" id="game-page" hidden>
+        <aside class="dashboard-sidebar" aria-label="Game page navigation">
+          <a class="dashboard-logo" href="#home" aria-label="Bayside Maths Challenge dashboard">
+            <img src="assets/bcc-logo-square.png?v=school-brand-20260810" alt="" width="512" height="512" />
+            <strong>Bayside Maths Challenge</strong>
+          </a>
+          <nav class="dashboard-menu" aria-label="Game page shortcuts">
+            <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
+            <a class="active" href="#games"><span aria-hidden="true">🎮</span> Games</a>
+            <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
+            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+          </nav>
+          <div class="dashboard-side-note">
+            <span aria-hidden="true">▶</span>
+            <p>Check the goal, start the challenge, then keep improving your best score.</p>
+          </div>
+        </aside>
+
+        <div class="dashboard-main dashboard-main-wide">
           <a class="text-link page-back-link" href="#games">← All games</a>
           <div class="game-page-hero">
             <div class="game-page-card">

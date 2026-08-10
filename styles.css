@@ -375,6 +375,14 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   transform: translateY(-2px);
 }
 
+.button.disabled,
+.button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.58;
+  pointer-events: none;
+  transform: none;
+}
+
 .button-small {
   min-height: 43px;
   padding: 0 15px;
@@ -1060,6 +1068,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 }
 
 .home-game-tile {
+  appearance: none;
   display: grid;
   min-height: 126px;
   padding: 18px 12px;
@@ -1074,6 +1083,8 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   text-align: center;
   text-decoration: none;
   box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .home-game-tile.active,
@@ -1085,6 +1096,11 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 
 .home-game-tile.locked {
   opacity: 0.55;
+}
+
+.home-game-tile:disabled {
+  cursor: not-allowed;
+  transform: none;
 }
 
 .home-game-tile span {
@@ -1100,6 +1116,27 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 
 .featured-game-card {
   padding: 22px;
+}
+
+.selected-game-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.selected-game-card::after {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -90px;
+  bottom: -120px;
+  content: "";
+  border: 44px solid rgba(140, 198, 230, 0.18);
+  border-radius: 50%;
+}
+
+.selected-game-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .featured-game-card .eyebrow {
@@ -1121,6 +1158,23 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   border-radius: 34px;
   place-items: center;
   font-size: 3.4rem;
+}
+
+.featured-bullets {
+  display: grid;
+  margin: -2px 0 16px;
+  padding: 0;
+  gap: 7px;
+  color: var(--navy);
+  list-style: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.featured-bullets li::before {
+  margin-right: 8px;
+  color: var(--blue-dark);
+  content: "✓";
 }
 
 .featured-game-card h2 {
@@ -1711,6 +1765,42 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
   background:
     radial-gradient(circle at 0 0, rgba(53, 143, 208, 0.14), transparent 28%),
     var(--cream);
+}
+
+.game-page-section.app-dashboard-page {
+  padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(140, 198, 230, 0.24), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
+.game-page-section.app-dashboard-page .page-back-link {
+  margin: 0;
+}
+
+.game-page-section.app-dashboard-page .game-page-card,
+.game-page-section.app-dashboard-page .game-page-details,
+.game-page-section.app-dashboard-page .game-page-leaderboard {
+  border: 1px solid rgba(53, 143, 208, 0.14);
+  box-shadow: 0 20px 55px rgba(23, 43, 77, 0.08);
+}
+
+.game-page-section.app-dashboard-page .game-page-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 100%, rgba(140, 198, 230, 0.2), transparent 30%),
+    white;
+}
+
+.game-page-section.app-dashboard-page .game-page-details {
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.18), transparent 26%),
+    linear-gradient(135deg, #ffffff 0%, #eef7fc 100%);
+}
+
+.game-page-section.app-dashboard-page .game-page-leaderboard {
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .page-back-link {
@@ -2937,6 +3027,7 @@ footer > a:last-child {
   .dashboard-home,
   .app-dashboard-page,
   .games-section.app-dashboard-page,
+  .game-page-section.app-dashboard-page,
   .leaderboard-section.app-dashboard-page {
     padding: 120px 18px 34px;
     grid-template-columns: 1fr;
@@ -3045,6 +3136,7 @@ footer > a:last-child {
   .dashboard-home,
   .app-dashboard-page,
   .games-section.app-dashboard-page,
+  .game-page-section.app-dashboard-page,
   .leaderboard-section.app-dashboard-page {
     padding: 108px 14px 28px;
     gap: 16px;
