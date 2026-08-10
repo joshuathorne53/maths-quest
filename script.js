@@ -403,6 +403,7 @@ const elements = {
   gamePagePrep: document.querySelector("#game-page-prep"),
   gameGoalStatus: document.querySelector("#game-goal-status"),
   gamePageStart: document.querySelector("#game-page-start"),
+  gamePageLeaderboard: document.querySelector(".game-page-leaderboard"),
   gamePageLeaderboardTitle: document.querySelector("#game-page-leaderboard-title"),
   gameBoardYearSelect: document.querySelector("#game-board-year-select"),
   gameBoardList: document.querySelector("#game-board-list"),
@@ -1155,8 +1156,9 @@ function getPenAndPaperNote(gameId) {
     : "";
 }
 
-function getGameHash(gameId) {
-  return `#game/${encodeURIComponent(gameId)}`;
+function getGameHash(gameId, { view = "" } = {}) {
+  const suffix = view === "leaderboard" ? "/leaderboard" : "";
+  return `#game/${encodeURIComponent(gameId)}${suffix}`;
 }
 
 function canYearAccessGame(yearLevel, gameId) {
@@ -1776,7 +1778,7 @@ function renderGamePage() {
   elements.gamePageStart.disabled = !canAccessGame(state.game);
   elements.gamePageStart.textContent = canAccessGame(state.game) ? "Start challenge →" : "Locked for now";
   elements.gamePageLeaderboardTitle.textContent = `${info.name} leaderboard`;
-  elements.resultLeaderboardLink.href = getGameHash(state.game);
+  elements.resultLeaderboardLink.href = getGameHash(state.game, { view: "leaderboard" });
   renderGameLeaderboard();
 }
 
@@ -2779,8 +2781,11 @@ function parsePageHash() {
   const rawHash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
 
   if (rawHash.startsWith("game/")) {
-    const gameId = rawHash.slice(5);
-    if (gameInfo[gameId]) return { page: "game", gameId };
+    const match = rawHash.match(/^game\/([^/]+)(?:\/(leaderboard))?$/);
+    const gameId = match?.[1] || "";
+    if (gameInfo[gameId]) {
+      return { page: "game", gameId, view: match[2] || "" };
+    }
   }
 
   if (rawHash === "leaderboards" || rawHash === "leaderboard") {
@@ -2792,6 +2797,18 @@ function parsePageHash() {
   }
 
   return { page: "home" };
+}
+
+function openResultLeaderboard(event) {
+  event.preventDefault();
+  const leaderboardHash = getGameHash(state.game, { view: "leaderboard" });
+
+  if (window.location.hash === leaderboardHash) {
+    renderCurrentPage({ scroll: true });
+    return;
+  }
+
+  window.location.hash = leaderboardHash;
 }
 
 function cancelActiveGame() {
@@ -2811,11 +2828,15 @@ function cancelActiveGame() {
 
 function renderCurrentPage({ scroll = false } = {}) {
   const route = parsePageHash();
-  const leavingGamePage = state.page === "game" && route.page !== "game";
+  const previousPage = state.page;
+  const previousGame = state.game;
+  const leavingGamePage = previousPage === "game" && route.page !== "game";
+  const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
+  const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
-  if (leavingGamePage) {
+  if (leavingGamePage || switchingGamePage || showingGameLeaderboard) {
     cancelActiveGame();
     elements.playSection.hidden = true;
   }
@@ -2841,13 +2862,15 @@ function renderCurrentPage({ scroll = false } = {}) {
   }
 
   if (scroll) {
-    const target = route.page === "game"
-      ? elements.gamePageSection
-      : route.page === "leaderboards"
-        ? elements.allLeaderboardsSection
-        : route.page === "games"
-          ? elements.gamesSection
-          : elements.heroSection;
+    const target = route.page === "game" && route.view === "leaderboard"
+      ? elements.gamePageLeaderboard
+      : route.page === "game"
+        ? elements.gamePageSection
+        : route.page === "leaderboards"
+          ? elements.allLeaderboardsSection
+          : route.page === "games"
+            ? elements.gamesSection
+            : elements.heroSection;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
@@ -2935,6 +2958,7 @@ elements.answerForm.addEventListener("submit", submitAnswer);
 document.querySelector("#back-button").addEventListener("click", endAndHideGame);
 document.querySelector("#quit-button").addEventListener("click", quitGame);
 document.querySelector("#play-again").addEventListener("click", requestStartGame);
+elements.resultLeaderboardLink.addEventListener("click", openResultLeaderboard);
 elements.signInButton.addEventListener("click", signInForLeaderboard);
 elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
 elements.resultSignIn.addEventListener("click", signInForLeaderboard);
