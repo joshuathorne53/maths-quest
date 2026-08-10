@@ -200,7 +200,7 @@ service cloud.firestore {
           || (
             resource.data.role == 'teacher'
             && resource.data.teacherYearLevels is list
-            && savedStudentYearLevel() in resource.data.teacherYearLevels
+            && isValidYearLevelList(resource.data.teacherYearLevels)
           )
         );
     }

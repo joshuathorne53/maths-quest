@@ -1,8 +1,16 @@
 const GAME_SECONDS = 60;
 const PAPER_GAME_SECONDS = 300;
 const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
+const PROGRESS_KEY = "bayside-maths-challenge-progress-v1";
 const DEFAULT_YEAR_LEVEL = "year7";
 const TEST_STUDENT_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
+const MR_THORNE_NAMES = new Set(["joshua thorne", "mr thorne"]);
+const MEDAL_GOALS = [
+  { id: "bronze", label: "Bronze", score: 1000 },
+  { id: "silver", label: "Silver", score: 2000 },
+  { id: "gold", label: "Gold", score: 3000 },
+  { id: "thorne", label: "Mr Thorne", score: 4000 },
+];
 
 const YEAR_LEVELS = [
   { id: "year7", label: "Year 7" },
@@ -388,6 +396,7 @@ const state = {
   savingSharedScore: false,
   latestSharedScoreId: null,
   sharedScores: cloneSharedScores(),
+  boardListenerContexts: new Map(),
 };
 
 const elements = {
@@ -410,6 +419,12 @@ const elements = {
   gameBoardYearSelect: document.querySelector("#game-board-year-select"),
   gameBoardList: document.querySelector("#game-board-list"),
   gameBoardStatus: document.querySelector("#game-board-status"),
+  progressSection: document.querySelector("#progress"),
+  progressGrid: document.querySelector("#progress-game-grid"),
+  progressSummary: document.querySelector("#progress-summary"),
+  progressStreakCount: document.querySelector("#progress-streak-count"),
+  progressStreakStatus: document.querySelector("#progress-streak-status"),
+  progressStatus: document.querySelector("#progress-status"),
   allLeaderboardsSection: document.querySelector("#leaderboards"),
   leaderboardsGrid: document.querySelector("#leaderboards-grid"),
   startPanel: document.querySelector("#start-panel"),
@@ -1251,9 +1266,31 @@ function getLeaderboardAccessMessage() {
   return "Leaderboards are locked to your account setup.";
 }
 
+function getProgressAccessMessage() {
+  if (!state.sharedConfigured) {
+    return "Firebase setup needed. Until then, medal progress uses scores saved on this device.";
+  }
+
+  if (!state.authAllowed) {
+    return `Sign in with a ${getAllowedDomainLabel()} account to load synced medal progress.`;
+  }
+
+  if (getActiveAccountType() === "teacher" && !state.teacherYearLevels.length) {
+    return "Choose your teaching year levels before loading synced medal progress.";
+  }
+
+  if (getActiveAccountType() === "student" && !state.studentYearLevel) {
+    return "Choose and save your year level before loading synced medal progress.";
+  }
+
+  return "Progress is locked to your account setup.";
+}
+
 function canUseAllTeacherFilter() {
   if (isTeacherTestingAsStudent()) return false;
-  return state.sharedConfigured && state.authAllowed && getActiveAccountType() === "teacher";
+  return state.sharedConfigured
+    && state.authAllowed
+    && (getActiveAccountType() === "teacher" || getActiveAccountType() === "student");
 }
 
 function cleanAllowedTeacherFilter(filter) {
@@ -1553,6 +1590,7 @@ function getVisibleScores(game = state.board, options = {}) {
 function stopSharedBoardListeners({ clearScores = false } = {}) {
   state.boardUnsubscribes.forEach((unsubscribe) => unsubscribe());
   state.boardUnsubscribes.clear();
+  state.boardListenerContexts.clear();
 
   if (clearScores) {
     state.sharedScores = cloneSharedScores();
@@ -1595,6 +1633,209 @@ function getTotalScores(gameIds) {
 function getCurrentPlayerBestScore(gameId) {
   const score = normalizeScores(getRawScores(gameId)).find(scoreMatchesCurrentPlayer);
   return Number.isInteger(score?.score) ? score.score : 0;
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function offsetDateKey(dateKey, offsetDays) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + offsetDays);
+  return getLocalDateKey(date);
+}
+
+function getProgressStore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProgressStore(store) {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(store));
+  } catch {
+    // Progress history is helpful, but the game should keep working if storage is blocked.
+  }
+}
+
+function getProgressPlayerKey(scoreContext = getScoreContext()) {
+  if (state.authUid) return `uid:${state.authUid}`;
+  const playerName = getGooglePlayerName().toLowerCase();
+  const contextKey = scoreContext.role === "teacher"
+    ? scoreContext.teacherYearLevels.join("-")
+    : scoreContext.yearLevel || state.boardYearLevel;
+  return `local:${scoreContext.role}:${contextKey}:${playerName}`;
+}
+
+function getProgressRecord(scoreContext = getScoreContext()) {
+  const store = getProgressStore();
+  const key = getProgressPlayerKey(scoreContext);
+  const record = store[key] && typeof store[key] === "object" ? store[key] : {};
+
+  return {
+    bronzeDays: Array.isArray(record.bronzeDays) ? record.bronzeDays : [],
+    attempts: Array.isArray(record.attempts) ? record.attempts : [],
+  };
+}
+
+function saveProgressRecord(record, scoreContext = getScoreContext()) {
+  const store = getProgressStore();
+  store[getProgressPlayerKey(scoreContext)] = record;
+  saveProgressStore(store);
+}
+
+function isMrThorneScore(entry) {
+  const cleanName = String(entry?.name || "").trim().toLowerCase();
+  return entry?.role === "teacher" && MR_THORNE_NAMES.has(cleanName);
+}
+
+function getMrThorneBestScore(gameId) {
+  return normalizeScores(getRawScores(gameId))
+    .filter(isMrThorneScore)
+    .reduce((highest, entry) => Math.max(highest, entry.score), 0);
+}
+
+function getMedalGoalsForGame(gameId) {
+  const mrThorneScore = getMrThorneBestScore(gameId);
+  return MEDAL_GOALS.map((goal) => ({
+    ...goal,
+    score: goal.id === "thorne" ? Math.max(goal.score, mrThorneScore) : goal.score,
+  }));
+}
+
+function getBestMedalForScore(score, goals) {
+  return goals.reduce((best, goal) => (score >= goal.score ? goal : best), null);
+}
+
+function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) {
+  if (!shouldSaveScore(scoreContext)) return;
+
+  const goals = getMedalGoalsForGame(gameId);
+  const bronzeGoal = goals.find((goal) => goal.id === "bronze");
+  if (!bronzeGoal || score < bronzeGoal.score) return;
+
+  const record = getProgressRecord(scoreContext);
+  const today = getLocalDateKey();
+  const bronzeDays = new Set(record.bronzeDays);
+  bronzeDays.add(today);
+  record.bronzeDays = [...bronzeDays].sort();
+  record.attempts = [
+    ...record.attempts,
+    {
+      date: today,
+      game: gameId,
+      score,
+      medal: getBestMedalForScore(score, goals)?.id || "bronze",
+      savedAt: new Date().toISOString(),
+    },
+  ].slice(-400);
+  saveProgressRecord(record, scoreContext);
+}
+
+function getBronzeStreak() {
+  const record = getProgressRecord();
+  const bronzeDays = new Set(record.bronzeDays);
+  const today = getLocalDateKey();
+  const yesterday = offsetDateKey(today, -1);
+  let cursor = bronzeDays.has(today) ? today : yesterday;
+  let streak = 0;
+
+  while (bronzeDays.has(cursor)) {
+    streak += 1;
+    cursor = offsetDateKey(cursor, -1);
+  }
+
+  return {
+    streak,
+    completedToday: bronzeDays.has(today),
+    lastBronzeDay: record.bronzeDays.at(-1) || "",
+  };
+}
+
+function setProgressStatus(status, message) {
+  elements.progressStatus.dataset.status = status;
+  elements.progressStatus.lastChild.textContent = message;
+}
+
+function renderProgressPage() {
+  const gameIds = getVisibleGameIds();
+  if (state.sharedConfigured && canReadSharedLeaderboards()) {
+    listenToSharedBoards(gameIds, { teacherFilterOverride: "all" });
+  }
+
+  const rows = gameIds.map((gameId) => {
+    const info = gameInfo[gameId];
+    const bestScore = getCurrentPlayerBestScore(gameId);
+    const goals = getMedalGoalsForGame(gameId);
+    const bestMedal = getBestMedalForScore(bestScore, goals);
+
+    return {
+      gameId,
+      info,
+      bestScore,
+      goals,
+      bestMedal,
+    };
+  });
+
+  const bronzeCount = rows.filter((row) => row.bestScore >= row.goals[0].score).length;
+  const goldCount = rows.filter((row) => row.bestScore >= row.goals[2].score).length;
+  const thorneCount = rows.filter((row) => row.bestScore >= row.goals[3].score).length;
+  const streak = getBronzeStreak();
+
+  elements.progressStreakCount.textContent = `${streak.streak} ${streak.streak === 1 ? "day" : "days"}`;
+  elements.progressStreakStatus.textContent = streak.completedToday
+    ? "Bronze or better is banked for today."
+    : streak.streak
+      ? "Get bronze or better today to keep this streak going."
+      : "Get bronze or better today to start a streak.";
+  elements.progressSummary.textContent = `${bronzeCount}/${gameIds.length} bronze, ${goldCount} gold, ${thorneCount} Mr Thorne targets reached.`;
+
+  elements.progressGrid.innerHTML = rows.length
+    ? rows.map(({ gameId, info, bestScore, goals, bestMedal }) => `
+        <article class="progress-game-card ${bestMedal ? `medal-${bestMedal.id}` : ""}">
+          <div class="progress-game-head">
+            <span class="mini-game-icon" aria-hidden="true">${escapeHtml(info.icon)}</span>
+            <div>
+              <p>${escapeHtml(getGameDurationLabel(gameId))}</p>
+              <h3>${escapeHtml(info.name)}</h3>
+            </div>
+          </div>
+          <div class="progress-best-score">
+            <span>Best score</span>
+            <strong>${bestScore.toLocaleString()}</strong>
+            <small>${bestMedal ? `${escapeHtml(bestMedal.label)} reached` : "No medal yet"}</small>
+          </div>
+          <div class="medal-track" aria-label="${escapeHtml(info.name)} medal targets">
+            ${goals.map((goal) => `
+              <div class="medal-step ${bestScore >= goal.score ? "achieved" : ""}">
+                <span>${escapeHtml(goal.label)}</span>
+                <strong>${goal.score.toLocaleString()}</strong>
+              </div>
+            `).join("")}
+          </div>
+          <a class="home-full-link" href="${getGameHash(gameId)}">Play ${escapeHtml(info.shortName)}</a>
+        </article>
+      `).join("")
+    : `<article class="progress-game-card"><p>No available games yet. Sign in and save your profile to see your games.</p></article>`;
+
+  if (!state.sharedConfigured) {
+    setProgressStatus("local", "Firebase setup needed. Progress uses scores saved on this device.");
+  } else if (!canReadSharedLeaderboards()) {
+    setProgressStatus("local", getProgressAccessMessage());
+  } else if (gameIds.some((gameId) => state.sharedScores[gameId] === null)) {
+    setProgressStatus("connecting", "Loading your medal progress and Mr Thorne targets...");
+  } else {
+    setProgressStatus("shared", "Progress is using your saved best scores. Daily streaks are kept on this device from new bronze-or-better attempts.");
+  }
 }
 
 function getGoalStatusMessage(gameId) {
@@ -2318,6 +2559,9 @@ function setBoardYearLevel(yearLevel) {
   if (state.page === "home") {
     renderHomeDashboard();
   }
+  if (state.page === "progress") {
+    renderProgressPage();
+  }
   if (state.page === "leaderboards") {
     renderAllLeaderboards();
   }
@@ -2412,10 +2656,18 @@ function updateSharedResultRank() {
   }
 }
 
-function listenToSharedBoard(game) {
+function listenToSharedBoard(game, { teacherFilterOverride = state.teacherFilter } = {}) {
   if (!state.sharedConfigured) return;
   if (!canReadGameLeaderboard(game)) return;
-  if (state.boardUnsubscribes.has(game)) return;
+  const teacherFilter = cleanAllowedTeacherFilter(teacherFilterOverride);
+  const listenerContext = `${state.boardYearLevel}:${teacherFilter}`;
+  if (state.boardUnsubscribes.has(game) && state.boardListenerContexts.get(game) === listenerContext) return;
+  if (state.boardUnsubscribes.has(game)) {
+    state.boardUnsubscribes.get(game)();
+    state.boardUnsubscribes.delete(game);
+    state.boardListenerContexts.delete(game);
+    state.sharedScores[game] = null;
+  }
 
   state.boardUnsubscribes.set(game, window.sharedLeaderboard.listen(
     game,
@@ -2423,6 +2675,7 @@ function listenToSharedBoard(game) {
       state.sharedScores[game] = normalizeScores(scores);
       if (state.page === "home") renderHomeDashboard();
       if (state.game === game) renderGameLeaderboard();
+      if (state.page === "progress") renderProgressPage();
       if (state.page === "leaderboards") renderAllLeaderboards();
       updateSharedResultRank();
     },
@@ -2430,18 +2683,20 @@ function listenToSharedBoard(game) {
       state.sharedScores[game] = null;
       if (state.page === "home") renderHomeDashboard();
       if (state.game === game) renderGameLeaderboard();
+      if (state.page === "progress") renderProgressPage();
       if (state.page === "leaderboards") renderAllLeaderboards();
       setLeaderboardStatus("local", "Shared leaderboard unavailable. Check Firestore database setup and rules.");
     },
     {
       yearLevel: state.boardYearLevel,
-      teacherFilter: state.teacherFilter,
+      teacherFilter,
     },
   ));
+  state.boardListenerContexts.set(game, listenerContext);
 }
 
-function listenToSharedBoards(games) {
-  games.forEach(listenToSharedBoard);
+function listenToSharedBoards(games, options = {}) {
+  games.forEach((game) => listenToSharedBoard(game, options));
 }
 
 function connectSharedLeaderboard() {
@@ -2849,6 +3104,9 @@ function finishGame() {
   }
 
   const localScore = saveScore ? saveLocalScore() : { rank: 0, saved: false };
+  if (saveScore) {
+    recordProgressAttempt(state.game, state.score, scoreContext);
+  }
   state.latestSharedScoreId = null;
 
   elements.gamePanel.hidden = true;
@@ -2965,10 +3223,12 @@ function renderLeaderboard() {
   renderTeacherFilterControls();
   if (state.page === "home") renderHomeDashboard();
   if (state.page === "game") renderGameLeaderboard();
+  if (state.page === "progress") renderProgressPage();
   if (state.page === "leaderboards") renderAllLeaderboards();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
     if (state.page === "home") listenToSharedBoards(getVisibleBoardGameIds());
     if (state.page === "game") listenToSharedBoard(state.game);
+    if (state.page === "progress") listenToSharedBoards(getVisibleGameIds(), { teacherFilterOverride: "all" });
     if (state.page === "leaderboards") listenToSharedBoards(getVisibleBoardGameIds());
   }
 }
@@ -2978,6 +3238,7 @@ function renderCurrentDataViews() {
   renderBoardTabs();
   if (state.page === "home") renderHomeDashboard();
   if (state.page === "game") renderGamePage();
+  if (state.page === "progress") renderProgressPage();
   if (state.page === "leaderboards") renderAllLeaderboards();
   renderLeaderboard();
 }
@@ -3010,6 +3271,10 @@ function parsePageHash() {
 
   if (rawHash === "leaderboards" || rawHash === "leaderboard") {
     return { page: "leaderboards" };
+  }
+
+  if (rawHash === "progress") {
+    return { page: "progress" };
   }
 
   if (rawHash === "games") {
@@ -3054,7 +3319,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
   const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
-  document.body.classList.toggle("app-page-active", ["home", "games", "game", "leaderboards"].includes(route.page));
+  document.body.classList.toggle("app-page-active", ["home", "games", "game", "progress", "leaderboards"].includes(route.page));
   document.body.classList.toggle("dashboard-page-active", route.page === "home");
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
 
@@ -3066,6 +3331,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   elements.heroSection.hidden = route.page !== "home";
   elements.gamesSection.hidden = route.page !== "games";
   elements.gamePageSection.hidden = route.page !== "game";
+  elements.progressSection.hidden = route.page !== "progress";
   elements.allLeaderboardsSection.hidden = route.page !== "leaderboards";
 
   if (route.page !== "game") {
@@ -3077,6 +3343,8 @@ function renderCurrentPage({ scroll = false } = {}) {
     state.board = route.gameId;
     renderGamePage();
     listenToSharedBoard(state.game);
+  } else if (route.page === "progress") {
+    renderProgressPage();
   } else if (route.page === "leaderboards") {
     renderAllLeaderboards();
   } else {
@@ -3096,9 +3364,11 @@ function renderCurrentPage({ scroll = false } = {}) {
         ? elements.gamePageSection
         : route.page === "leaderboards"
           ? elements.allLeaderboardsSection
-          : route.page === "games"
-            ? elements.gamesSection
-            : elements.heroSection;
+          : route.page === "progress"
+            ? elements.progressSection
+            : route.page === "games"
+              ? elements.gamesSection
+              : elements.heroSection;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }

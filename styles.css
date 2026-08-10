@@ -1497,6 +1497,7 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
 }
 
 .games-section.app-dashboard-page,
+.progress-section.app-dashboard-page,
 .leaderboard-section.app-dashboard-page {
   padding: 18px max(18px, calc((100vw - 1440px) / 2)) 58px;
 }
@@ -1514,13 +1515,23 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
     linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
 }
 
+.progress-section.app-dashboard-page {
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(140, 198, 230, 0.22), transparent 24%),
+    radial-gradient(circle at 8% 90%, rgba(53, 143, 208, 0.12), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
 .catalog-card .dashboard-section-head,
-.leaderboard-toolbar-card .dashboard-section-head {
+.leaderboard-toolbar-card .dashboard-section-head,
+.progress-toolbar-card .dashboard-section-head {
   padding: 0 2px;
 }
 
 .catalog-card .dashboard-section-head h2,
-.leaderboard-toolbar-card .dashboard-section-head h2 {
+.leaderboard-toolbar-card .dashboard-section-head h2,
+.progress-toolbar-card .dashboard-section-head h2 {
   color: var(--navy);
   font-size: 1.45rem;
 }
@@ -2895,6 +2906,139 @@ body.leaderboards-page-active:not(.app-page-active) .main-nav a:hover {
     linear-gradient(135deg, #ffffff 0%, #eef7fc 100%);
 }
 
+.progress-streak-card {
+  display: grid;
+  padding: 24px;
+  gap: 10px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(53, 143, 208, 0.16);
+  border-radius: 22px;
+  box-shadow: 0 16px 34px rgba(23, 43, 77, 0.08);
+}
+
+.progress-streak-card span,
+.progress-best-score span {
+  color: var(--blue-dark);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.progress-streak-card strong {
+  font-size: clamp(2.1rem, 4vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.progress-streak-card p,
+.progress-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.progress-game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.progress-game-card {
+  display: grid;
+  padding: 22px;
+  gap: 18px;
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.14), transparent 30%),
+    white;
+  border: 1px solid rgba(53, 143, 208, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
+}
+
+.progress-game-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.progress-game-head p {
+  margin: 0 0 6px;
+  color: var(--blue-dark);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.progress-game-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.progress-best-score {
+  display: grid;
+  padding: 16px;
+  gap: 5px;
+  background: #f4f9fc;
+  border-radius: 18px;
+}
+
+.progress-best-score strong {
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.progress-best-score small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.medal-track {
+  display: grid;
+  gap: 8px;
+}
+
+.medal-step {
+  display: flex;
+  min-height: 42px;
+  padding: 8px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  background: #f4f9fc;
+  border: 1px solid rgba(23, 43, 77, 0.06);
+  border-radius: 14px;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.medal-step.achieved {
+  color: var(--navy);
+  background: #e5f4fb;
+  border-color: rgba(53, 143, 208, 0.22);
+  box-shadow: inset 4px 0 0 var(--blue);
+}
+
+.medal-step span {
+  text-transform: uppercase;
+}
+
+.medal-step strong {
+  color: inherit;
+}
+
 .leaderboard-grid-card-head p {
   margin: 0 0 8px;
   color: var(--blue-dark);
@@ -3032,6 +3176,7 @@ footer > a:last-child {
   .app-dashboard-page,
   .games-section.app-dashboard-page,
   .game-page-section.app-dashboard-page,
+  .progress-section.app-dashboard-page,
   .leaderboard-section.app-dashboard-page {
     padding: 120px 18px 34px;
     grid-template-columns: 1fr;
@@ -3141,6 +3286,7 @@ footer > a:last-child {
   .app-dashboard-page,
   .games-section.app-dashboard-page,
   .game-page-section.app-dashboard-page,
+  .progress-section.app-dashboard-page,
   .leaderboard-section.app-dashboard-page {
     padding: 108px 14px 28px;
     gap: 16px;

@@ -372,13 +372,27 @@ if (!isConfigured) {
       ),
     ];
 
-    if (teacherFilter !== "none") {
+    if (teacherFilter === "year") {
       unsubscribes.push(
         onSnapshot(
           query(
             scoreCollection(game),
             where("role", "==", "teacher"),
             where("teacherYearLevels", "array-contains", yearLevel),
+          ),
+          (snapshot) => {
+            latestRows.teachers = scoreRowsFromSnapshot(snapshot);
+            emitRows();
+          },
+          onError,
+        ),
+      );
+    } else if (teacherFilter === "all") {
+      unsubscribes.push(
+        onSnapshot(
+          query(
+            scoreCollection(game),
+            where("role", "==", "teacher"),
           ),
           (snapshot) => {
             latestRows.teachers = scoreRowsFromSnapshot(snapshot);

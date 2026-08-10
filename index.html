@@ -130,8 +130,7 @@
             <a class="active" href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
             <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
-            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
-            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+            <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">√</span>
@@ -273,12 +272,11 @@
             <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
             <a class="active" href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
-            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
-            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+            <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">🎯</span>
-            <p>Choose a skill, beat your best score, and work towards the term goal.</p>
+            <p>Choose a skill, beat your best score, and build your medal progress.</p>
           </div>
         </aside>
 
@@ -322,12 +320,11 @@
             <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
             <a class="active" href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
-            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
-            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+            <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">▶</span>
-            <p>Check the goal, start the challenge, then keep improving your best score.</p>
+            <p>Start the challenge, then keep improving your best score and medal progress.</p>
           </div>
         </aside>
 
@@ -507,6 +504,60 @@
         </div>
       </section>
 
+      <section class="progress-section app-dashboard-page" id="progress" hidden>
+        <aside class="dashboard-sidebar" aria-label="Progress navigation">
+          <a class="dashboard-logo" href="#home" aria-label="Bayside Maths Challenge dashboard">
+            <img src="assets/bcc-logo-square.png?v=school-brand-20260810" alt="" width="512" height="512" />
+            <strong>Bayside Maths Challenge</strong>
+          </a>
+          <nav class="dashboard-menu" aria-label="Progress shortcuts">
+            <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
+            <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
+            <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
+            <a class="active" href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+          </nav>
+          <div class="dashboard-side-note">
+            <span aria-hidden="true">★</span>
+            <p>Earn medals by beating the bronze, silver, gold, and Mr Thorne targets.</p>
+          </div>
+        </aside>
+
+        <div class="dashboard-main dashboard-main-wide">
+          <section class="page-hero-card progress-page-hero" aria-labelledby="progress-heading">
+            <div>
+              <p class="eyebrow"><span></span> My progress</p>
+              <h1 id="progress-heading">Medals across every available game.</h1>
+              <p>
+                Bronze, silver, gold, and Mr Thorne targets are set for each game. For now,
+                the targets start at 1,000, 2,000, 3,000, and 4,000 points, with Mr Thorne
+                rising to Mr Thorne's best score when that is higher.
+              </p>
+            </div>
+            <div class="progress-streak-card" aria-label="Bronze streak">
+              <span>Bronze streak</span>
+              <strong id="progress-streak-count">0 days</strong>
+              <p id="progress-streak-status">Get bronze or better today to start a streak.</p>
+            </div>
+          </section>
+
+          <section class="dashboard-card progress-toolbar-card" aria-label="Progress summary">
+            <div class="dashboard-section-head">
+              <div>
+                <p class="eyebrow"><span></span> Medal map</p>
+                <h2>Your available games</h2>
+              </div>
+              <p class="progress-summary" id="progress-summary">Loading medal progress...</p>
+            </div>
+          </section>
+
+          <div class="progress-game-grid" id="progress-game-grid"></div>
+          <p class="leaderboard-note" id="progress-status" data-status="local" aria-live="polite">
+            <span></span>
+            Progress uses your saved best scores. Daily streaks are kept on this device from new attempts.
+          </p>
+        </div>
+      </section>
+
       <section class="leaderboard-section app-dashboard-page" id="leaderboards" hidden>
         <aside class="dashboard-sidebar" aria-label="Leaderboard navigation">
           <a class="dashboard-logo" href="#home" aria-label="Bayside Maths Challenge dashboard">
@@ -517,8 +568,7 @@
             <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
             <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a class="active" href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
-            <a href="#home-progress"><span aria-hidden="true">↗</span> My progress</a>
-            <a href="#home-badges"><span aria-hidden="true">★</span> Goals</a>
+            <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">Σ</span>
