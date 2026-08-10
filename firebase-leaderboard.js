@@ -169,6 +169,10 @@ function cleanTeacherFilter(filter) {
   return validTeacherFilters.has(value) ? value : "none";
 }
 
+function cleanBestStreak(bestStreak) {
+  return Number.isInteger(bestStreak) && bestStreak >= 0 ? bestStreak : 0;
+}
+
 function getYearRank(yearLevel) {
   const cleanLevel = cleanYearLevel(yearLevel);
   return cleanLevel ? Number(cleanLevel.replace("year", "")) : 0;
@@ -595,13 +599,16 @@ if (!isConfigured) {
       const scoreData = role === "teacher"
         ? await getTeacherScorePayload(user, game, score)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
+      const currentBestStreak = cleanBestStreak(context.bestStreak);
       const scoreDocument = doc(scoreCollection(game), user.uid);
       const existingScore = await getDoc(scoreDocument);
       const existingData = existingScore.exists() ? existingScore.data() : null;
       const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
+      const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
+      scoreData.bestStreak = Math.max(previousBestStreak, currentBestStreak);
 
       if (previousScore !== null && score <= previousScore) {
-        if (shouldSyncScoreMetadata(existingData, scoreData)) {
+        if (shouldSyncScoreMetadata(existingData, scoreData) || scoreData.bestStreak > previousBestStreak) {
           try {
             await updateDoc(scoreDocument, {
               ...scoreData,
@@ -619,6 +626,7 @@ if (!isConfigured) {
           previousScore,
           role: scoreData.role,
           score: previousScore,
+          bestStreak: scoreData.bestStreak,
         };
       }
 
@@ -641,6 +649,7 @@ if (!isConfigured) {
         previousScore,
         role: scoreData.role,
         score,
+        bestStreak: scoreData.bestStreak,
       };
     },
   };

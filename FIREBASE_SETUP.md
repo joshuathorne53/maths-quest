@@ -66,8 +66,8 @@ entries can only keep the same score or move higher.
 Leaderboard names come from the user's Google account. Student accounts save one
 year level before playing. Each Google account can have one score document per
 game because the score document ID must match the signed-in user's Firebase UID.
-Students can play any number of attempts, and the leaderboard keeps only their
-highest score for each game.
+Students can play any number of attempts. The leaderboard keeps their highest
+score for each game and their highest saved answer streak for the streak board.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
 and `year12`. Students can submit scores for skill challenges at their saved

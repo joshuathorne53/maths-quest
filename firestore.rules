@@ -214,12 +214,15 @@ service cloud.firestore {
       return isValidName(request.resource.data.name)
         && request.resource.data.score is int
         && request.resource.data.score >= 0
+        && request.resource.data.bestStreak is int
+        && request.resource.data.bestStreak >= 0
+        && request.resource.data.bestStreak <= 1000
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.game == game;
     }
 
     function hasValidStudentScoreFields(game) {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'role', 'yearLevel', 'game', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'uid', 'role', 'yearLevel', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && isStudentUser()
         && request.resource.data.role == 'student'
@@ -229,7 +232,7 @@ service cloud.firestore {
     }
 
     function hasValidTeacherScoreFields(game) {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && isTeacherUser()
         && request.resource.data.role == 'teacher'

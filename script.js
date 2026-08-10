@@ -1400,6 +1400,7 @@ function cloneSharedScores() {
 function normalizeScores(scores) {
   return scores.filter((entry) => {
     if (!entry || typeof entry.name !== "string" || !Number.isInteger(entry.score)) return false;
+    if (entry.bestStreak !== undefined && !Number.isInteger(entry.bestStreak)) return false;
     if (entry.role === "teacher") return Array.isArray(entry.teacherYearLevels);
     return entry.role === "student" && validYearLevels.has(entry.yearLevel);
   });
@@ -1520,12 +1521,17 @@ function saveLocalScore() {
     (entry) => (entry.uid || entry.id) === currentUid,
   );
   const previousScore = existingIndex >= 0 ? scores[state.game][existingIndex].score : null;
+  const previousBestStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestStreak)
+    ? scores[state.game][existingIndex].bestStreak
+    : 0;
   const improved = previousScore === null || state.score > previousScore;
+  const bestStreak = Math.max(previousBestStreak, state.bestStreak);
   const entry = {
     id: currentUid,
     uid: currentUid,
     name: playerName,
     score: improved ? state.score : previousScore,
+    bestStreak,
     role: scoreContext.role,
     game: state.game,
   };
@@ -1623,6 +1629,43 @@ function getTotalScores(gameIds) {
 
   return [...totals.values()]
     .sort((a, b) => b.score - a.score || b.games - a.games)
+    .slice(0, 20);
+}
+
+function getHighestStreakScores(gameIds) {
+  const totals = new Map();
+
+  gameIds.forEach((gameId) => {
+    filterScoresForBoard(getRawScores(gameId), state.boardYearLevel, state.teacherFilter, { scoreLimit: null })
+      .forEach((entry) => {
+        const key = getScoreKey(entry);
+        const streak = Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0;
+        const existing = totals.get(key) || {
+          id: key,
+          uid: key,
+          name: entry.name,
+          score: 0,
+          totalScore: 0,
+          role: entry.role,
+          yearLevel: entry.yearLevel,
+          teacherYearLevels: entry.teacherYearLevels,
+          games: 0,
+          streakGame: "",
+        };
+
+        existing.totalScore += entry.score;
+        existing.games += 1;
+        if (streak > existing.score) {
+          existing.score = streak;
+          existing.streakGame = gameInfo[gameId]?.name || "";
+        }
+        totals.set(key, existing);
+      });
+  });
+
+  return [...totals.values()]
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || b.totalScore - a.totalScore || b.games - a.games)
     .slice(0, 20);
 }
 
@@ -2010,7 +2053,16 @@ function renderGameCards() {
   }).join("");
 }
 
-function renderScoreRows(scores, emptyMessage, { scoreLimit = 7, showGameCount = false } = {}) {
+function renderScoreRows(
+  scores,
+  emptyMessage,
+  {
+    scoreLimit = 7,
+    showGameCount = false,
+    showStreakGame = false,
+    valueFormatter = (entry) => entry.score.toLocaleString(),
+  } = {},
+) {
   if (!scores.length) {
     return `<li class="empty-scores">${escapeHtml(emptyMessage)}</li>`;
   }
@@ -2021,6 +2073,9 @@ function renderScoreRows(scores, emptyMessage, { scoreLimit = 7, showGameCount =
       const gameCountLabel = showGameCount
         ? ` • ${entry.games} ${entry.games === 1 ? "game" : "games"}`
         : "";
+      const streakGameLabel = showStreakGame && entry.streakGame
+        ? ` • ${entry.streakGame}`
+        : "";
 
       return `
         <li class="score-row ${scoreMatchesCurrentPlayer(entry) ? "current-player" : ""} ${entry.role === "teacher" ? "teacher-score" : ""}">
@@ -2028,9 +2083,9 @@ function renderScoreRows(scores, emptyMessage, { scoreLimit = 7, showGameCount =
           <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
           <span class="score-name">
             ${escapeHtml(entry.name)}
-            <small>${escapeHtml(`${getScoreMeta(entry)}${gameCountLabel}`)}</small>
+            <small>${escapeHtml(`${getScoreMeta(entry)}${gameCountLabel}${streakGameLabel}`)}</small>
           </span>
-          <span class="score-points">${entry.score.toLocaleString()}</span>
+          <span class="score-points">${escapeHtml(valueFormatter(entry))}</span>
         </li>
       `;
     })
@@ -2280,10 +2335,21 @@ function renderGameLeaderboard() {
   }
 }
 
-function renderLeaderboardGridCard({ gameId, title, description, scores, total = false }) {
+function renderLeaderboardGridCard({
+  gameId,
+  title,
+  description,
+  scores,
+  total = false,
+  streak = false,
+}) {
   const info = gameInfo[gameId] || {};
-  const classes = total ? "leaderboard-grid-card total-leaderboard-card" : "leaderboard-grid-card";
-  const meta = total
+  const classes = total || streak
+    ? `leaderboard-grid-card summary-leaderboard-card ${total ? "total-leaderboard-card" : "streak-leaderboard-card"}`
+    : "leaderboard-grid-card";
+  const meta = streak
+    ? `${scores.length ? "Highest saved streaks" : "Waiting for streaks"} • ${getVisibleBoardGameIds().length} games`
+    : total
     ? `${scores.length ? "Combined best scores" : "Waiting for scores"} • ${getVisibleBoardGameIds().length} games`
     : `${getGameDurationLabel(gameId)} • Rank ${getGameRankLabel(gameId)}`;
 
@@ -2294,14 +2360,21 @@ function renderLeaderboardGridCard({ gameId, title, description, scores, total =
           <p>${escapeHtml(meta)}</p>
           <h3>${escapeHtml(title)}</h3>
         </div>
-        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(total ? "Σ" : info.icon)}</span>
+        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(total ? "Σ" : streak ? "↯" : info.icon)}</span>
       </div>
       <p class="leaderboard-grid-description">${escapeHtml(description)}</p>
       <ol class="compact-score-list">
         ${renderScoreRows(
           scores,
-          `No ${getYearLabel(state.boardYearLevel)} scores yet.`,
-          { scoreLimit: total ? 10 : 5, showGameCount: total },
+          streak
+            ? `No ${getYearLabel(state.boardYearLevel)} streaks saved yet.`
+            : `No ${getYearLabel(state.boardYearLevel)} scores yet.`,
+          {
+            scoreLimit: total || streak ? 10 : 5,
+            showGameCount: total,
+            showStreakGame: streak,
+            valueFormatter: streak ? (entry) => `${entry.score.toLocaleString()} streak` : undefined,
+          },
         )}
       </ol>
     </article>
@@ -2325,6 +2398,12 @@ function renderAllLeaderboards() {
     scores: totalScores,
     total: true,
   });
+  const streakCard = renderLeaderboardGridCard({
+    title: `${getYearLabel(state.boardYearLevel)} Highest Streak`,
+    description: "Ranks each player by their best saved answer streak from any visible game.",
+    scores: getHighestStreakScores(gameIds),
+    streak: true,
+  });
 
   const gameCards = gameIds.map((gameId) => renderLeaderboardGridCard({
     gameId,
@@ -2333,7 +2412,7 @@ function renderAllLeaderboards() {
     scores: getVisibleScores(gameId, { scoreLimit: 5 }),
   })).join("");
 
-  elements.leaderboardsGrid.innerHTML = `${totalCard}${gameCards}`;
+  elements.leaderboardsGrid.innerHTML = `${totalCard}${streakCard}${gameCards}`;
 
   if (!state.sharedConfigured) {
     setLeaderboardStatus("local", "Firebase setup needed. Until then, the grid uses scores saved on this device.");
@@ -2755,6 +2834,7 @@ async function saveSharedScore() {
     state.pendingSharedScore = {
       game: state.game,
       score: state.score,
+      bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
     elements.resultRank.textContent = "Sign in needed";
@@ -2770,6 +2850,7 @@ async function saveSharedScore() {
     state.pendingSharedScore = {
       game: state.game,
       score: state.score,
+      bestStreak: state.bestStreak,
       context: currentScoreContext,
     };
     elements.resultRank.textContent = "Setup needed";
@@ -2782,12 +2863,18 @@ async function saveSharedScore() {
   const scoreToSave = state.pendingSharedScore
     ? {
         ...state.pendingSharedScore,
-        context: currentScoreContext,
+        context: {
+          ...currentScoreContext,
+          bestStreak: state.pendingSharedScore.bestStreak || 0,
+        },
       }
     : {
         game: state.game,
         score: state.score,
-        context: currentScoreContext,
+        context: {
+          ...currentScoreContext,
+          bestStreak: state.bestStreak,
+        },
       };
 
   try {

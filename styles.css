@@ -2897,18 +2897,24 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
 }
 
-.total-leaderboard-card {
+.summary-leaderboard-card {
   min-height: 0;
-  grid-column: 1 / -1;
   background:
     radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.32), transparent 28%),
     white;
 }
 
 .leaderboard-section.app-dashboard-page .total-leaderboard-card {
+  grid-column: span 2;
   background:
     radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.34), transparent 28%),
     linear-gradient(135deg, #ffffff 0%, #eef7fc 100%);
+}
+
+.leaderboard-section.app-dashboard-page .streak-leaderboard-card {
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 199, 44, 0.2), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #fff8df 100%);
 }
 
 .progress-streak-card {
