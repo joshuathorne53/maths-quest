@@ -1569,6 +1569,17 @@ function updateLocalTeacherScoreMetadata(name, teacherYearLevels) {
   const cleanName = cleanLeaderboardName(name);
   const cleanLevels = teacherYearLevels.map(cleanYearLevel).filter(Boolean);
   if (!cleanName || !cleanLevels.length) return;
+  const updateEntry = (entry) => {
+    if (entry.role !== "teacher" || (entry.uid || entry.id) !== state.authUid) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      name: cleanName,
+      teacherYearLevels: cleanLevels,
+    };
+  };
 
   const scores = getLocalScores();
   let changed = false;
@@ -1576,16 +1587,9 @@ function updateLocalTeacherScoreMetadata(name, teacherYearLevels) {
   GAME_IDS.forEach((gameId) => {
     scores[gameId] = normalizeScores(scores[gameId])
       .map((entry) => {
-        if (entry.role !== "teacher" || (entry.uid || entry.id) !== state.authUid) {
-          return entry;
-        }
-
-        changed = true;
-        return {
-          ...entry,
-          name: cleanName,
-          teacherYearLevels: cleanLevels,
-        };
+        const updatedEntry = updateEntry(entry);
+        if (updatedEntry !== entry) changed = true;
+        return updatedEntry;
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, 300);
@@ -1594,6 +1598,14 @@ function updateLocalTeacherScoreMetadata(name, teacherYearLevels) {
   if (changed) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
   }
+
+  Object.entries(state.sharedScores).forEach(([gameId, scoreRows]) => {
+    if (!Array.isArray(scoreRows)) return;
+    state.sharedScores[gameId] = normalizeScores(scoreRows)
+      .map(updateEntry)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 300);
+  });
 }
 
 function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
@@ -2754,6 +2766,7 @@ function applyAuthState(authState) {
   const oldAuthUid = state.authUid;
   const oldAuthAllowed = state.authAllowed;
   const oldAccountType = state.accountType;
+  const oldAuthName = state.authName;
   const oldStudentYearLevel = state.studentYearLevel;
   const oldTeacherYears = state.teacherYearLevels.join(",");
 
@@ -2788,6 +2801,12 @@ function applyAuthState(authState) {
     state.player = getGooglePlayerName();
     if (getActiveAccountType() === "student" && state.studentYearLevel) {
       setBoardYearLevel(state.studentYearLevel);
+    }
+    if (
+      getActiveAccountType() === "teacher"
+      && (oldAuthName !== state.authName || oldTeacherYears !== state.teacherYearLevels.join(","))
+    ) {
+      updateLocalTeacherScoreMetadata(getGooglePlayerName(), state.teacherYearLevels);
     }
   } else {
     state.settingsOpen = false;

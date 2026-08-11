@@ -469,11 +469,17 @@ if (!isConfigured) {
       if (!scoreSnapshot.exists()) return;
 
       const scoreData = scoreSnapshot.data();
-      if (scoreData.uid !== user.uid || scoreData.role !== "teacher") return;
+      if (scoreData.uid !== user.uid) return;
+      if (scoreData.role && scoreData.role !== "teacher") return;
+      if (!Number.isInteger(scoreData.score) || scoreData.score < 0) return;
 
       await updateDoc(scoreDocument, {
         name,
+        score: scoreData.score,
+        uid: user.uid,
+        role: "teacher",
         teacherYearLevels: yearLevels,
+        game,
         bestStreak: cleanBestStreak(scoreData.bestStreak),
         updatedAt: serverTimestamp(),
       });
