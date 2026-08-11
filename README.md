@@ -7,8 +7,8 @@ live topic leaderboards.
 
 ## Topic Areas
 
-- **Number Fluency:** arithmetic, integers, powers, indices, logarithms, and
-  complex-number fluency as year levels unlock them
+- **Number Fluency:** arithmetic, integers, powers, indices, and logarithms as
+  year levels unlock them
 - **Fractions, Ratios & Percentages:** fraction skills first, then ratios and
   percentage change in higher years
 - **Order of Operations:** BIDMAS and operation-order fluency

@@ -457,16 +457,6 @@ const gameInfo = {
     cardClass: "game-card-sky",
     accessYear: "year12",
   },
-  "y12-complex-numbers": {
-    name: "Complex Numbers",
-    shortName: "Complex",
-    description: "Find moduli of simple complex numbers.",
-    cardDescription: "Use exact right-triangle pairs to calculate complex moduli.",
-    bullets: ["Complex modulus", "Exact values"],
-    icon: "i",
-    cardClass: "game-card-sun",
-    accessYear: "year12",
-  },
   "y12-series": {
     name: "Series",
     shortName: "Series",
@@ -490,7 +480,6 @@ const skillTopicMap = {
   "y8-square-powers": "topic-number",
   "y9-index-laws": "topic-number",
   "y11-logarithms": "topic-number",
-  "y12-complex-numbers": "topic-number",
   "y7-fractions": "topic-fractions",
   "y7-simplifying-fractions": "topic-fractions",
   "y7-add-subtract-fractions": "topic-fractions",
@@ -531,8 +520,8 @@ const topicAreaInfo = {
   "topic-number": {
     name: "Number Fluency",
     shortName: "Number",
-    description: "A mixed number-fluency game using arithmetic, integers, powers, indices, logarithms, and complex-number basics as they unlock.",
-    cardDescription: "Build fast number sense. Higher years add powers, indices, logs, and complex-number fluency.",
+    description: "A mixed number-fluency game using arithmetic, integers, powers, indices, and logarithms as they unlock.",
+    cardDescription: "Build fast number sense. Higher years add powers, indices, and logarithms.",
     bullets: ["Combined topic game", "Arithmetic to advanced number"],
     icon: "∑",
     cardClass: "game-card-sky",
@@ -632,7 +621,6 @@ const PEN_AND_PAPER_GAME_IDS = new Set([
   "y11-surds",
   "y12-calculus-derivatives",
   "y12-integrals",
-  "y12-complex-numbers",
   "y12-series",
 ]);
 
@@ -1433,26 +1421,6 @@ const skillQuestionGenerators = {
     () => {
       const coefficient = randomNumber(2, 8);
       return { text: `Find k: ∫ ${coefficient} dx = kx + C`, answer: coefficient };
-    },
-  ])(),
-  "y12-complex-numbers": () => sample([
-    () => {
-      const triples = [
-        [3, 4, 5],
-        [5, 12, 13],
-        [8, 15, 17],
-      ];
-      const [real, imaginary, magnitude] = sample(triples);
-      return { text: `|${real} + ${imaginary}i| = ?`, answer: magnitude };
-    },
-    () => {
-      const triples = [
-        [3, 4, 5],
-        [5, 12, 13],
-        [8, 15, 17],
-      ];
-      const [real, imaginary, magnitude] = sample(triples);
-      return { text: `|${real} − ${imaginary}i| = ?`, answer: magnitude };
     },
   ])(),
   "y12-series": () => sample([
