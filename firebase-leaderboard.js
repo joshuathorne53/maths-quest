@@ -397,9 +397,23 @@ if (!isConfigured) {
     return cleanLevel ? `${user.uid}_${cleanLevel}` : user.uid;
   }
 
+  function getTeacherScoreDocumentId(user, yearLevel) {
+    const cleanLevel = cleanYearLevel(yearLevel);
+    return cleanLevel ? `${user.uid}_${cleanLevel}` : user.uid;
+  }
+
   function isMatchingStudentScore(scoreData, user, game, yearLevel) {
     return scoreData?.uid === user.uid
       && scoreData?.role === "student"
+      && scoreData?.game === game
+      && cleanYearLevel(scoreData?.yearLevel) === yearLevel
+      && Number.isInteger(scoreData?.score)
+      && scoreData.score >= 0;
+  }
+
+  function isMatchingTeacherScore(scoreData, user, game, yearLevel) {
+    return scoreData?.uid === user.uid
+      && scoreData?.role === "teacher"
       && scoreData?.game === game
       && cleanYearLevel(scoreData?.yearLevel) === yearLevel
       && Number.isInteger(scoreData?.score)
@@ -429,15 +443,14 @@ if (!isConfigured) {
 
   async function getScoreDocumentState(user, game, scoreData) {
     if (scoreData.role !== "student") {
-      const scoreDocument = doc(scoreCollection(game), user.uid);
+      const yearLevel = cleanYearLevel(scoreData.yearLevel);
+      const scoreDocument = doc(scoreCollection(game), getTeacherScoreDocumentId(user, yearLevel));
       const existingScore = await getDoc(scoreDocument);
       const existingData = existingScore.exists() ? existingScore.data() : null;
-      const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
-      const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
-      const previousBestTopicBronzeStreak = cleanBestTopicBronzeStreak(
-        existingData?.bestTopicBronzeStreak,
-        existingData || {},
-      );
+      const matchingSnapshots = existingScore.exists() && isMatchingTeacherScore(existingData, user, game, yearLevel)
+        ? [existingScore]
+        : [];
+      const { previousScore, previousBestStreak, previousBestTopicBronzeStreak } = getHighestScoreData(matchingSnapshots);
       return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak, previousBestTopicBronzeStreak };
     }
 
@@ -553,7 +566,7 @@ if (!isConfigured) {
           query(
             scoreCollection(game),
             where("role", "==", "teacher"),
-            where("teacherYearLevels", "array-contains", yearLevel),
+            where("yearLevel", "==", yearLevel),
           ),
           (snapshot) => {
             latestRows.teachers = scoreRowsFromSnapshot(snapshot);
@@ -568,6 +581,7 @@ if (!isConfigured) {
           query(
             scoreCollection(game),
             where("role", "==", "teacher"),
+            where("yearLevel", "==", yearLevel),
           ),
           (snapshot) => {
             latestRows.teachers = scoreRowsFromSnapshot(snapshot);
@@ -639,8 +653,12 @@ if (!isConfigured) {
   }
 
   async function syncTeacherScoreMetadata(user, name, yearLevels) {
-    const scoreUpdates = [...validGames].map(async (game) => {
-      const scoreDocument = doc(scoreCollection(game), user.uid);
+    const scoreDocuments = [...validGames].flatMap((game) => yearLevels.map((yearLevel) => ({
+      game,
+      scoreDocument: doc(scoreCollection(game), getTeacherScoreDocumentId(user, yearLevel)),
+    })));
+
+    const scoreUpdates = scoreDocuments.map(async ({ game, scoreDocument }) => {
       const scoreSnapshot = await getDoc(scoreDocument);
       if (!scoreSnapshot.exists()) return;
 
@@ -648,12 +666,15 @@ if (!isConfigured) {
       if (scoreData.uid !== user.uid) return;
       if (scoreData.role && scoreData.role !== "teacher") return;
       if (!Number.isInteger(scoreData.score) || scoreData.score < 0) return;
+      const yearLevel = cleanYearLevel(scoreData.yearLevel) || yearLevels[0];
+      if (!yearLevels.includes(yearLevel)) return;
 
       await updateDoc(scoreDocument, {
         name,
         score: scoreData.score,
         uid: user.uid,
         role: "teacher",
+        yearLevel,
         teacherYearLevels: yearLevels,
         game,
         bestStreak: cleanBestStreak(scoreData.bestStreak),
@@ -753,7 +774,11 @@ if (!isConfigured) {
     };
   }
 
-  async function getTeacherScorePayload(user, game, score) {
+  async function getTeacherScorePayload(user, game, score, yearLevel) {
+    if (!validGames.has(game)) {
+      throw new Error("Unknown game mode.");
+    }
+
     if (getAccountTypeForEmail(user.email) !== "teacher") {
       throw makeError("teacher/domain-required", "Only baysidecc.vic.edu.au accounts can submit teacher scores.");
     }
@@ -766,12 +791,22 @@ if (!isConfigured) {
       throw makeError("teacher/year-levels-needed", "Choose at least one teaching year level before playing.");
     }
 
+    const cleanLevel = cleanYearLevel(yearLevel);
+    if (!cleanLevel || !teacherYearLevels.includes(cleanLevel)) {
+      throw makeError("teacher/year-level-locked", "Choose one of your saved teaching year levels before playing.");
+    }
+
+    if (!canStudentAccessGame(game, cleanLevel)) {
+      throw makeError("profile/game-locked", "This challenge is locked for that year level.");
+    }
+
     teacherProfile = currentTeacherProfile;
     return {
       name: getTeacherLeaderboardName(user, currentTeacherProfile),
       score,
       uid: user.uid,
       role: "teacher",
+      yearLevel: cleanLevel,
       teacherYearLevels,
       game,
     };
@@ -788,7 +823,8 @@ if (!isConfigured) {
     }
 
     if (scoreData.role === "teacher") {
-      return !sameArray(cleanYearLevels(existingData.teacherYearLevels), scoreData.teacherYearLevels);
+      return cleanYearLevel(existingData.yearLevel) !== scoreData.yearLevel
+        || !sameArray(cleanYearLevels(existingData.teacherYearLevels), scoreData.teacherYearLevels);
     }
 
     return existingData.yearLevel !== scoreData.yearLevel;
@@ -907,7 +943,7 @@ if (!isConfigured) {
 
       const role = accountType === "teacher" ? "teacher" : "student";
       const scoreData = role === "teacher"
-        ? await getTeacherScorePayload(user, game, score)
+        ? await getTeacherScorePayload(user, game, score, context.yearLevel)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
       const currentBestStreak = cleanBestStreak(context.bestStreak);
       const {
@@ -950,10 +986,11 @@ if (!isConfigured) {
         }
 
         return {
-          id: user.uid,
+          id: scoreDocument.id,
           improved: false,
           previousScore,
           role: scoreData.role,
+          yearLevel: scoreData.yearLevel,
           score: previousScore,
           bestStreak: scoreData.bestStreak,
           bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
@@ -978,10 +1015,11 @@ if (!isConfigured) {
       }
 
       return {
-        id: user.uid,
+        id: scoreDocument.id,
         improved: true,
         previousScore,
         role: scoreData.role,
+        yearLevel: scoreData.yearLevel,
         score,
         bestStreak: scoreData.bestStreak,
         bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,

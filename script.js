@@ -677,6 +677,7 @@ const state = {
   settingsUserOpen: false,
   studentYearLevel: "",
   teacherYearLevels: [],
+  teacherChallengeYearLevel: DEFAULT_YEAR_LEVEL,
   testStudentMode: false,
   testStudentYearLevel: DEFAULT_YEAR_LEVEL,
   boardUnsubscribes: new Map(),
@@ -729,6 +730,10 @@ const elements = {
   startTitle: document.querySelector("#start-title"),
   startDescription: document.querySelector("#start-description"),
   startPlayer: document.querySelector("#start-player"),
+  startNote: document.querySelector("#start-note"),
+  teacherChallengeYearWrap: document.querySelector("#teacher-challenge-year-wrap"),
+  teacherChallengeYearSelect: document.querySelector("#teacher-challenge-year-select"),
+  teacherChallengeYearNote: document.querySelector("#teacher-challenge-year-note"),
   startGameButton: document.querySelector("#start-game-button"),
   countdownNumber: document.querySelector("#countdown-number"),
   countdownMessage: document.querySelector("#countdown-message"),
@@ -1531,6 +1536,9 @@ function getEffectiveChallengeYearLevel() {
   if (getActiveAccountType() === "student") {
     return cleanYearLevel(state.studentYearLevel) || cleanYearLevel(state.boardYearLevel) || DEFAULT_YEAR_LEVEL;
   }
+  if (getActiveAccountType() === "teacher") {
+    return getTeacherChallengeYearLevel(state.game);
+  }
   return cleanYearLevel(state.boardYearLevel) || DEFAULT_YEAR_LEVEL;
 }
 
@@ -1540,6 +1548,30 @@ function getYearRank(yearLevel) {
 
 function getGameRequiredYear(gameId) {
   return cleanYearLevel(gameInfo[gameId]?.accessYear) || DEFAULT_YEAR_LEVEL;
+}
+
+function getTeacherPlayableChallengeYearLevels(gameId = state.game) {
+  return state.teacherYearLevels
+    .map(cleanYearLevel)
+    .filter((yearLevel, index, levels) => yearLevel && levels.indexOf(yearLevel) === index)
+    .filter((yearLevel) => !gameInfo[gameId] || canYearAccessGame(yearLevel, gameId));
+}
+
+function getTeacherChallengeYearLevel(gameId = state.game) {
+  const playableYearLevels = getTeacherPlayableChallengeYearLevels(gameId);
+  const selectedYearLevel = cleanYearLevel(state.teacherChallengeYearLevel);
+  if (selectedYearLevel && playableYearLevels.includes(selectedYearLevel)) return selectedYearLevel;
+
+  const boardYearLevel = cleanYearLevel(state.boardYearLevel);
+  if (boardYearLevel && playableYearLevels.includes(boardYearLevel)) return boardYearLevel;
+
+  return playableYearLevels[0] || selectedYearLevel || boardYearLevel || DEFAULT_YEAR_LEVEL;
+}
+
+function syncTeacherChallengeYearLevel(gameId = state.game) {
+  const yearLevel = getTeacherChallengeYearLevel(gameId);
+  state.teacherChallengeYearLevel = yearLevel;
+  return yearLevel;
 }
 
 function getTopicSkillIds(topicId, yearLevel = "") {
@@ -1573,17 +1605,17 @@ function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel(
   return getPlayableTopicSkillIds(gameId, yearLevel).some((skillId) => PEN_AND_PAPER_GAME_IDS.has(skillId));
 }
 
-function getGameDuration(gameId) {
-  return hasPenAndPaperSkill(gameId) ? PAPER_GAME_SECONDS : GAME_SECONDS;
+function getGameDuration(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
+  return hasPenAndPaperSkill(gameId, yearLevel) ? PAPER_GAME_SECONDS : GAME_SECONDS;
 }
 
-function getGameDurationLabel(gameId) {
-  const minutes = getGameDuration(gameId) / 60;
+function getGameDurationLabel(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
+  const minutes = getGameDuration(gameId, yearLevel) / 60;
   return minutes === 1 ? "1 minute" : `${minutes} minutes`;
 }
 
-function getPenAndPaperNote(gameId) {
-  return hasPenAndPaperSkill(gameId)
+function getPenAndPaperNote(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
+  return hasPenAndPaperSkill(gameId, yearLevel)
     ? "Pen and paper recommended. This challenge gives 5 minutes so you can write working out."
     : "";
 }
@@ -1613,7 +1645,8 @@ function canAccessGame(gameId) {
     return canYearAccessGame(state.testStudentYearLevel, gameId);
   }
   if (getActiveAccountType() === "teacher") {
-    return canYearAccessGame(getEffectiveChallengeYearLevel(), gameId);
+    if (!state.teacherYearLevels.length) return false;
+    return canYearAccessGame(getTeacherChallengeYearLevel(gameId), gameId);
   }
 
   return canYearAccessGame(state.studentYearLevel, gameId);
@@ -1715,6 +1748,10 @@ function getVisibleGameIds() {
 }
 
 function getVisibleTopicAreaIds() {
+  if (getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()) {
+    return TOPIC_AREA_IDS.filter((topicId) => getTeacherPlayableChallengeYearLevels(topicId).length > 0);
+  }
+
   const topicIds = TOPIC_AREA_IDS.filter((topicId) => (
     hasUnlockedTopicSkills(topicId, getEffectiveChallengeYearLevel())
   ));
@@ -1758,7 +1795,10 @@ function getGameAccessMessage(gameId) {
   }
 
   if (getActiveAccountType() === "teacher") {
-    return "Available for teacher accounts.";
+    const playableYearLevels = getTeacherPlayableChallengeYearLevels(gameId);
+    return playableYearLevels.length
+      ? `Available for teacher accounts. Choose ${getYearLabel(getTeacherChallengeYearLevel(gameId))} or another saved teaching year before playing.`
+      : "No saved teaching year has skills unlocked for this topic yet.";
   }
 
   if (!state.studentYearLevel) {
@@ -1800,6 +1840,8 @@ function setupYearControls() {
   elements.studentYearSelect.innerHTML = createYearOptions({ includePlaceholder: true });
   elements.testStudentYearSelect.innerHTML = createYearOptions();
   elements.testStudentYearSelect.value = state.testStudentYearLevel;
+  elements.teacherChallengeYearSelect.innerHTML = createYearOptions();
+  elements.teacherChallengeYearSelect.value = state.teacherChallengeYearLevel;
   elements.teacherYearOptions.innerHTML = YEAR_LEVELS.map(
     (yearLevel) => `
       <label class="year-check">
@@ -1823,7 +1865,9 @@ function normalizeScores(scores) {
     if (!entry || typeof entry.name !== "string" || !Number.isInteger(entry.score)) return false;
     if (entry.bestStreak !== undefined && !Number.isInteger(entry.bestStreak)) return false;
     if (entry.bestTopicBronzeStreak !== undefined && !Number.isInteger(entry.bestTopicBronzeStreak)) return false;
-    if (entry.role === "teacher") return Array.isArray(entry.teacherYearLevels);
+    if (entry.role === "teacher") {
+      return Array.isArray(entry.teacherYearLevels) && validYearLevels.has(entry.yearLevel);
+    }
     return entry.role === "student" && validYearLevels.has(entry.yearLevel);
   });
 }
@@ -1912,8 +1956,12 @@ function getScoreContext() {
   }
 
   if (getActiveAccountType() === "teacher") {
+    const teacherYearLevel = isTopicArea(state.game) && (state.page === "game" || !elements.playSection.hidden)
+      ? getTeacherChallengeYearLevel(state.game)
+      : cleanYearLevel(state.boardYearLevel) || getTeacherChallengeYearLevel(state.game);
     return {
       role: "teacher",
+      yearLevel: teacherYearLevel,
       teacherYearLevels: state.teacherYearLevels,
     };
   }
@@ -1938,6 +1986,13 @@ function getScoreIdentity(scoreContext, playerName) {
       };
     }
 
+    if (scoreContext.role === "teacher") {
+      return {
+        id: getStudentScoreId(state.authUid, scoreContext.yearLevel),
+        uid: state.authUid,
+      };
+    }
+
     return {
       id: state.authUid,
       uid: state.authUid,
@@ -1946,7 +2001,7 @@ function getScoreIdentity(scoreContext, playerName) {
 
   const cleanName = cleanLeaderboardName(playerName) || "Student";
   const contextKey = scoreContext.role === "teacher"
-    ? "teacher"
+    ? `teacher:${scoreContext.yearLevel || state.boardYearLevel}`
     : `${scoreContext.role}:${scoreContext.yearLevel || state.boardYearLevel}`;
   const id = `${contextKey}:${cleanName}`;
   return { id, uid: id };
@@ -1961,6 +2016,7 @@ function scoreMatchesIdentity(entry, scoreContext, scoreIdentity) {
   }
 
   if (scoreContext.role === "teacher") {
+    if (entry.yearLevel !== cleanYearLevel(scoreContext.yearLevel)) return false;
     return entry.id === scoreIdentity.id || entry.uid === scoreIdentity.uid;
   }
 
@@ -2017,6 +2073,7 @@ function saveLocalScore() {
 
   if (scoreContext.role === "teacher") {
     entry.teacherYearLevels = scoreContext.teacherYearLevels;
+    entry.yearLevel = scoreContext.yearLevel;
   } else {
     entry.yearLevel = scoreContext.yearLevel;
   }
@@ -2111,7 +2168,7 @@ function applyCurrentTeacherScoreName(scores) {
 
 function getLeaderboardDedupeKey(entry) {
   const identity = entry.uid || entry.id || entry.name;
-  if (entry.role === "teacher") return `teacher:${identity}`;
+  if (entry.role === "teacher") return `teacher:${identity}:${entry.yearLevel}`;
   return `student:${identity}:${entry.yearLevel}`;
 }
 
@@ -2145,9 +2202,11 @@ function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 1
   const currentViewerIsStudent = getActiveAccountType() === "student" && !isTeacherTestingAsStudent();
   const matchingScores = applyCurrentTeacherScoreName(scores).filter((entry) => {
     if (entry.role === "teacher") {
+      const teacherScoreYearLevel = cleanYearLevel(entry.yearLevel);
+      if (teacherScoreYearLevel !== yearLevel) return false;
       if (teacherFilter === "none") return false;
       if (teacherFilter === "all") return true;
-      return entry.teacherYearLevels.includes(yearLevel);
+      return Array.isArray(entry.teacherYearLevels) && entry.teacherYearLevels.includes(yearLevel);
     }
 
     if (currentViewerIsStudent && teacherFilter !== "none") {
@@ -2196,7 +2255,8 @@ function stopSharedBoardListeners({ clearScores = false } = {}) {
 }
 
 function getScoreKey(entry) {
-  return entry.uid || entry.id || `${entry.role}:${entry.name}:${entry.yearLevel || entry.teacherYearLevels?.join("-") || "teacher"}`;
+  const contextYearLevel = entry.yearLevel || entry.teacherYearLevels?.join("-") || "teacher";
+  return `${entry.uid || entry.id || `${entry.role}:${entry.name}`}:${contextYearLevel}`;
 }
 
 function shouldKeepCurrentPlayerInTeacherView() {
@@ -2316,13 +2376,15 @@ function getProgressPlayerKey(scoreContext = getScoreContext()) {
   if (state.authUid) {
     const contextKey = scoreContext.role === "student"
       ? scoreContext.yearLevel || state.boardYearLevel
-      : scoreContext.role;
+      : scoreContext.role === "teacher"
+        ? `teacher:${scoreContext.yearLevel || state.boardYearLevel}`
+        : scoreContext.role;
     return `uid:${state.authUid}:${contextKey}`;
   }
 
   const playerName = getGooglePlayerName().toLowerCase();
   const contextKey = scoreContext.role === "teacher"
-    ? scoreContext.teacherYearLevels.join("-")
+    ? scoreContext.yearLevel || state.boardYearLevel
     : scoreContext.yearLevel || state.boardYearLevel;
   return `local:${scoreContext.role}:${contextKey}:${playerName}`;
 }
@@ -2471,7 +2533,14 @@ function getProgressMedalData(gameId) {
 }
 
 function renderProgressSkillMedals(topicId) {
-  const skillIds = getPlayableTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+  const progressYearLevel = getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+    ? state.boardYearLevel
+    : getEffectiveChallengeYearLevel();
+  const skillIds = getPlayableTopicSkillIds(topicId, progressYearLevel).filter((skillId) => (
+    getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+      ? canYearAccessGame(progressYearLevel, skillId)
+      : canAccessGame(skillId)
+  ));
   if (!skillIds.length) {
     return `<p class="progress-skill-empty">No sub skills are unlocked for this topic yet.</p>`;
   }
@@ -2518,14 +2587,17 @@ function renderProgressPage() {
   elements.progressGrid.innerHTML = topicRows.length
     ? topicRows.map(({ gameId, info, bestScore, goals, bestMedal }) => {
         const expanded = state.expandedProgressTopics.has(gameId);
+        const progressYearLevel = getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+          ? state.boardYearLevel
+          : getEffectiveChallengeYearLevel();
         return `
         <article class="progress-game-card ${bestMedal ? `medal-${bestMedal.id}` : ""}">
           <div class="progress-game-head">
             <span class="mini-game-icon" aria-hidden="true">${escapeHtml(info.icon)}</span>
             <div>
-              <p>${escapeHtml(getGameDurationLabel(gameId))}</p>
+              <p>${escapeHtml(getGameDurationLabel(gameId, progressYearLevel))}</p>
               <h3>${escapeHtml(info.name)}</h3>
-              <small>${escapeHtml(getTopicSkillSummary(gameId))}</small>
+              <small>${escapeHtml(getTopicSkillSummary(gameId, progressYearLevel))}</small>
             </div>
           </div>
           <div class="progress-best-score">
@@ -2771,22 +2843,54 @@ function hasPlayableProfile() {
   return Boolean(state.studentYearLevel);
 }
 
+function renderTeacherChallengeYearControl() {
+  const showControl = state.sharedConfigured
+    && state.authAllowed
+    && getActiveAccountType() === "teacher"
+    && !isTeacherTestingAsStudent()
+    && isTopicArea(state.game);
+  const playableYearLevels = showControl ? getTeacherPlayableChallengeYearLevels(state.game) : [];
+  elements.teacherChallengeYearWrap.hidden = !showControl || !playableYearLevels.length;
+
+  if (!showControl || !playableYearLevels.length) {
+    return "";
+  }
+
+  const selectedYearLevel = syncTeacherChallengeYearLevel(state.game);
+  const options = playableYearLevels.map(
+    (yearLevel) => `<option value="${yearLevel}">${getYearLabel(yearLevel)}</option>`,
+  ).join("");
+  if (elements.teacherChallengeYearSelect.innerHTML !== options) {
+    elements.teacherChallengeYearSelect.innerHTML = options;
+  }
+  elements.teacherChallengeYearSelect.value = selectedYearLevel;
+  elements.teacherChallengeYearNote.textContent = `Questions and leaderboard score will use ${getYearLabel(selectedYearLevel)}.`;
+  return selectedYearLevel;
+}
+
 function updateStartPanel() {
+  elements.startGameButton.disabled = false;
+  elements.startNote.textContent = "Your name and year level come from your signed-in account setup.";
+  const teacherChallengeYearLevel = renderTeacherChallengeYearControl();
+
   if (!state.sharedConfigured) {
     elements.startPlayer.textContent = `Playing on the ${getYearLabel(state.boardYearLevel)} local leaderboard.`;
     elements.startGameButton.textContent = "Start game →";
+    elements.startNote.textContent = "Local scores only save on this device until Firebase is connected.";
     return;
   }
 
   if (!state.authAllowed) {
     elements.startPlayer.textContent = "Sign in with your Google account to play and submit a score.";
     elements.startGameButton.textContent = "Sign in to play →";
+    elements.startNote.textContent = "Use your school Google account to save progress and leaderboard scores.";
     return;
   }
 
   if (!state.accountType) {
     elements.startPlayer.textContent = "Sign in with your Google account before playing.";
     elements.startGameButton.textContent = "Open settings";
+    elements.startNote.textContent = "Your school email decides whether you are a student or teacher.";
     return;
   }
 
@@ -2794,15 +2898,29 @@ function updateStartPanel() {
     if (isTeacherTestingAsStudent()) {
       elements.startPlayer.textContent = `Playing as ${getTestStudentLabel()}. Test scores will not save.`;
       elements.startGameButton.textContent = "Start test game →";
+      elements.startNote.textContent = "Test student attempts never appear on shared leaderboards.";
       return;
     }
 
     if (state.teacherYearLevels.length) {
-      elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher.`;
-      elements.startGameButton.textContent = "Start game →";
+      const playableYearLevels = getTeacherPlayableChallengeYearLevels(state.game);
+      if (isTopicArea(state.game) && !playableYearLevels.length) {
+        elements.startPlayer.textContent = `No saved teaching year has ${gameInfo[state.game].name} skills unlocked.`;
+        elements.startGameButton.textContent = "Locked for now";
+        elements.startGameButton.disabled = true;
+        elements.startNote.textContent = "Choose a different topic or update your teaching years in settings.";
+      } else {
+        const yearLabel = teacherChallengeYearLevel ? ` for ${getYearLabel(teacherChallengeYearLevel)}` : "";
+        elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher${yearLabel}.`;
+        elements.startGameButton.textContent = "Start game →";
+        elements.startNote.textContent = teacherChallengeYearLevel
+          ? `${gameInfo[state.game].name} questions and leaderboard score will use ${getYearLabel(teacherChallengeYearLevel)}.`
+          : "Teacher skill practice saves to your progress but not shared leaderboards.";
+      }
     } else {
       elements.startPlayer.textContent = "Choose your teaching year levels before playing as a teacher.";
       elements.startGameButton.textContent = "Open settings";
+      elements.startNote.textContent = "Your teacher profile controls which topic year levels you can play for.";
     }
     return;
   }
@@ -2810,6 +2928,7 @@ function updateStartPanel() {
   if (state.studentYearLevel) {
     elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()} in ${getYearLabel(state.studentYearLevel)}.`;
     elements.startGameButton.textContent = "Start game →";
+    elements.startNote.textContent = "Your account year level controls your questions and leaderboard.";
     return;
   }
 
@@ -2832,9 +2951,16 @@ function renderGameCards() {
   const visibleTopicIds = getVisibleTopicAreaIds();
   elements.gameGrid.innerHTML = visibleTopicIds.map((topicId) => {
     const info = gameInfo[topicId];
+    const topicYearLevel = getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+      ? getTeacherChallengeYearLevel(topicId)
+      : getEffectiveChallengeYearLevel();
     const locked = !canAccessGame(topicId);
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
-    const availableSkillIds = getPlayableTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+    const availableSkillIds = getPlayableTopicSkillIds(topicId, topicYearLevel).filter((skillId) => (
+      getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+        ? canYearAccessGame(topicYearLevel, skillId)
+        : canAccessGame(skillId)
+    ));
     const skillLinks = availableSkillIds.map((skillId) => {
       const skill = gameInfo[skillId];
       return `
@@ -2851,8 +2977,8 @@ function renderGameCards() {
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.cardDescription)}</p>
         <div class="game-card-meta">
-          <span>${escapeHtml(getGameDurationLabel(topicId))}</span>
-          <span>${escapeHtml(getTopicSkillSummary(topicId))}</span>
+          <span>${escapeHtml(getGameDurationLabel(topicId, topicYearLevel))}</span>
+          <span>${escapeHtml(getTopicSkillSummary(topicId, topicYearLevel))}</span>
         </div>
         <ul>
           ${info.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}
@@ -2907,7 +3033,9 @@ function getHomeLeaderboardScores(view = state.homeLeaderboardView) {
 
   const matchingScores = normalizeScores(getRawScores(topicId)).filter((entry) => {
     if (view === "teachers") {
-      return entry.role === "teacher" && entry.teacherYearLevels.includes(state.boardYearLevel);
+      return entry.role === "teacher"
+        && entry.yearLevel === state.boardYearLevel
+        && entry.teacherYearLevels.includes(state.boardYearLevel);
     }
 
     return entry.role === "student" && entry.yearLevel === state.boardYearLevel;
@@ -2965,6 +3093,9 @@ function renderHomeFeaturedGame() {
 
   const gameId = state.homeFeaturedGame;
   const info = gameInfo[gameId];
+  const featuredYearLevel = getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+    ? getTeacherChallengeYearLevel(gameId)
+    : getEffectiveChallengeYearLevel();
   const locked = !canAccessGame(gameId);
   const playLabel = locked ? "Locked for now" : `Play ${info.name}`;
 
@@ -2972,8 +3103,8 @@ function renderHomeFeaturedGame() {
   elements.featuredGameHeading.textContent = info.name;
   elements.featuredGameDescription.textContent = info.description;
   elements.featuredGameMeta.innerHTML = `
-    <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
-    <span>${escapeHtml(getTopicSkillSummary(gameId))}</span>
+    <span>${escapeHtml(getGameDurationLabel(gameId, featuredYearLevel))}</span>
+    <span>${escapeHtml(getTopicSkillSummary(gameId, featuredYearLevel))}</span>
   `;
   elements.featuredGameBullets.innerHTML = info.bullets
     .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
@@ -3080,7 +3211,11 @@ function renderGamePage() {
   const info = gameInfo[state.game] || gameInfo["topic-number"];
   const topicId = getLeaderboardGameId(state.game);
   const hasTopicLeaderboard = isTopicArea(state.game);
-  const penNote = getPenAndPaperNote(state.game);
+  if (getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent() && hasTopicLeaderboard) {
+    syncTeacherChallengeYearLevel(state.game);
+  }
+  const challengeYearLevel = getEffectiveChallengeYearLevel();
+  const penNote = getPenAndPaperNote(state.game, challengeYearLevel);
 
   elements.gamePageSection.className = `game-page-section app-dashboard-page ${info.cardClass}`;
   elements.gamePageIcon.textContent = info.icon;
@@ -3089,7 +3224,7 @@ function renderGamePage() {
   elements.gamePageBullets.innerHTML = info.bullets
     .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
     .join("");
-  elements.gamePageDuration.textContent = getGameDurationLabel(state.game);
+  elements.gamePageDuration.textContent = getGameDurationLabel(state.game, challengeYearLevel);
   elements.gamePageGoal.textContent = getGameRankLabel(state.game);
   elements.gamePagePrep.hidden = !penNote;
   elements.gamePagePrep.textContent = penNote;
@@ -3114,8 +3249,13 @@ function renderTopicPageSkills() {
     return;
   }
 
-  const availableSkillIds = getPlayableTopicSkillIds(state.game, getEffectiveChallengeYearLevel()).filter(canAccessGame);
-  const yearLabel = getYearLabel(getEffectiveChallengeYearLevel());
+  const topicYearLevel = getEffectiveChallengeYearLevel();
+  const availableSkillIds = getPlayableTopicSkillIds(state.game, topicYearLevel).filter((skillId) => (
+    getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent()
+      ? canYearAccessGame(topicYearLevel, skillId)
+      : canAccessGame(skillId)
+  ));
+  const yearLabel = getYearLabel(topicYearLevel);
   elements.topicPageSkillsTitle.textContent = `${gameInfo[state.game].name} sub skills`;
   elements.topicPageSkillsSummary.textContent = availableSkillIds.length
     ? `${availableSkillIds.length} ${availableSkillIds.length === 1 ? "skill is" : "skills are"} available for ${yearLabel}. Practise one exact question type, then play the topic area game for the shared leaderboard.`
@@ -3185,7 +3325,7 @@ function renderLeaderboardGridCard({
   scores,
 }) {
   const info = gameInfo[gameId] || {};
-  const meta = `${getGameDurationLabel(gameId)} • ${getTopicSkillSummary(gameId, state.boardYearLevel)}`;
+  const meta = `${getGameDurationLabel(gameId, state.boardYearLevel)} • ${getTopicSkillSummary(gameId, state.boardYearLevel)}`;
 
   return `
     <article class="leaderboard-grid-card">
@@ -3654,6 +3794,10 @@ function getFirebaseMessage(error, fallback) {
     return "Choose at least one teaching year level before playing as a teacher.";
   }
 
+  if (code.includes("teacher/year-level-locked")) {
+    return "Choose one of your saved teaching year levels before playing this topic.";
+  }
+
   if (code.includes("teacher/name-needed")) {
     return "Enter the teacher name you want shown on leaderboards.";
   }
@@ -3677,6 +3821,9 @@ function setBoardYearLevel(yearLevel) {
   }
 
   state.boardYearLevel = cleanLevel;
+  if (getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent() && state.teacherYearLevels.includes(cleanLevel)) {
+    state.teacherChallengeYearLevel = cleanLevel;
+  }
   elements.boardYearSelect.value = cleanLevel;
   elements.gameBoardYearSelect.value = cleanLevel;
   renderBoardTabs();
@@ -3775,6 +3922,11 @@ function applyAuthState(authState) {
   state.teacherYearLevels = Array.isArray(authState?.teacherYearLevels)
     ? authState.teacherYearLevels.map(cleanYearLevel).filter(Boolean)
     : [];
+  if (state.accountType === "teacher" && state.teacherYearLevels.length) {
+    syncTeacherChallengeYearLevel(state.game);
+  } else {
+    state.teacherChallengeYearLevel = DEFAULT_YEAR_LEVEL;
+  }
   if (state.accountType !== "teacher" || !canUseTestStudentMode()) {
     state.testStudentMode = false;
   }
@@ -4012,8 +4164,12 @@ async function saveSharedScore() {
     );
     state.pendingSharedScore = null;
 
+    if (savedScore.role === "teacher") {
+      setBoardYearLevel(savedScore.yearLevel || currentScoreContext.yearLevel);
+    }
+
     if (savedScore.role === "teacher" && state.teacherFilter === "none") {
-      state.teacherFilter = state.teacherYearLevels.includes(state.boardYearLevel) ? "year" : "all";
+      state.teacherFilter = "year";
       renderTeacherFilterControls();
       renderLeaderboard();
     }
@@ -4148,6 +4304,21 @@ function playTone(success) {
   oscillator.stop(context.currentTime + 0.12);
 }
 
+function updateSelectedGameStartCopy() {
+  const info = gameInfo[state.game];
+  if (!info) return;
+
+  const challengeYearLevel = getEffectiveChallengeYearLevel();
+  const penNote = getPenAndPaperNote(state.game, challengeYearLevel);
+  elements.startTitle.textContent = info.name;
+  elements.startDescription.textContent = [
+    info.description,
+    `Time limit: ${getGameDurationLabel(state.game, challengeYearLevel)}.`,
+    penNote,
+  ].filter(Boolean).join(" ");
+  elements.playMode.textContent = info.name;
+}
+
 function selectGame(mode) {
   if (!gameInfo[mode]) return;
 
@@ -4159,15 +4330,10 @@ function selectGame(mode) {
 
   state.game = mode;
   state.board = getLeaderboardGameId(mode);
-  const info = gameInfo[mode];
-  const penNote = getPenAndPaperNote(mode);
-  elements.startTitle.textContent = info.name;
-  elements.startDescription.textContent = [
-    info.description,
-    `Time limit: ${getGameDurationLabel(mode)}.`,
-    penNote,
-  ].filter(Boolean).join(" ");
-  elements.playMode.textContent = info.name;
+  if (getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent() && isTopicArea(mode)) {
+    syncTeacherChallengeYearLevel(mode);
+  }
+  updateSelectedGameStartCopy();
   elements.startPanel.hidden = false;
   elements.countdownPanel.hidden = true;
   elements.gamePanel.hidden = true;
@@ -4310,11 +4476,9 @@ async function requestStartGame() {
 
   if (scoreContext.role === "student" || scoreContext.role === "test") {
     setBoardYearLevel(scoreContext.yearLevel);
-  } else if (scoreContext.teacherYearLevels.includes(state.boardYearLevel)) {
+  } else if (scoreContext.role === "teacher") {
+    setBoardYearLevel(scoreContext.yearLevel);
     state.teacherFilter = "year";
-    renderTeacherFilterControls();
-  } else {
-    state.teacherFilter = "all";
     renderTeacherFilterControls();
   }
 
@@ -4331,9 +4495,12 @@ function finishGame() {
 
   if (scoreContext.role === "student" || scoreContext.role === "test") {
     setBoardYearLevel(scoreContext.yearLevel);
-  } else if (state.teacherFilter === "none") {
-    state.teacherFilter = scoreContext.teacherYearLevels.includes(state.boardYearLevel) ? "year" : "all";
-    renderTeacherFilterControls();
+  } else if (scoreContext.role === "teacher") {
+    setBoardYearLevel(scoreContext.yearLevel);
+    if (state.teacherFilter === "none") {
+      state.teacherFilter = "year";
+      renderTeacherFilterControls();
+    }
   }
 
   if (saveScore) {
@@ -4694,6 +4861,19 @@ elements.boardYearSelect.addEventListener("change", () => {
 });
 elements.gameBoardYearSelect.addEventListener("change", () => {
   setBoardYearLevel(elements.gameBoardYearSelect.value);
+});
+elements.teacherChallengeYearSelect.addEventListener("change", () => {
+  const selectedYearLevel = cleanYearLevel(elements.teacherChallengeYearSelect.value);
+  if (!selectedYearLevel) return;
+
+  state.teacherChallengeYearLevel = selectedYearLevel;
+  state.pendingSharedScore = null;
+  if (isTopicArea(state.game)) {
+    setBoardYearLevel(selectedYearLevel);
+    updateSelectedGameStartCopy();
+    renderGamePage();
+  }
+  updateStartPanel();
 });
 elements.studentProfileForm.addEventListener("submit", saveStudentProfile);
 elements.studentRequestButton.addEventListener("click", () => requestStudentYearLevel());

@@ -171,8 +171,7 @@ service cloud.firestore {
           )
           || (
             resource.data.role == 'teacher'
-            && resource.data.teacherYearLevels is list
-            && isValidYearLevelList(resource.data.teacherYearLevels)
+            && resource.data.yearLevel == savedStudentYearLevel()
           )
         );
     }
@@ -220,11 +219,14 @@ service cloud.firestore {
     }
 
     function hasValidTeacherScoreFields(game) {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'bestTopicBronzeStreak', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'bestTopicBronzeStreak', 'uid', 'role', 'yearLevel', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && isTeacherUser()
         && request.resource.data.role == 'teacher'
+        && isValidYearLevel(request.resource.data.yearLevel)
+        && canStudentAccessGame(game, request.resource.data.yearLevel)
         && hasSavedTeacherYears()
+        && get(teacherProfilePath()).data.yearLevels.hasAny([request.resource.data.yearLevel])
         && request.resource.data.teacherYearLevels == get(teacherProfilePath()).data.yearLevels
         && isValidYearLevelList(request.resource.data.teacherYearLevels);
     }
@@ -236,7 +238,7 @@ service cloud.firestore {
     function hasValidScoreDocumentId(scoreId) {
       return (
           request.resource.data.role == 'teacher'
-          && scoreId == request.auth.uid
+          && scoreId == request.auth.uid + '_' + request.resource.data.yearLevel
         )
         || (
           request.resource.data.role == 'student'

@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=topic-streak-v2-20260811" />
-    <script src="script.js?v=topic-skills-v2-20260811" defer></script>
-    <script type="module" src="firebase-leaderboard.js?v=topic-streak-v2-20260811"></script>
+    <link rel="stylesheet" href="styles.css?v=teacher-topic-year-v1-20260811" />
+    <script src="script.js?v=teacher-topic-year-v1-20260811" defer></script>
+    <script type="module" src="firebase-leaderboard.js?v=teacher-topic-year-v1-20260811"></script>
   </head>
   <body>
     <header class="site-header">
@@ -433,8 +433,13 @@
             <p id="start-description">Solve as many questions as you can in 60 seconds.</p>
             <div class="start-actions">
               <p class="player-preview" id="start-player">Sign in with your school Google account to play.</p>
+              <label class="select-field teacher-challenge-year" id="teacher-challenge-year-wrap" for="teacher-challenge-year-select" hidden>
+                <span>Playing for year level</span>
+                <select id="teacher-challenge-year-select"></select>
+                <small id="teacher-challenge-year-note">Questions and leaderboard score use this year level.</small>
+              </label>
               <button class="button button-primary" id="start-game-button" type="button">Start game →</button>
-              <small>Your name and year level come from your signed-in account setup.</small>
+              <small id="start-note">Your name and year level come from your signed-in account setup.</small>
             </div>
           </div>
 
