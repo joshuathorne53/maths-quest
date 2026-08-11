@@ -3093,13 +3093,13 @@ function renderAllLeaderboards() {
       valueFormatter: (entry) => `${entry.score.toLocaleString()} pts`,
     }),
     renderSummaryLeaderboardCard({
-      title: "Topic Bronze Streak",
+      title: "Streak",
       description: "Longest streak of days earning at least Bronze in a topic-area game.",
-      meta: "Bronze-or-better topic days",
+      meta: "Bronze-or-better days",
       icon: "↯",
       scores: streakScores,
       className: "topic-streak-leaderboard-card",
-      emptyMessage: `No ${getYearLabel(state.boardYearLevel)} topic bronze streaks yet.`,
+      emptyMessage: `No ${getYearLabel(state.boardYearLevel)} streaks yet.`,
       valueFormatter: (entry) => formatDayCount(entry.score),
     }),
   ].join("");
