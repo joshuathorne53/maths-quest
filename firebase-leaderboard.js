@@ -30,7 +30,7 @@ import {
   studentEmailDomain,
   teacherEmailDomain,
   yearLevelRequestEmail,
-} from "./firebase-config.js?v=topic-skills-20260811";
+} from "./firebase-config.js?v=summary-progress-20260811";
 
 const validGames = new Set([
   "topic-number",
@@ -392,8 +392,12 @@ if (!isConfigured) {
       (highest, scoreData) => Math.max(highest, cleanBestStreak(scoreData.bestStreak)),
       0,
     );
+    const previousBestBronzeStreak = matchingScores.reduce(
+      (highest, scoreData) => Math.max(highest, cleanBestStreak(scoreData.bestBronzeStreak)),
+      0,
+    );
 
-    return { previousScore, previousBestStreak };
+    return { previousScore, previousBestStreak, previousBestBronzeStreak };
   }
 
   async function getScoreDocumentState(user, game, scoreData) {
@@ -403,7 +407,8 @@ if (!isConfigured) {
       const existingData = existingScore.exists() ? existingScore.data() : null;
       const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
       const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
-      return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak };
+      const previousBestBronzeStreak = cleanBestStreak(existingData?.bestBronzeStreak);
+      return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak, previousBestBronzeStreak };
     }
 
     const yearLevel = cleanYearLevel(scoreData.yearLevel);
@@ -427,7 +432,7 @@ if (!isConfigured) {
         : null,
       legacyMatchesYear ? legacyScoreSnapshot : null,
     ].filter(Boolean);
-    const { previousScore, previousBestStreak } = getHighestScoreData(relevantSnapshots);
+    const { previousScore, previousBestStreak, previousBestBronzeStreak } = getHighestScoreData(relevantSnapshots);
 
     return {
       scoreDocument: preferredScoreDocument,
@@ -435,6 +440,7 @@ if (!isConfigured) {
       existingData,
       previousScore,
       previousBestStreak,
+      previousBestBronzeStreak,
     };
   }
 
@@ -617,6 +623,7 @@ if (!isConfigured) {
         teacherYearLevels: yearLevels,
         game,
         bestStreak: cleanBestStreak(scoreData.bestStreak),
+        bestBronzeStreak: cleanBestStreak(scoreData.bestBronzeStreak),
         ...(scoreData.createdAt ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       });
@@ -869,20 +876,24 @@ if (!isConfigured) {
         ? await getTeacherScorePayload(user, game, score)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
       const currentBestStreak = cleanBestStreak(context.bestStreak);
+      const currentBestBronzeStreak = cleanBestStreak(context.bestBronzeStreak);
       const {
         scoreDocument,
         existingScore,
         existingData,
         previousScore,
         previousBestStreak,
+        previousBestBronzeStreak,
       } = await getScoreDocumentState(user, game, scoreData);
       scoreData.bestStreak = Math.max(previousBestStreak, currentBestStreak);
+      scoreData.bestBronzeStreak = Math.max(previousBestBronzeStreak, currentBestBronzeStreak);
 
       if (previousScore !== null && score <= previousScore) {
         const preferredScore = Number.isInteger(existingData?.score) ? existingData.score : null;
         if (
           shouldSyncScoreMetadata(existingData, scoreData)
           || scoreData.bestStreak > previousBestStreak
+          || scoreData.bestBronzeStreak > previousBestBronzeStreak
           || preferredScore === null
           || previousScore > preferredScore
         ) {
@@ -908,6 +919,7 @@ if (!isConfigured) {
           role: scoreData.role,
           score: previousScore,
           bestStreak: scoreData.bestStreak,
+          bestBronzeStreak: scoreData.bestBronzeStreak,
         };
       }
 
@@ -935,6 +947,7 @@ if (!isConfigured) {
         role: scoreData.role,
         score,
         bestStreak: scoreData.bestStreak,
+        bestBronzeStreak: scoreData.bestBronzeStreak,
       };
     },
   };

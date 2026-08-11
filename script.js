@@ -531,6 +531,7 @@ const state = {
   boardListenerContexts: new Map(),
   adminRequests: [],
   adminRequestsUnsubscribe: null,
+  expandedProgressTopics: new Set(),
 };
 
 const elements = {
@@ -560,6 +561,7 @@ const elements = {
   progressGrid: document.querySelector("#progress-game-grid"),
   progressSummary: document.querySelector("#progress-summary"),
   progressStreakCount: document.querySelector("#progress-streak-count"),
+  progressHighestStreakCount: document.querySelector("#progress-highest-streak-count"),
   progressStreakStatus: document.querySelector("#progress-streak-status"),
   progressStatus: document.querySelector("#progress-status"),
   allLeaderboardsSection: document.querySelector("#leaderboards"),
@@ -1643,6 +1645,7 @@ function normalizeScores(scores) {
   return scores.filter((entry) => {
     if (!entry || typeof entry.name !== "string" || !Number.isInteger(entry.score)) return false;
     if (entry.bestStreak !== undefined && !Number.isInteger(entry.bestStreak)) return false;
+    if (entry.bestBronzeStreak !== undefined && !Number.isInteger(entry.bestBronzeStreak)) return false;
     if (entry.role === "teacher") return Array.isArray(entry.teacherYearLevels);
     return entry.role === "student" && validYearLevels.has(entry.yearLevel);
   });
@@ -1816,14 +1819,21 @@ function saveLocalScore() {
   const previousBestStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestStreak)
     ? scores[state.game][existingIndex].bestStreak
     : 0;
+  const previousBestBronzeStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestBronzeStreak)
+    ? scores[state.game][existingIndex].bestBronzeStreak
+    : 0;
   const improved = previousScore === null || state.score > previousScore;
   const bestStreak = Math.max(previousBestStreak, state.bestStreak);
+  const bestBronzeStreak = isTopicArea(state.game)
+    ? Math.max(previousBestBronzeStreak, getBronzeStreak(scoreContext).highestStreak)
+    : previousBestBronzeStreak;
   const entry = {
     id: scoreIdentity.id,
     uid: scoreIdentity.uid,
     name: playerName,
     score: improved ? state.score : previousScore,
     bestStreak,
+    bestBronzeStreak,
     role: scoreContext.role,
     game: state.game,
   };
@@ -1941,10 +1951,13 @@ function dedupeLeaderboardScores(scores) {
 
     const existingBestStreak = Number.isInteger(existing.bestStreak) ? existing.bestStreak : 0;
     const entryBestStreak = Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0;
+    const existingBestBronzeStreak = Number.isInteger(existing.bestBronzeStreak) ? existing.bestBronzeStreak : 0;
+    const entryBestBronzeStreak = Number.isInteger(entry.bestBronzeStreak) ? entry.bestBronzeStreak : 0;
     const bestEntry = entry.score > existing.score ? entry : existing;
     bestScores.set(key, {
       ...bestEntry,
       bestStreak: Math.max(existingBestStreak, entryBestStreak),
+      bestBronzeStreak: Math.max(existingBestBronzeStreak, entryBestBronzeStreak),
     });
   });
 
@@ -2003,6 +2016,83 @@ function stopSharedBoardListeners({ clearScores = false } = {}) {
   if (clearScores) {
     state.sharedScores = cloneSharedScores();
   }
+}
+
+function getScoreKey(entry) {
+  return entry.uid || entry.id || `${entry.role}:${entry.name}:${entry.yearLevel || entry.teacherYearLevels?.join("-") || "teacher"}`;
+}
+
+function shouldKeepCurrentPlayerInTeacherView() {
+  return getActiveAccountType() === "student"
+    && !isTeacherTestingAsStudent()
+    && state.teacherFilter !== "none";
+}
+
+function limitScoreRows(scores, scoreLimit = 10, { keepCurrentPlayer = false } = {}) {
+  if (scoreLimit === null) return scores;
+  if (!keepCurrentPlayer) return scores.slice(0, scoreLimit);
+
+  const currentPlayerIndex = scores.findIndex(scoreMatchesCurrentPlayer);
+  if (currentPlayerIndex < scoreLimit) return scores.slice(0, scoreLimit);
+  if (currentPlayerIndex < 0) return scores.slice(0, scoreLimit);
+
+  return [
+    ...scores.slice(0, Math.max(scoreLimit - 1, 0)),
+    scores[currentPlayerIndex],
+  ];
+}
+
+function aggregateTopicScoreRows(gameIds) {
+  const totals = new Map();
+
+  gameIds.forEach((gameId) => {
+    filterScoresForBoard(getRawScores(gameId), state.boardYearLevel, state.teacherFilter, { scoreLimit: null })
+      .forEach((entry) => {
+        const key = getScoreKey(entry);
+        const existing = totals.get(key) || {
+          id: key,
+          uid: entry.uid || entry.id || key,
+          name: entry.name,
+          score: 0,
+          bestBronzeStreak: 0,
+          role: entry.role,
+          yearLevel: entry.yearLevel,
+          teacherYearLevels: entry.teacherYearLevels,
+          games: 0,
+        };
+
+        existing.score += entry.score;
+        existing.bestBronzeStreak = Math.max(
+          existing.bestBronzeStreak,
+          Number.isInteger(entry.bestBronzeStreak) ? entry.bestBronzeStreak : 0,
+        );
+        existing.games += 1;
+        totals.set(key, existing);
+      });
+  });
+
+  return [...totals.values()];
+}
+
+function getCombinedTopicScores(gameIds, scoreLimit = 10) {
+  const scores = aggregateTopicScoreRows(gameIds)
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || b.games - a.games);
+
+  return limitScoreRows(scores, scoreLimit, { keepCurrentPlayer: shouldKeepCurrentPlayerInTeacherView() });
+}
+
+function getTopicBronzeStreakScores(gameIds, scoreLimit = 10) {
+  const scores = aggregateTopicScoreRows(gameIds)
+    .filter((entry) => entry.bestBronzeStreak > 0)
+    .map((entry) => ({
+      ...entry,
+      score: entry.bestBronzeStreak,
+      totalScore: entry.score,
+    }))
+    .sort((a, b) => b.score - a.score || b.totalScore - a.totalScore || b.games - a.games);
+
+  return limitScoreRows(scores, scoreLimit, { keepCurrentPlayer: shouldKeepCurrentPlayerInTeacherView() });
 }
 
 function getCurrentPlayerBestScore(gameId) {
@@ -2067,6 +2157,7 @@ function getProgressRecord(scoreContext = getScoreContext()) {
 
   return {
     bronzeDays: Array.isArray(record.bronzeDays) ? record.bronzeDays : [],
+    topicBronzeDays: Array.isArray(record.topicBronzeDays) ? record.topicBronzeDays : [],
     attempts: Array.isArray(record.attempts) ? record.attempts : [],
   };
 }
@@ -2112,6 +2203,11 @@ function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) 
   const bronzeDays = new Set(record.bronzeDays);
   bronzeDays.add(today);
   record.bronzeDays = [...bronzeDays].sort();
+  if (isTopicArea(gameId)) {
+    const topicBronzeDays = new Set(getTopicBronzeDays(record));
+    topicBronzeDays.add(today);
+    record.topicBronzeDays = [...topicBronzeDays].sort();
+  }
   record.attempts = [
     ...record.attempts,
     {
@@ -2125,9 +2221,40 @@ function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) 
   saveProgressRecord(record, scoreContext);
 }
 
-function getBronzeStreak() {
-  const record = getProgressRecord();
-  const bronzeDays = new Set(record.bronzeDays);
+function getTopicBronzeDays(record = getProgressRecord()) {
+  const topicBronzeDays = new Set(record.topicBronzeDays);
+  record.attempts
+    .filter((attempt) => isTopicArea(attempt.game))
+    .forEach((attempt) => {
+      if (attempt.date) topicBronzeDays.add(attempt.date);
+    });
+  return [...topicBronzeDays].sort();
+}
+
+function getLongestStreakFromDays(days) {
+  const daySet = new Set(days);
+  let longestStreak = 0;
+
+  days.forEach((dateKey) => {
+    if (daySet.has(offsetDateKey(dateKey, -1))) return;
+    let cursor = dateKey;
+    let streak = 0;
+
+    while (daySet.has(cursor)) {
+      streak += 1;
+      cursor = offsetDateKey(cursor, 1);
+    }
+
+    longestStreak = Math.max(longestStreak, streak);
+  });
+
+  return longestStreak;
+}
+
+function getBronzeStreak(scoreContext = getScoreContext()) {
+  const record = getProgressRecord(scoreContext);
+  const topicBronzeDays = getTopicBronzeDays(record);
+  const bronzeDays = new Set(topicBronzeDays);
   const today = getLocalDateKey();
   const yesterday = offsetDateKey(today, -1);
   let cursor = bronzeDays.has(today) ? today : yesterday;
@@ -2140,8 +2267,9 @@ function getBronzeStreak() {
 
   return {
     streak,
+    highestStreak: getLongestStreakFromDays(topicBronzeDays),
     completedToday: bronzeDays.has(today),
-    lastBronzeDay: record.bronzeDays.at(-1) || "",
+    lastBronzeDay: topicBronzeDays.at(-1) || "",
   };
 }
 
@@ -2150,49 +2278,77 @@ function setProgressStatus(status, message) {
   elements.progressStatus.lastChild.textContent = message;
 }
 
+function getProgressMedalData(gameId) {
+  const info = gameInfo[gameId];
+  const bestScore = getCurrentPlayerBestScore(gameId);
+  const goals = getMedalGoalsForGame(gameId);
+  const bestMedal = getBestMedalForScore(bestScore, goals);
+
+  return {
+    gameId,
+    info,
+    bestScore,
+    goals,
+    bestMedal,
+  };
+}
+
+function renderProgressSkillMedals(topicId) {
+  const skillIds = getTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+  if (!skillIds.length) {
+    return `<p class="progress-skill-empty">No sub skills are unlocked for this topic yet.</p>`;
+  }
+
+  return skillIds.map((skillId) => {
+    const { info, bestScore, bestMedal } = getProgressMedalData(skillId);
+    return `
+      <article class="progress-skill-medal-row ${bestMedal ? `medal-${bestMedal.id}` : ""}">
+        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(info.icon)}</span>
+        <div>
+          <strong>${escapeHtml(info.name)}</strong>
+          <small>${escapeHtml(bestMedal ? `${bestMedal.label} reached` : "No medal yet")} • ${bestScore.toLocaleString()} best</small>
+        </div>
+        <a class="text-link" href="${getGameHash(skillId)}">Practise →</a>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderProgressPage() {
-  const gameIds = getVisibleProgressGameIds();
+  const progressGameIds = getVisibleProgressGameIds();
+  const topicIds = getVisibleTopicAreaIds();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
     listenToSharedBoards(getVisibleBoardGameIds(), { teacherFilterOverride: "all" });
   }
 
-  const rows = gameIds.map((gameId) => {
-    const info = gameInfo[gameId];
-    const bestScore = getCurrentPlayerBestScore(gameId);
-    const goals = getMedalGoalsForGame(gameId);
-    const bestMedal = getBestMedalForScore(bestScore, goals);
+  const allRows = progressGameIds.map(getProgressMedalData);
+  const topicRows = topicIds.map(getProgressMedalData);
 
-    return {
-      gameId,
-      info,
-      bestScore,
-      goals,
-      bestMedal,
-    };
-  });
-
-  const bronzeCount = rows.filter((row) => row.bestScore >= row.goals[0].score).length;
-  const goldCount = rows.filter((row) => row.bestScore >= row.goals[2].score).length;
-  const thorneCount = rows.filter((row) => row.bestScore >= row.goals[3].score).length;
+  const bronzeCount = allRows.filter((row) => row.bestScore >= row.goals[0].score).length;
+  const goldCount = allRows.filter((row) => row.bestScore >= row.goals[2].score).length;
+  const thorneCount = allRows.filter((row) => row.bestScore >= row.goals[3].score).length;
   const streak = getBronzeStreak();
 
   elements.progressStreakCount.textContent = `${streak.streak} ${streak.streak === 1 ? "day" : "days"}`;
+  elements.progressHighestStreakCount.textContent = `${streak.highestStreak} ${streak.highestStreak === 1 ? "day" : "days"}`;
   elements.progressStreakStatus.textContent = streak.completedToday
-    ? "Bronze or better is banked for today."
+    ? "A topic Bronze or better is banked for today."
     : streak.streak
-      ? "Get bronze or better today to keep this streak going."
-      : "Get bronze or better today to start a streak.";
-  elements.progressSummary.textContent = `${bronzeCount}/${gameIds.length} bronze, ${goldCount} gold, ${thorneCount} Mr Thorne targets reached.`;
+      ? "Get Bronze or better in a topic today to keep this streak going."
+      : "Get Bronze or better in a topic today to start a streak.";
+  elements.progressSummary.textContent = `${bronzeCount}/${progressGameIds.length} bronze, ${goldCount} gold, ${thorneCount} Mr Thorne targets reached.`;
 
-  elements.progressGrid.innerHTML = rows.length
-    ? rows.map(({ gameId, info, bestScore, goals, bestMedal }) => `
+  elements.progressGrid.innerHTML = topicRows.length
+    ? topicRows.map(({ gameId, info, bestScore, goals, bestMedal }) => {
+        const expanded = state.expandedProgressTopics.has(gameId);
+        return `
         <article class="progress-game-card ${bestMedal ? `medal-${bestMedal.id}` : ""}">
           <div class="progress-game-head">
             <span class="mini-game-icon" aria-hidden="true">${escapeHtml(info.icon)}</span>
             <div>
               <p>${escapeHtml(getGameDurationLabel(gameId))}</p>
               <h3>${escapeHtml(info.name)}</h3>
-              <small>${escapeHtml(getGameTypeLabel(gameId))}</small>
+              <small>${escapeHtml(getTopicSkillSummary(gameId))}</small>
             </div>
           </div>
           <div class="progress-best-score">
@@ -2208,9 +2364,16 @@ function renderProgressPage() {
               </div>
             `).join("")}
           </div>
+          <button class="progress-expand-button" type="button" data-progress-topic="${escapeHtml(gameId)}" aria-expanded="${expanded}">
+            ${expanded ? "Hide skill medals" : "Show skill medals"}
+          </button>
+          <div class="progress-skill-medals" ${expanded ? "" : "hidden"}>
+            ${renderProgressSkillMedals(gameId)}
+          </div>
           <a class="home-full-link" href="${getGameHash(gameId)}">Play ${escapeHtml(info.shortName)}</a>
         </article>
-      `).join("")
+      `;
+      }).join("")
     : `<article class="progress-game-card"><p>No available games yet. Sign in and get your year level assigned to see your games.</p></article>`;
 
   if (!state.sharedConfigured) {
@@ -2220,7 +2383,7 @@ function renderProgressPage() {
   } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
     setProgressStatus("connecting", "Loading your medal progress and Mr Thorne targets...");
   } else {
-    setProgressStatus("shared", "Topic medals use shared best scores. Skill medals and daily streaks are kept on this device from new bronze-or-better attempts.");
+    setProgressStatus("shared", "Topic medals use shared best scores. Skill medals expand inside each topic. Streaks count topic Bronze-or-better days.");
   }
 }
 
@@ -2534,6 +2697,7 @@ function renderScoreRows(
   {
     scoreLimit = 10,
     valueFormatter = (entry) => entry.score.toLocaleString(),
+    metaFormatter = getScoreMeta,
   } = {},
 ) {
   if (!scores.length) {
@@ -2549,7 +2713,7 @@ function renderScoreRows(
           <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
           <span class="score-name">
             ${escapeHtml(entry.name)}
-            <small>${escapeHtml(getScoreMeta(entry))}</small>
+            <small>${escapeHtml(metaFormatter(entry))}</small>
           </span>
           <span class="score-points">${escapeHtml(valueFormatter(entry))}</span>
         </li>
@@ -2865,6 +3029,46 @@ function renderLeaderboardGridCard({
   `;
 }
 
+function formatDayCount(count) {
+  return `${count.toLocaleString()} ${count === 1 ? "day" : "days"}`;
+}
+
+function getTopicCountMeta(entry) {
+  const topicLabel = `${entry.games} ${entry.games === 1 ? "topic" : "topics"}`;
+  return `${getScoreMeta(entry)} • ${topicLabel}`;
+}
+
+function renderSummaryLeaderboardCard({
+  title,
+  description,
+  meta,
+  icon,
+  scores,
+  className = "",
+  emptyMessage,
+  valueFormatter,
+}) {
+  return `
+    <article class="leaderboard-grid-card summary-leaderboard-card ${className}">
+      <div class="leaderboard-grid-card-head">
+        <div>
+          <p>${escapeHtml(meta)}</p>
+          <h3>${escapeHtml(title)}</h3>
+        </div>
+        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(icon)}</span>
+      </div>
+      <p class="leaderboard-grid-description">${escapeHtml(description)}</p>
+      <ol class="compact-score-list">
+        ${renderScoreRows(scores, emptyMessage, {
+          scoreLimit: 10,
+          valueFormatter,
+          metaFormatter: getTopicCountMeta,
+        })}
+      </ol>
+    </article>
+  `;
+}
+
 function renderAllLeaderboards() {
   if (!canReadSharedLeaderboards()) {
     elements.leaderboardsGrid.innerHTML = "";
@@ -2875,6 +3079,30 @@ function renderAllLeaderboards() {
   const gameIds = getVisibleBoardGameIds();
   if (state.sharedConfigured) listenToSharedBoards(gameIds);
 
+  const combinedScores = getCombinedTopicScores(gameIds);
+  const streakScores = getTopicBronzeStreakScores(gameIds);
+  const summaryCards = [
+    renderSummaryLeaderboardCard({
+      title: "Combined Topic Scores",
+      description: "Adds each player's best score from every available topic area.",
+      meta: `${gameIds.length} ${gameIds.length === 1 ? "topic" : "topics"} combined`,
+      icon: "Σ",
+      scores: combinedScores,
+      className: "combined-leaderboard-card",
+      emptyMessage: `No ${getYearLabel(state.boardYearLevel)} combined scores yet.`,
+      valueFormatter: (entry) => `${entry.score.toLocaleString()} pts`,
+    }),
+    renderSummaryLeaderboardCard({
+      title: "Topic Bronze Streak",
+      description: "Longest streak of days earning at least Bronze in a topic-area game.",
+      meta: "Bronze-or-better topic days",
+      icon: "↯",
+      scores: streakScores,
+      className: "topic-streak-leaderboard-card",
+      emptyMessage: `No ${getYearLabel(state.boardYearLevel)} topic bronze streaks yet.`,
+      valueFormatter: (entry) => formatDayCount(entry.score),
+    }),
+  ].join("");
   const gameCards = gameIds.map((gameId) => renderLeaderboardGridCard({
     gameId,
     title: gameInfo[gameId].name,
@@ -2882,14 +3110,14 @@ function renderAllLeaderboards() {
     scores: getVisibleScores(gameId, { scoreLimit: 10 }),
   })).join("");
 
-  elements.leaderboardsGrid.innerHTML = gameCards;
+  elements.leaderboardsGrid.innerHTML = summaryCards + gameCards;
 
   if (!state.sharedConfigured) {
     setLeaderboardStatus("local", "Firebase setup needed. Until then, the grid uses scores saved on this device.");
   } else {
     setLeaderboardStatus(
       "shared",
-      `Showing ${getYearLabel(state.boardYearLevel)} topic-area leaderboards only.`,
+      `Showing ${getYearLabel(state.boardYearLevel)} combined, streak, and topic-area leaderboards.`,
     );
   }
 }
@@ -3525,6 +3753,7 @@ async function saveSharedScore() {
   }
 
   const currentScoreContext = getScoreContext();
+  const currentBronzeStreak = getBronzeStreak(currentScoreContext);
   if (!shouldSaveScore(currentScoreContext)) {
     state.pendingSharedScore = null;
     return;
@@ -3535,6 +3764,7 @@ async function saveSharedScore() {
       game: state.game,
       score: state.score,
       bestStreak: state.bestStreak,
+      bestBronzeStreak: currentBronzeStreak.highestStreak,
       context: currentScoreContext,
     };
     setResultMedalDisplay(
@@ -3558,6 +3788,7 @@ async function saveSharedScore() {
       game: state.game,
       score: state.score,
       bestStreak: state.bestStreak,
+      bestBronzeStreak: currentBronzeStreak.highestStreak,
       context: currentScoreContext,
     };
     setResultMedalDisplay(
@@ -3580,6 +3811,7 @@ async function saveSharedScore() {
         context: {
           ...currentScoreContext,
           bestStreak: state.pendingSharedScore.bestStreak || 0,
+          bestBronzeStreak: state.pendingSharedScore.bestBronzeStreak || 0,
         },
       }
     : {
@@ -3588,6 +3820,7 @@ async function saveSharedScore() {
         context: {
           ...currentScoreContext,
           bestStreak: state.bestStreak,
+          bestBronzeStreak: currentBronzeStreak.highestStreak,
         },
       };
 
@@ -3925,8 +4158,8 @@ function finishGame() {
   }
 
   if (saveScore) {
-    saveLocalScore();
     recordProgressAttempt(state.game, state.score, scoreContext);
+    saveLocalScore();
   }
   elements.gamePanel.hidden = true;
   elements.resultPanel.hidden = false;
@@ -4236,6 +4469,21 @@ elements.homeGameStrip.addEventListener("click", (event) => {
   }
   state.homeFeaturedGame = gameId;
   renderHomeDashboard();
+});
+
+elements.progressGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-progress-topic]");
+  if (!button) return;
+  const topicId = button.dataset.progressTopic;
+  if (!isTopicArea(topicId)) return;
+
+  if (state.expandedProgressTopics.has(topicId)) {
+    state.expandedProgressTopics.delete(topicId);
+  } else {
+    state.expandedProgressTopics.add(topicId);
+  }
+
+  renderProgressPage();
 });
 
 document.querySelectorAll("[data-home-leaderboard]").forEach((button) => {

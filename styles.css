@@ -3124,6 +3124,26 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
 }
 
+.summary-leaderboard-card {
+  min-height: 0;
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.32), transparent 28%),
+    white;
+}
+
+.leaderboard-section.app-dashboard-page .combined-leaderboard-card {
+  grid-column: span 2;
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.34), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #eef7fc 100%);
+}
+
+.leaderboard-section.app-dashboard-page .topic-streak-leaderboard-card {
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 199, 44, 0.2), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #fff8df 100%);
+}
+
 .progress-streak-card {
   display: grid;
   padding: 24px;
@@ -3144,8 +3164,31 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   text-transform: uppercase;
 }
 
+.progress-streak-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progress-streak-stats div {
+  display: grid;
+  padding: 14px;
+  gap: 4px;
+  background: #f4f9fc;
+  border: 1px solid rgba(23, 43, 77, 0.06);
+  border-radius: 16px;
+}
+
+.progress-streak-stats small {
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .progress-streak-card strong {
-  font-size: clamp(2.1rem, 4vw, 3.6rem);
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
   font-weight: 900;
   letter-spacing: -0.06em;
   line-height: 0.95;
@@ -3328,6 +3371,71 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 
 .medal-step strong {
   color: inherit;
+}
+
+.progress-expand-button {
+  display: inline-flex;
+  width: fit-content;
+  padding: 10px 14px;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-dark);
+  background: #e5f4fb;
+  border: 1px solid rgba(53, 143, 208, 0.2);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.progress-expand-button:hover {
+  color: white;
+  background: var(--blue-dark);
+}
+
+.progress-skill-medals {
+  display: grid;
+  gap: 8px;
+}
+
+.progress-skill-medals[hidden] {
+  display: none;
+}
+
+.progress-skill-medal-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #f4f9fc;
+  border: 1px solid rgba(23, 43, 77, 0.06);
+  border-radius: 16px;
+}
+
+.progress-skill-medal-row .mini-game-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  font-size: 1rem;
+}
+
+.progress-skill-medal-row strong,
+.progress-skill-medal-row small {
+  display: block;
+}
+
+.progress-skill-medal-row strong {
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.progress-skill-medal-row small,
+.progress-skill-empty {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .leaderboard-grid-card-head p {
@@ -3554,6 +3662,10 @@ footer > a:last-child {
   .game-page-hero,
   .leaderboards-grid {
     grid-template-columns: 1fr;
+  }
+
+  .leaderboard-section.app-dashboard-page .combined-leaderboard-card {
+    grid-column: auto;
   }
 
   .game-card {
@@ -3790,6 +3902,11 @@ footer > a:last-child {
   .topic-page-skills-head {
     display: grid;
     align-items: start;
+  }
+
+  .progress-streak-stats,
+  .progress-skill-medal-row {
+    grid-template-columns: 1fr;
   }
 
   .goal-grid,

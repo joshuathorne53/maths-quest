@@ -53,7 +53,8 @@ account can try as many times as they like while only their highest score per
 topic area for their assigned year level is kept. Student leaderboard views show
 the top 10 students only. When a student switches to the year-level teachers or
 all-teachers view, the board shows that signed-in student plus the relevant
-teachers, not every other student.
+teachers, not every other student. The leaderboard page also includes combined
+topic scores and a longest topic-Bronze streak board.
 
 The site is high-school only: Year 7 to Year 12. Students can access skill
 challenges at their assigned year level and every lower year level. For example, a
