@@ -28,18 +28,28 @@ const validTeacherFilters = new Set(["none", "year", "all"]);
 
 const gameInfo = {
   quick: {
-    name: "Quick Fire",
-    shortName: "Quick",
-    description: "Solve as many addition and subtraction questions as you can in 60 seconds.",
-    cardDescription: "Add and subtract at speed. A friendly place to warm up your brain.",
-    bullets: ["Integers and mental methods", "All high school years"],
+    name: "Addition",
+    shortName: "Addition",
+    description: "Solve as many addition questions as you can in 60 seconds.",
+    cardDescription: "Add at speed. A friendly place to warm up your brain.",
+    bullets: ["Addition facts", "Mental methods"],
     icon: "+",
     cardClass: "game-card-sky",
     accessYear: "year7",
   },
+  "y7-subtraction": {
+    name: "Subtraction",
+    shortName: "Subtraction",
+    description: "Solve subtraction questions using mental strategies.",
+    cardDescription: "Practise subtraction as one clear question type.",
+    bullets: ["Subtraction facts", "Mental methods"],
+    icon: "−",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
   times: {
-    name: "Times Table Dash",
-    shortName: "Times",
+    name: "Multiplication Facts",
+    shortName: "Multiply",
     description: "Race through multiplication facts from the 2 to 12 times tables.",
     cardDescription: "Race through multiplication facts and keep your winning streak alive.",
     bullets: ["Tables from 2 to 12", "Streak bonuses"],
@@ -48,23 +58,43 @@ const gameInfo = {
     accessYear: "year7",
   },
   missing: {
-    name: "Missing Number",
+    name: "Missing Multiplication",
     shortName: "Missing",
     description: "Find the mystery number hiding inside each equation.",
-    cardDescription: "Find the mystery number inside each equation before time runs out.",
-    bullets: ["Reverse operations", "Algebra thinking"],
+    cardDescription: "Find the missing factor inside each multiplication equation.",
+    bullets: ["Missing factors", "Reverse operations"],
     icon: "?",
     cardClass: "game-card-coral",
     accessYear: "year7",
   },
   "y7-integers": {
-    name: "Integers",
-    shortName: "Integers",
-    description: "Practise adding, subtracting, and multiplying positive and negative integers.",
-    cardDescription: "Get confident with positive and negative numbers in quick mental questions.",
-    bullets: ["Integer operations", "Positive and negative numbers"],
+    name: "Integer Addition",
+    shortName: "Int. Add",
+    description: "Practise adding positive and negative integers.",
+    cardDescription: "Get confident adding positive and negative numbers.",
+    bullets: ["Integer addition", "Positive and negative numbers"],
     icon: "±",
     cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "y7-integer-subtraction": {
+    name: "Integer Subtraction",
+    shortName: "Int. Subtract",
+    description: "Practise subtracting positive and negative integers.",
+    cardDescription: "Work with subtracting negatives as one focused skill.",
+    bullets: ["Integer subtraction", "Positive and negative numbers"],
+    icon: "±",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y7-integer-multiplication": {
+    name: "Integer Multiplication",
+    shortName: "Int. Multiply",
+    description: "Practise multiplying positive and negative integers.",
+    cardDescription: "Build fluency with sign rules in multiplication.",
+    bullets: ["Integer multiplication", "Sign rules"],
+    icon: "±×",
+    cardClass: "game-card-sun",
     accessYear: "year7",
   },
   "y7-fractions": {
@@ -88,13 +118,23 @@ const gameInfo = {
     accessYear: "year7",
   },
   "y7-add-subtract-fractions": {
-    name: "Adding & Subtracting Fractions",
-    shortName: "Add/Sub Fractions",
-    description: "Add and subtract fractions, including questions with different denominators.",
-    cardDescription: "Build speed with fraction addition and subtraction.",
+    name: "Adding Fractions",
+    shortName: "Add Fractions",
+    description: "Add fractions, including questions with different denominators.",
+    cardDescription: "Build speed with fraction addition.",
     bullets: ["Common denominators", "Equivalent fractions"],
     icon: "±/",
     cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y7-subtracting-fractions": {
+    name: "Subtracting Fractions",
+    shortName: "Subtract Fractions",
+    description: "Subtract fractions, including questions with different denominators.",
+    cardDescription: "Build speed with fraction subtraction.",
+    bullets: ["Common denominators", "Equivalent fractions"],
+    icon: "−/",
+    cardClass: "game-card-sky",
     accessYear: "year7",
   },
   "y7-multiplying-fractions": {
@@ -118,22 +158,92 @@ const gameInfo = {
     accessYear: "year7",
   },
   "y7-bidmas": {
-    name: "BIDMAS",
-    shortName: "BIDMAS",
-    description: "Use the order of operations with brackets, indices, division, multiplication, addition, and subtraction.",
-    cardDescription: "Practise choosing the correct operation order before calculating.",
-    bullets: ["Order of operations", "Brackets and indices"],
-    icon: "()",
+    name: "Multiply Before Add",
+    shortName: "× Before +",
+    description: "Use multiplication before addition in order-of-operations questions.",
+    cardDescription: "Practise multiplication before addition as one exact question type.",
+    bullets: ["Order of operations", "Multiplication before addition"],
+    icon: "×+",
     cardClass: "game-card-sun",
     accessYear: "year7",
   },
+  "y7-bidmas-brackets": {
+    name: "Brackets First",
+    shortName: "Brackets",
+    description: "Calculate inside brackets before multiplying.",
+    cardDescription: "Focus on brackets-first questions.",
+    bullets: ["Brackets first", "Order of operations"],
+    icon: "()",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "y7-bidmas-division": {
+    name: "Division Before Add",
+    shortName: "÷ Before +",
+    description: "Use division before addition in order-of-operations questions.",
+    cardDescription: "Practise division before addition as one exact question type.",
+    bullets: ["Division before addition", "Order of operations"],
+    icon: "÷+",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y8-bidmas-indices": {
+    name: "Indices Before Multiply",
+    shortName: "Indices",
+    description: "Calculate powers before multiplication and addition.",
+    cardDescription: "Focus on index rules inside BIDMAS.",
+    bullets: ["Indices first", "Order of operations"],
+    icon: "^",
+    cardClass: "game-card-sun",
+    accessYear: "year8",
+  },
+  "y9-bidmas-brackets-indices": {
+    name: "Brackets With Indices",
+    shortName: "Brackets + Indices",
+    description: "Use brackets and powers together in order-of-operations questions.",
+    cardDescription: "Combine brackets and indices in one question type.",
+    bullets: ["Brackets", "Indices"],
+    icon: "(^)",
+    cardClass: "game-card-coral",
+    accessYear: "year9",
+  },
   "y7-one-step-equations": {
-    name: "One-Step Equations",
-    shortName: "One-Step",
-    description: "Solve simple one-step equations using addition, subtraction, multiplication, and division.",
-    cardDescription: "Build algebra confidence by finding x with all four operations.",
-    bullets: ["One-step algebra", "Four operations"],
-    icon: "x",
+    name: "Addition Equations",
+    shortName: "Add Eq.",
+    description: "Solve one-step equations where x has a number added.",
+    cardDescription: "Find x in equations like x + 7 = 19.",
+    bullets: ["One-step algebra", "Addition equations"],
+    icon: "x+",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "y7-one-step-subtraction-equations": {
+    name: "Subtraction Equations",
+    shortName: "Subtract Eq.",
+    description: "Solve one-step equations where a number is subtracted from x.",
+    cardDescription: "Find x in equations like x − 5 = 14.",
+    bullets: ["One-step algebra", "Subtraction equations"],
+    icon: "x−",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "y7-one-step-multiplication-equations": {
+    name: "Multiplication Equations",
+    shortName: "Multiply Eq.",
+    description: "Solve one-step equations where x is multiplied by a number.",
+    cardDescription: "Find x in equations like 6x = 42.",
+    bullets: ["One-step algebra", "Multiplication equations"],
+    icon: "ax",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "y7-one-step-division-equations": {
+    name: "Division Equations",
+    shortName: "Divide Eq.",
+    description: "Solve one-step equations where x is divided by a number.",
+    cardDescription: "Find x in equations like x ÷ 4 = 9.",
+    bullets: ["One-step algebra", "Division equations"],
+    icon: "x÷",
     cardClass: "game-card-sky",
     accessYear: "year7",
   },
@@ -158,22 +268,32 @@ const gameInfo = {
     accessYear: "year8",
   },
   "y8-percentage-change": {
-    name: "Percentage Change",
-    shortName: "Percent Change",
-    description: "Calculate percentage increases and decreases.",
-    cardDescription: "Practise friendly percentage changes on whole-number amounts.",
-    bullets: ["Increase and decrease", "Percent strategies"],
+    name: "Percentage Increase",
+    shortName: "Percent Increase",
+    description: "Calculate percentage increases.",
+    cardDescription: "Practise friendly percentage increases on whole-number amounts.",
+    bullets: ["Percentage increase", "Percent strategies"],
     icon: "%",
     cardClass: "game-card-sky",
     accessYear: "year8",
   },
+  "y8-percentage-decrease": {
+    name: "Percentage Decrease",
+    shortName: "Percent Decrease",
+    description: "Calculate percentage decreases.",
+    cardDescription: "Practise friendly percentage decreases on whole-number amounts.",
+    bullets: ["Percentage decrease", "Percent strategies"],
+    icon: "%",
+    cardClass: "game-card-coral",
+    accessYear: "year8",
+  },
   "y8-linear-equations": {
-    name: "Linear Equations",
-    shortName: "Linear Eq.",
-    description: "Solve simple multiplication and division equations.",
-    cardDescription: "Solve equations like 6x = 42 and x ÷ 4 = 9 at speed.",
-    bullets: ["Linear equations", "Inverse operations"],
-    icon: "x",
+    name: "Linear Addition Equations",
+    shortName: "Linear + Eq.",
+    description: "Solve two-step linear equations in the form ax + b = c.",
+    cardDescription: "Find x in equations like 4x + 7 = 31.",
+    bullets: ["Two-step equations", "Addition constant"],
+    icon: "ax+",
     cardClass: "game-card-sun",
     accessYear: "year8",
   },
@@ -208,12 +328,12 @@ const gameInfo = {
     accessYear: "year9",
   },
   "y9-two-step-equations": {
-    name: "Two-Step Equations",
-    shortName: "Two-Step",
-    description: "Solve two-step linear equations.",
-    cardDescription: "Find x in equations with a coefficient and a constant.",
-    bullets: ["Two-step algebra", "Linear equations"],
-    icon: "x",
+    name: "Linear Subtraction Equations",
+    shortName: "Linear − Eq.",
+    description: "Solve two-step linear equations in the form ax − b = c.",
+    cardDescription: "Find x in equations like 5x − 8 = 27.",
+    bullets: ["Two-step equations", "Subtraction constant"],
+    icon: "ax−",
     cardClass: "game-card-coral",
     accessYear: "year9",
   },
@@ -228,13 +348,23 @@ const gameInfo = {
     accessYear: "year10",
   },
   "y10-pythagoras": {
-    name: "Pythagoras",
-    shortName: "Pythagoras",
-    description: "Find missing side lengths using Pythagorean triples.",
-    cardDescription: "Practise right-triangle side lengths with classic triples.",
-    bullets: ["Pythagorean triples", "Right triangles"],
+    name: "Pythagoras Hypotenuse",
+    shortName: "Hypotenuse",
+    description: "Find the hypotenuse using Pythagorean triples.",
+    cardDescription: "Find the hypotenuse in right triangles.",
+    bullets: ["Hypotenuse", "Pythagorean triples"],
     icon: "△",
     cardClass: "game-card-sun",
+    accessYear: "year10",
+  },
+  "y10-pythagoras-missing-leg": {
+    name: "Pythagoras Missing Leg",
+    shortName: "Missing Leg",
+    description: "Find a missing shorter side using Pythagorean triples.",
+    cardDescription: "Find the missing leg in right triangles.",
+    bullets: ["Missing leg", "Pythagorean triples"],
+    icon: "△",
+    cardClass: "game-card-coral",
     accessYear: "year10",
   },
   "y10-simultaneous-equations": {
@@ -248,13 +378,23 @@ const gameInfo = {
     accessYear: "year10",
   },
   "y10-functions": {
-    name: "Functions",
-    shortName: "Functions",
-    description: "Substitute values into linear and quadratic functions.",
-    cardDescription: "Evaluate f(x) expressions with careful arithmetic.",
-    bullets: ["Function notation", "Substitution"],
+    name: "Linear Functions",
+    shortName: "Linear Func.",
+    description: "Substitute values into linear functions.",
+    cardDescription: "Evaluate linear f(x) expressions with careful arithmetic.",
+    bullets: ["Linear functions", "Substitution"],
     icon: "f",
     cardClass: "game-card-sky",
+    accessYear: "year10",
+  },
+  "y10-quadratic-functions": {
+    name: "Quadratic Functions",
+    shortName: "Quad. Func.",
+    description: "Substitute values into quadratic functions.",
+    cardDescription: "Evaluate quadratic f(x) expressions with careful arithmetic.",
+    bullets: ["Quadratic functions", "Substitution"],
+    icon: "f²",
+    cardClass: "game-card-sun",
     accessYear: "year10",
   },
   "y11-derivatives": {
@@ -341,9 +481,12 @@ const gameInfo = {
 
 const skillTopicMap = {
   quick: "topic-number",
+  "y7-subtraction": "topic-number",
   times: "topic-number",
   missing: "topic-number",
   "y7-integers": "topic-number",
+  "y7-integer-subtraction": "topic-number",
+  "y7-integer-multiplication": "topic-number",
   "y8-square-powers": "topic-number",
   "y9-index-laws": "topic-number",
   "y11-logarithms": "topic-number",
@@ -351,12 +494,21 @@ const skillTopicMap = {
   "y7-fractions": "topic-fractions",
   "y7-simplifying-fractions": "topic-fractions",
   "y7-add-subtract-fractions": "topic-fractions",
+  "y7-subtracting-fractions": "topic-fractions",
   "y7-multiplying-fractions": "topic-fractions",
   "y7-percentages": "topic-fractions",
   "y8-ratios": "topic-fractions",
   "y8-percentage-change": "topic-fractions",
+  "y8-percentage-decrease": "topic-fractions",
   "y7-bidmas": "topic-order",
+  "y7-bidmas-brackets": "topic-order",
+  "y7-bidmas-division": "topic-order",
+  "y8-bidmas-indices": "topic-order",
+  "y9-bidmas-brackets-indices": "topic-order",
   "y7-one-step-equations": "topic-algebra",
+  "y7-one-step-subtraction-equations": "topic-algebra",
+  "y7-one-step-multiplication-equations": "topic-algebra",
+  "y7-one-step-division-equations": "topic-algebra",
   "y8-linear-equations": "topic-algebra",
   "y9-expanding-brackets": "topic-algebra",
   "y9-two-step-equations": "topic-algebra",
@@ -365,7 +517,9 @@ const skillTopicMap = {
   "y11-arithmetic-sequences": "topic-algebra",
   "y9-gradients": "topic-graphs-functions",
   "y10-functions": "topic-graphs-functions",
+  "y10-quadratic-functions": "topic-graphs-functions",
   "y10-pythagoras": "topic-geometry",
+  "y10-pythagoras-missing-leg": "topic-geometry",
   "y11-surds": "topic-surds-calculus",
   "y11-derivatives": "topic-surds-calculus",
   "y12-calculus-derivatives": "topic-surds-calculus",
@@ -468,8 +622,10 @@ const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
 const PEN_AND_PAPER_GAME_IDS = new Set([
   "y10-quadratics",
   "y10-pythagoras",
+  "y10-pythagoras-missing-leg",
   "y10-simultaneous-equations",
   "y10-functions",
+  "y10-quadratic-functions",
   "y11-derivatives",
   "y11-logarithms",
   "y11-arithmetic-sequences",
@@ -617,6 +773,8 @@ const elements = {
   homeAuthSummary: document.querySelector("#home-auth-summary"),
   homeSignInButton: document.querySelector("#home-sign-in-button"),
   homeSettingsButton: document.querySelector("#home-settings-button"),
+  heroSkillCount: document.querySelector("#hero-skill-count"),
+  homeSkillCount: document.querySelector("#home-skill-count"),
   homeGamesPlayed: document.querySelector("#home-games-played"),
   homeBestScore: document.querySelector("#home-best-score"),
   homeCurrentGoal: document.querySelector("#home-current-goal"),
@@ -678,11 +836,16 @@ function formatSigned(value) {
 
 function createQuestion(mode) {
   if (isTopicArea(mode)) {
-    const skillIds = getTopicSkillIds(mode, getEffectiveChallengeYearLevel())
-      .filter((skillId) => skillQuestionGenerators[skillId] || ["quick", "times", "missing"].includes(skillId));
-    const fallbackSkillIds = getTopicSkillIds(mode)
-      .filter((skillId) => skillQuestionGenerators[skillId] || ["quick", "times", "missing"].includes(skillId));
-    const skillId = sample(skillIds.length ? skillIds : fallbackSkillIds);
+    const skillIds = getPlayableTopicSkillIds(mode, getEffectiveChallengeYearLevel());
+    if (!skillIds.length) {
+      return {
+        text: "No sub skills are unlocked for this topic yet.",
+        answer: 0,
+        skillId: "",
+      };
+    }
+
+    const skillId = sample(skillIds);
     const question = createQuestion(skillId);
     return {
       ...question,
@@ -693,29 +856,9 @@ function createQuestion(mode) {
   const skillGenerator = skillQuestionGenerators[mode];
   if (skillGenerator) return skillGenerator();
 
-  if (mode === "times") {
-    const a = randomNumber(2, 12);
-    const b = randomNumber(2, 12);
-    return { text: `${a} × ${b} = ?`, answer: a * b };
-  }
-
-  if (mode === "missing") {
-    const hidden = randomNumber(2, 12);
-    const multiplier = randomNumber(2, 12);
-    const product = hidden * multiplier;
-    return { text: `? × ${multiplier} = ${product}`, answer: hidden };
-  }
-
-  const useAddition = Math.random() > 0.45;
-  if (useAddition) {
-    const a = randomNumber(5, 45);
-    const b = randomNumber(2, 35);
-    return { text: `${a} + ${b} = ?`, answer: a + b };
-  }
-
-  const a = randomNumber(15, 60);
-  const b = randomNumber(2, a);
-  return { text: `${a} − ${b} = ?`, answer: a - b };
+  const a = randomNumber(5, 45);
+  const b = randomNumber(2, 35);
+  return { text: `${a} + ${b} = ?`, answer: a + b };
 }
 
 function greatestCommonDivisor(a, b) {
@@ -822,23 +965,42 @@ function setSurdAnswerMode(enabled) {
 }
 
 const skillQuestionGenerators = {
-  "y7-integers": () => sample([
-    () => {
-      const a = randomNumber(-18, 35);
-      const b = randomNumber(-15, 20);
-      return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
-    },
-    () => {
-      const a = randomNumber(-10, 30);
-      const b = randomNumber(-12, 18);
-      return { text: `${a} − ${formatSigned(b)} = ?`, answer: a - b };
-    },
-    () => {
-      const a = randomNumber(-9, 9) || 3;
-      const b = randomNumber(-9, 9) || -4;
-      return { text: `${a} × ${formatSigned(b)} = ?`, answer: a * b };
-    },
-  ])(),
+  quick: () => {
+    const a = randomNumber(5, 45);
+    const b = randomNumber(2, 35);
+    return { text: `${a} + ${b} = ?`, answer: a + b };
+  },
+  "y7-subtraction": () => {
+    const a = randomNumber(15, 70);
+    const b = randomNumber(2, a);
+    return { text: `${a} − ${b} = ?`, answer: a - b };
+  },
+  times: () => {
+    const a = randomNumber(2, 12);
+    const b = randomNumber(2, 12);
+    return { text: `${a} × ${b} = ?`, answer: a * b };
+  },
+  missing: () => {
+    const hidden = randomNumber(2, 12);
+    const multiplier = randomNumber(2, 12);
+    const product = hidden * multiplier;
+    return { text: `? × ${multiplier} = ${product}`, answer: hidden };
+  },
+  "y7-integers": () => {
+    const a = randomNumber(-18, 35);
+    const b = randomNumber(-15, 20);
+    return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
+  },
+  "y7-integer-subtraction": () => {
+    const a = randomNumber(-10, 30);
+    const b = randomNumber(-12, 18);
+    return { text: `${a} − ${formatSigned(b)} = ?`, answer: a - b };
+  },
+  "y7-integer-multiplication": () => {
+    const a = randomNumber(-9, 9) || 3;
+    const b = randomNumber(-9, 9) || -4;
+    return { text: `${a} × ${formatSigned(b)} = ?`, answer: a * b };
+  },
   "y7-fractions": () => sample([
     () => {
       const denominator = sample([4, 5, 8, 10]);
@@ -898,15 +1060,6 @@ const skillQuestionGenerators = {
       };
     },
     () => {
-      const denominator = sample([4, 5, 6, 8, 10, 12]);
-      const left = randomNumber(2, denominator - 1);
-      const right = randomNumber(1, left - 1);
-      return {
-        text: `${left}/${denominator} − ${right}/${denominator} = ?`,
-        answer: createFractionAnswer(left - right, denominator),
-      };
-    },
-    () => {
       const smallerDenominator = sample([3, 4, 5, 6]);
       const largerDenominator = smallerDenominator * sample([2, 3]);
       const left = randomNumber(1, smallerDenominator - 1);
@@ -914,6 +1067,17 @@ const skillQuestionGenerators = {
       return {
         text: `${left}/${smallerDenominator} + ${right}/${largerDenominator} = ?`,
         answer: createFractionAnswer(left * (largerDenominator / smallerDenominator) + right, largerDenominator),
+      };
+    },
+  ])(),
+  "y7-subtracting-fractions": () => sample([
+    () => {
+      const denominator = sample([4, 5, 6, 8, 10, 12]);
+      const left = randomNumber(2, denominator - 1);
+      const right = randomNumber(1, left - 1);
+      return {
+        text: `${left}/${denominator} − ${right}/${denominator} = ?`,
+        answer: createFractionAnswer(left - right, denominator),
       };
     },
     () => {
@@ -970,61 +1134,57 @@ const skillQuestionGenerators = {
       return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
     },
   ])(),
-  "y7-bidmas": () => sample([
-    () => {
-      const a = randomNumber(2, 20);
-      const b = randomNumber(2, 12);
-      const c = randomNumber(2, 10);
-      return { text: `${a} + ${b} × ${c} = ?`, answer: a + b * c };
-    },
-    () => {
-      const a = randomNumber(2, 10);
-      const b = randomNumber(2, 10);
-      const c = randomNumber(2, 8);
-      return { text: `(${a} + ${b}) × ${c} = ?`, answer: (a + b) * c };
-    },
-    () => {
-      const base = randomNumber(2, 8);
-      const multiplier = randomNumber(2, 9);
-      const addend = randomNumber(2, 20);
-      return { text: `${base}² + ${multiplier} × ${addend} = ?`, answer: base ** 2 + multiplier * addend };
-    },
-    () => {
-      const start = randomNumber(2, 20);
-      const divisor = randomNumber(2, 6);
-      const quotient = randomNumber(3, 12);
-      return { text: `${start} + ${quotient * divisor} ÷ ${divisor} = ?`, answer: start + quotient };
-    },
-    () => {
-      const multiplier = randomNumber(2, 6);
-      const a = randomNumber(2, 8);
-      const b = randomNumber(2, 8);
-      const subtract = randomNumber(1, 15);
-      return { text: `${multiplier} × (${a} + ${b}) − ${subtract} = ?`, answer: multiplier * (a + b) - subtract };
-    },
-  ])(),
-  "y7-one-step-equations": () => sample([
-    () => {
-      const answer = randomNumber(4, 24);
-      const offset = randomNumber(5, 30);
-      return { text: `Solve x + ${offset} = ${answer + offset}`, answer };
-    },
-    () => {
-      const answer = randomNumber(6, 30);
-      const offset = randomNumber(2, 12);
-      return { text: `Solve x − ${offset} = ${answer - offset}`, answer };
-    },
-    () => {
-      const answer = randomNumber(3, 12);
-      const factor = randomNumber(2, 12);
-      return { text: `Solve ${factor}x = ${answer * factor}`, answer };
-    },
-    () => {
-      const answer = randomNumber(3, 12);
-      const divisor = randomNumber(2, 12);
-      return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
-    },
-  ])(),
+  "y7-bidmas": () => {
+    const a = randomNumber(2, 20);
+    const b = randomNumber(2, 12);
+    const c = randomNumber(2, 10);
+    return { text: `${a} + ${b} × ${c} = ?`, answer: a + b * c };
+  },
+  "y7-bidmas-brackets": () => {
+    const a = randomNumber(2, 10);
+    const b = randomNumber(2, 10);
+    const c = randomNumber(2, 8);
+    return { text: `(${a} + ${b}) × ${c} = ?`, answer: (a + b) * c };
+  },
+  "y7-bidmas-division": () => {
+    const start = randomNumber(2, 20);
+    const divisor = randomNumber(2, 6);
+    const quotient = randomNumber(3, 12);
+    return { text: `${start} + ${quotient * divisor} ÷ ${divisor} = ?`, answer: start + quotient };
+  },
+  "y8-bidmas-indices": () => {
+    const base = randomNumber(2, 8);
+    const multiplier = randomNumber(2, 9);
+    const addend = randomNumber(2, 20);
+    return { text: `${base}² + ${multiplier} × ${addend} = ?`, answer: base ** 2 + multiplier * addend };
+  },
+  "y9-bidmas-brackets-indices": () => {
+    const multiplier = randomNumber(2, 6);
+    const a = randomNumber(2, 8);
+    const b = randomNumber(2, 8);
+    const subtract = randomNumber(1, 15);
+    return { text: `${multiplier} × (${a} + ${b}) − ${subtract} = ?`, answer: multiplier * (a + b) - subtract };
+  },
+  "y7-one-step-equations": () => {
+    const answer = randomNumber(4, 24);
+    const offset = randomNumber(5, 30);
+    return { text: `Solve x + ${offset} = ${answer + offset}`, answer };
+  },
+  "y7-one-step-subtraction-equations": () => {
+    const answer = randomNumber(6, 30);
+    const offset = randomNumber(2, 12);
+    return { text: `Solve x − ${offset} = ${answer - offset}`, answer };
+  },
+  "y7-one-step-multiplication-equations": () => {
+    const answer = randomNumber(3, 12);
+    const factor = randomNumber(2, 12);
+    return { text: `Solve ${factor}x = ${answer * factor}`, answer };
+  },
+  "y7-one-step-division-equations": () => {
+    const answer = randomNumber(3, 12);
+    const divisor = randomNumber(2, 12);
+    return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
+  },
   "y8-square-powers": () => sample([
     () => {
       const a = randomNumber(2, 5);
@@ -1066,6 +1226,8 @@ const skillQuestionGenerators = {
       const base = sample([40, 60, 80, 100, 120]);
       return { text: `${base} increased by ${percent}% = ?`, answer: base + (base * percent) / 100 };
     },
+  ])(),
+  "y8-percentage-decrease": () => sample([
     () => {
       const percent = sample([10, 20, 25, 50]);
       const base = sample([40, 60, 80, 100, 120, 160]);
@@ -1074,14 +1236,10 @@ const skillQuestionGenerators = {
   ])(),
   "y8-linear-equations": () => sample([
     () => {
-      const answer = randomNumber(3, 16);
-      const coefficient = randomNumber(2, 9);
-      return { text: `Solve ${coefficient}x = ${coefficient * answer}`, answer };
-    },
-    () => {
-      const answer = randomNumber(3, 16);
-      const divisor = randomNumber(2, 8);
-      return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
+      const answer = randomNumber(4, 18);
+      const coefficient = randomNumber(2, 6);
+      const offset = randomNumber(5, 20);
+      return { text: `Solve ${coefficient}x + ${offset} = ${coefficient * answer + offset}`, answer };
     },
   ])(),
   "y9-index-laws": () => sample([
@@ -1130,12 +1288,6 @@ const skillQuestionGenerators = {
       const offset = randomNumber(5, 20);
       return { text: `Solve ${coefficient}x − ${offset} = ${coefficient * answer - offset}`, answer };
     },
-    () => {
-      const answer = randomNumber(4, 18);
-      const coefficient = randomNumber(2, 6);
-      const offset = randomNumber(5, 20);
-      return { text: `Solve ${coefficient}x + ${offset} = ${coefficient * answer + offset}`, answer };
-    },
   ])(),
   "y10-quadratics": () => sample([
     () => {
@@ -1160,6 +1312,8 @@ const skillQuestionGenerators = {
       const [a, b, c] = sample(triples);
       return { text: `Right triangle legs ${a} and ${b}. Hypotenuse = ?`, answer: c };
     },
+  ])(),
+  "y10-pythagoras-missing-leg": () => sample([
     () => {
       const triples = [
         [3, 4, 5],
@@ -1185,16 +1339,18 @@ const skillQuestionGenerators = {
   ])(),
   "y10-functions": () => sample([
     () => {
-      const x = randomNumber(3, 8);
-      const a = randomNumber(2, 5);
-      const b = randomNumber(1, 8);
-      return { text: `f(x) = ${a}x² − ${b}x. f(${x}) = ?`, answer: a * x ** 2 - b * x };
-    },
-    () => {
       const x = randomNumber(3, 12);
       const a = randomNumber(2, 6);
       const b = randomNumber(4, 20);
       return { text: `f(x) = ${a}x + ${b}. f(${x}) = ?`, answer: a * x + b };
+    },
+  ])(),
+  "y10-quadratic-functions": () => sample([
+    () => {
+      const x = randomNumber(3, 8);
+      const a = randomNumber(2, 5);
+      const b = randomNumber(1, 8);
+      return { text: `f(x) = ${a}x² − ${b}x. f(${x}) = ?`, answer: a * x ** 2 - b * x };
     },
   ])(),
   "y11-derivatives": () => sample([
@@ -1394,15 +1550,23 @@ function getTopicSkillIds(topicId, yearLevel = "") {
   });
 }
 
+function hasQuestionGenerator(gameId) {
+  return typeof skillQuestionGenerators[gameId] === "function";
+}
+
+function getPlayableTopicSkillIds(topicId, yearLevel = getEffectiveChallengeYearLevel()) {
+  return getTopicSkillIds(topicId, yearLevel).filter(hasQuestionGenerator);
+}
+
 function getTopicSkillSummary(topicId, yearLevel = getEffectiveChallengeYearLevel()) {
-  const skillCount = getTopicSkillIds(topicId, yearLevel).length;
+  const skillCount = getPlayableTopicSkillIds(topicId, yearLevel).length;
   return `${skillCount} ${skillCount === 1 ? "skill" : "skills"} unlocked`;
 }
 
 function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
   if (PEN_AND_PAPER_GAME_IDS.has(gameId)) return true;
   if (!isTopicArea(gameId)) return false;
-  return getTopicSkillIds(gameId, yearLevel).some((skillId) => PEN_AND_PAPER_GAME_IDS.has(skillId));
+  return getPlayableTopicSkillIds(gameId, yearLevel).some((skillId) => PEN_AND_PAPER_GAME_IDS.has(skillId));
 }
 
 function getGameDuration(gameId) {
@@ -1432,7 +1596,10 @@ function getLeaderboardHash(gameId) {
 function canYearAccessGame(yearLevel, gameId) {
   const yearRank = getYearRank(yearLevel);
   const requiredRank = getYearRank(getGameRequiredYear(gameId));
-  return yearRank >= 0 && requiredRank >= 0 && yearRank >= requiredRank;
+  const yearCanAccess = yearRank >= 0 && requiredRank >= 0 && yearRank >= requiredRank;
+  if (!yearCanAccess) return false;
+  if (isTopicArea(gameId)) return getPlayableTopicSkillIds(gameId, yearLevel).length > 0;
+  return true;
 }
 
 function canAccessGame(gameId) {
@@ -1441,7 +1608,9 @@ function canAccessGame(gameId) {
   if (isTeacherTestingAsStudent()) {
     return canYearAccessGame(state.testStudentYearLevel, gameId);
   }
-  if (getActiveAccountType() === "teacher") return true;
+  if (getActiveAccountType() === "teacher") {
+    return canYearAccessGame(getEffectiveChallengeYearLevel(), gameId);
+  }
 
   return canYearAccessGame(state.studentYearLevel, gameId);
 }
@@ -2294,7 +2463,7 @@ function getProgressMedalData(gameId) {
 }
 
 function renderProgressSkillMedals(topicId) {
-  const skillIds = getTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+  const skillIds = getPlayableTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
   if (!skillIds.length) {
     return `<p class="progress-skill-empty">No sub skills are unlocked for this topic yet.</p>`;
   }
@@ -2657,7 +2826,7 @@ function renderGameCards() {
     const info = gameInfo[topicId];
     const locked = !canAccessGame(topicId);
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
-    const availableSkillIds = getTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+    const availableSkillIds = getPlayableTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
     const skillLinks = availableSkillIds.map((skillId) => {
       const skill = gameInfo[skillId];
       return `
@@ -2864,6 +3033,8 @@ function renderHomeProgress() {
   elements.homeGamesPlayed.textContent = String(gamesPlayed);
   elements.homeBestScore.textContent = bestScore.toLocaleString();
   elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "topic-number");
+  elements.heroSkillCount.textContent = String(SKILL_IDS.length);
+  elements.homeSkillCount.textContent = String(SKILL_IDS.length);
 }
 
 function renderHomeAuthCard() {
@@ -2935,7 +3106,7 @@ function renderTopicPageSkills() {
     return;
   }
 
-  const availableSkillIds = getTopicSkillIds(state.game, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+  const availableSkillIds = getPlayableTopicSkillIds(state.game, getEffectiveChallengeYearLevel()).filter(canAccessGame);
   const yearLabel = getYearLabel(getEffectiveChallengeYearLevel());
   elements.topicPageSkillsTitle.textContent = `${gameInfo[state.game].name} sub skills`;
   elements.topicPageSkillsSummary.textContent = availableSkillIds.length

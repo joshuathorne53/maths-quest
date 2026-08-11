@@ -77,7 +77,8 @@ least Bronze in a topic-area game.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
 and `year12`. Students can submit scores for topic areas at their assigned year
-level and lower. Topic areas can include extra skills at higher year levels; for
+level and lower. Topic areas include sub-skills that unlock by year level, and
+topic-area games only sample from the sub-skills unlocked for that player. For
 example, a `year10` student can practise topic skills such as `y7-integers`,
 `y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not Year 11 or Year 12
 skills.
