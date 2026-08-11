@@ -1558,6 +1558,10 @@ function getPlayableTopicSkillIds(topicId, yearLevel = getEffectiveChallengeYear
   return getTopicSkillIds(topicId, yearLevel).filter(hasQuestionGenerator);
 }
 
+function hasUnlockedTopicSkills(topicId, yearLevel = getEffectiveChallengeYearLevel()) {
+  return isTopicArea(topicId) && getPlayableTopicSkillIds(topicId, yearLevel).length > 0;
+}
+
 function getTopicSkillSummary(topicId, yearLevel = getEffectiveChallengeYearLevel()) {
   const skillCount = getPlayableTopicSkillIds(topicId, yearLevel).length;
   return `${skillCount} ${skillCount === 1 ? "skill" : "skills"} unlocked`;
@@ -1598,7 +1602,7 @@ function canYearAccessGame(yearLevel, gameId) {
   const requiredRank = getYearRank(getGameRequiredYear(gameId));
   const yearCanAccess = yearRank >= 0 && requiredRank >= 0 && yearRank >= requiredRank;
   if (!yearCanAccess) return false;
-  if (isTopicArea(gameId)) return getPlayableTopicSkillIds(gameId, yearLevel).length > 0;
+  if (isTopicArea(gameId)) return hasUnlockedTopicSkills(gameId, yearLevel);
   return true;
 }
 
@@ -1711,9 +1715,13 @@ function getVisibleGameIds() {
 }
 
 function getVisibleTopicAreaIds() {
+  const topicIds = TOPIC_AREA_IDS.filter((topicId) => (
+    hasUnlockedTopicSkills(topicId, getEffectiveChallengeYearLevel())
+  ));
+
   return shouldHideInaccessibleGames()
-    ? TOPIC_AREA_IDS.filter(canAccessGame)
-    : TOPIC_AREA_IDS;
+    ? topicIds.filter(canAccessGame)
+    : topicIds;
 }
 
 function getVisibleProgressGameIds() {
