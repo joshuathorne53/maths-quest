@@ -161,6 +161,18 @@ service cloud.firestore {
         && isValidYearLevelList(request.resource.data.yearLevels);
     }
 
+    function preservesOrBackfillsCreatedAt() {
+      return resource.data.keys().hasAll(['createdAt'])
+        ? request.resource.data.createdAt == resource.data.createdAt
+        : request.resource.data.createdAt == request.time;
+    }
+
+    function preservesOrBackfillsApprovedAt() {
+      return resource.data.keys().hasAll(['approvedAt'])
+        ? request.resource.data.approvedAt == resource.data.approvedAt
+        : request.resource.data.approvedAt == request.time;
+    }
+
     function studentProfilePath() {
       return /databases/$(database)/documents/studentProfiles/$(request.auth.uid);
     }
@@ -281,8 +293,8 @@ service cloud.firestore {
         && resource.data.approved == true
         && hasValidTeacherProfileFields()
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.approvedAt == resource.data.approvedAt
+        && preservesOrBackfillsCreatedAt()
+        && preservesOrBackfillsApprovedAt()
         && request.resource.data.updatedAt == request.time;
 
       allow delete: if false;
@@ -305,7 +317,7 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && hasValidScoreFields(game)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.createdAt == resource.data.createdAt
+        && preservesOrBackfillsCreatedAt()
         && request.resource.data.updatedAt == request.time
         && request.resource.data.score >= resource.data.score;
 

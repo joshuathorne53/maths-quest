@@ -217,8 +217,11 @@ function getPublicAuthState(user) {
   const email = user?.email || "";
   const accountType = getAccountTypeForEmail(email);
   const teacherYearLevels = cleanYearLevels(teacherProfile?.yearLevels);
+  const teacherLeaderboardName = accountType === "teacher"
+    ? cleanLeaderboardName(teacherProfile?.name)
+    : "";
   const publicName = user
-    ? (accountType === "teacher" ? getTeacherLeaderboardName(user) : getAccountName(user))
+    ? (accountType === "teacher" && isValidLeaderboardName(teacherLeaderboardName) ? teacherLeaderboardName : getAccountName(user))
     : "";
 
   return {
@@ -232,6 +235,9 @@ function getPublicAuthState(user) {
     accountType,
     studentYearLevel: accountType === "student" ? cleanYearLevel(studentProfile?.yearLevel) : "",
     teacherYearLevels: accountType === "teacher" ? teacherYearLevels : [],
+    teacherLeaderboardName: accountType === "teacher" && isValidLeaderboardName(teacherLeaderboardName)
+      ? teacherLeaderboardName
+      : "",
   };
 }
 
@@ -482,6 +488,7 @@ if (!isConfigured) {
         teacherYearLevels: yearLevels,
         game,
         bestStreak: cleanBestStreak(scoreData.bestStreak),
+        ...(scoreData.createdAt ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       });
     });
@@ -521,6 +528,12 @@ if (!isConfigured) {
     };
 
     if (currentTeacherProfile) {
+      if (!currentTeacherProfile.createdAt) {
+        profileData.createdAt = serverTimestamp();
+      }
+      if (!currentTeacherProfile.approvedAt) {
+        profileData.approvedAt = serverTimestamp();
+      }
       await updateDoc(teacherDocument, profileData);
     } else {
       await setDoc(teacherDocument, {
@@ -663,11 +676,15 @@ if (!isConfigured) {
       if (previousScore !== null && score <= previousScore) {
         if (shouldSyncScoreMetadata(existingData, scoreData) || scoreData.bestStreak > previousBestStreak) {
           try {
-            await updateDoc(scoreDocument, {
+            const updateData = {
               ...scoreData,
               score: previousScore,
               updatedAt: serverTimestamp(),
-            });
+            };
+            if (!existingData?.createdAt) {
+              updateData.createdAt = serverTimestamp();
+            }
+            await updateDoc(scoreDocument, updateData);
           } catch (error) {
             console.warn("Could not update score metadata.", error);
           }
@@ -684,10 +701,14 @@ if (!isConfigured) {
       }
 
       if (existingScore.exists()) {
-        await updateDoc(scoreDocument, {
+        const updateData = {
           ...scoreData,
           updatedAt: serverTimestamp(),
-        });
+        };
+        if (!existingData?.createdAt) {
+          updateData.createdAt = serverTimestamp();
+        }
+        await updateDoc(scoreDocument, updateData);
       } else {
         await setDoc(scoreDocument, {
           ...scoreData,

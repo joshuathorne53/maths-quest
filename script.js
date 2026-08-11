@@ -2,6 +2,7 @@ const GAME_SECONDS = 60;
 const PAPER_GAME_SECONDS = 300;
 const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
 const PROGRESS_KEY = "bayside-maths-challenge-progress-v1";
+const TEACHER_NAME_KEY = "bayside-maths-challenge-teacher-names-v1";
 const DEFAULT_YEAR_LEVEL = "year7";
 const TEST_STUDENT_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
 const MR_THORNE_NAMES = new Set(["joshua thorne", "mr thorne"]);
@@ -381,6 +382,7 @@ const state = {
   authUid: "",
   authEmail: "",
   authName: "",
+  teacherLeaderboardName: "",
   authAllowed: false,
   allowedEmailDomain: "",
   allowedEmailDomains: [],
@@ -1608,8 +1610,29 @@ function updateLocalTeacherScoreMetadata(name, teacherYearLevels) {
   });
 }
 
+function applyCurrentTeacherScoreName(scores) {
+  const normalizedScores = normalizeScores(scores);
+  if (getActiveAccountType() !== "teacher" || !state.authUid) return normalizedScores;
+
+  const cleanName = cleanLeaderboardName(getGooglePlayerName());
+  const cleanLevels = state.teacherYearLevels.map(cleanYearLevel).filter(Boolean);
+  if (!cleanName || !cleanLevels.length) return normalizedScores;
+
+  return normalizedScores.map((entry) => {
+    if (entry.role !== "teacher" || (entry.uid || entry.id) !== state.authUid) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      name: cleanName,
+      teacherYearLevels: cleanLevels,
+    };
+  });
+}
+
 function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
-  const filteredScores = normalizeScores(scores)
+  const filteredScores = applyCurrentTeacherScoreName(scores)
     .filter((entry) => {
       if (entry.role === "teacher") {
         if (teacherFilter === "none") return false;
@@ -1625,7 +1648,8 @@ function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 2
 }
 
 function getRawScores(game) {
-  return state.sharedScores[game] !== null ? state.sharedScores[game] : getLocalScores()[game];
+  const rawScores = state.sharedScores[game] !== null ? state.sharedScores[game] : getLocalScores()[game];
+  return applyCurrentTeacherScoreName(rawScores);
 }
 
 function getVisibleScores(game = state.board, options = {}) {
@@ -2030,12 +2054,52 @@ function getAllowedDomainLabel() {
   return state.allowedEmailDomain ? `@${state.allowedEmailDomain}` : "your school Google";
 }
 
-function getGooglePlayerName() {
-  return state.authName || state.authEmail.split("@")[0] || "Student";
-}
-
 function cleanLeaderboardName(name) {
   return String(name || "").replace(/\s+/g, " ").trim();
+}
+
+function getTeacherNameCache() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TEACHER_NAME_KEY));
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function getTeacherNameCacheKeys(uid = state.authUid, email = state.authEmail) {
+  return [
+    uid ? `uid:${uid}` : "",
+    cleanEmail(email) ? `email:${cleanEmail(email)}` : "",
+  ].filter(Boolean);
+}
+
+function getCachedTeacherLeaderboardName(uid = state.authUid, email = state.authEmail) {
+  const cache = getTeacherNameCache();
+  const key = getTeacherNameCacheKeys(uid, email).find((cacheKey) => cleanLeaderboardName(cache[cacheKey]));
+  return key ? cleanLeaderboardName(cache[key]) : "";
+}
+
+function cacheTeacherLeaderboardName(name, uid = state.authUid, email = state.authEmail) {
+  const cleanName = cleanLeaderboardName(name);
+  if (!cleanName) return;
+
+  const cache = getTeacherNameCache();
+  getTeacherNameCacheKeys(uid, email).forEach((key) => {
+    cache[key] = cleanName;
+  });
+  try {
+    localStorage.setItem(TEACHER_NAME_KEY, JSON.stringify(cache));
+  } catch {
+    // The live Firebase profile remains the source of truth if local storage is unavailable.
+  }
+}
+
+function getGooglePlayerName() {
+  const teacherName = getActiveAccountType() === "teacher"
+    ? cleanLeaderboardName(state.teacherLeaderboardName)
+    : "";
+  return teacherName || state.authName || state.authEmail.split("@")[0] || "Student";
 }
 
 function validateLeaderboardName(name) {
@@ -2767,16 +2831,29 @@ function applyAuthState(authState) {
   const oldAuthAllowed = state.authAllowed;
   const oldAccountType = state.accountType;
   const oldAuthName = state.authName;
+  const oldTeacherLeaderboardName = state.teacherLeaderboardName;
   const oldStudentYearLevel = state.studentYearLevel;
   const oldTeacherYears = state.teacherYearLevels.join(",");
+  const incomingAccountType = cleanAccountType(authState?.accountType);
+  const incomingName = cleanLeaderboardName(authState?.name);
+  const incomingTeacherName = cleanLeaderboardName(authState?.teacherLeaderboardName);
 
   state.authUid = authState?.uid || "";
   state.authEmail = authState?.email || "";
-  state.authName = authState?.name || "";
   state.authAllowed = Boolean(authState?.allowed);
   state.allowedEmailDomain = authState?.allowedEmailDomain || state.allowedEmailDomain;
   state.allowedEmailDomains = authState?.allowedEmailDomains || state.allowedEmailDomains;
-  state.accountType = cleanAccountType(authState?.accountType);
+  state.accountType = incomingAccountType;
+  state.teacherLeaderboardName = "";
+  if (state.accountType === "teacher") {
+    state.teacherLeaderboardName = incomingTeacherName || getCachedTeacherLeaderboardName(state.authUid, state.authEmail);
+    state.authName = state.teacherLeaderboardName || incomingName;
+    if (incomingTeacherName) {
+      cacheTeacherLeaderboardName(incomingTeacherName, state.authUid, state.authEmail);
+    }
+  } else {
+    state.authName = incomingName;
+  }
   state.studentYearLevel = cleanYearLevel(authState?.studentYearLevel);
   state.teacherYearLevels = Array.isArray(authState?.teacherYearLevels)
     ? authState.teacherYearLevels.map(cleanYearLevel).filter(Boolean)
@@ -2804,7 +2881,11 @@ function applyAuthState(authState) {
     }
     if (
       getActiveAccountType() === "teacher"
-      && (oldAuthName !== state.authName || oldTeacherYears !== state.teacherYearLevels.join(","))
+      && (
+        oldAuthName !== state.authName
+        || oldTeacherLeaderboardName !== state.teacherLeaderboardName
+        || oldTeacherYears !== state.teacherYearLevels.join(",")
+      )
     ) {
       updateLocalTeacherScoreMetadata(getGooglePlayerName(), state.teacherYearLevels);
     }
@@ -2864,7 +2945,7 @@ function listenToSharedBoard(game, { teacherFilterOverride = state.teacherFilter
   state.boardUnsubscribes.set(game, window.sharedLeaderboard.listen(
     game,
     (scores) => {
-      state.sharedScores[game] = normalizeScores(scores);
+      state.sharedScores[game] = applyCurrentTeacherScoreName(scores);
       if (state.page === "home") renderHomeDashboard();
       if (state.game === game) renderGameLeaderboard();
       if (state.page === "progress") renderProgressPage();
@@ -3100,6 +3181,7 @@ async function saveTeacherYears() {
   try {
     setProfileStatus("Saving teacher details...");
     const authState = await window.sharedLeaderboard.saveTeacherYearLevels(yearLevels, teacherName);
+    cacheTeacherLeaderboardName(teacherName, authState?.uid, authState?.email);
     applyAuthState(authState);
     updateLocalTeacherScoreMetadata(getGooglePlayerName(), state.teacherYearLevels);
     renderCurrentDataViews();

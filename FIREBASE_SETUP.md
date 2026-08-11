@@ -63,11 +63,12 @@ profiles and student scores. `@baysidecc.vic.edu.au` users can only save teacher
 profiles and teacher scores. Score values are limited, and existing score
 entries can only keep the same score or move higher.
 
-Leaderboard names come from the user's Google account. Student accounts save one
-year level before playing. Each Google account can have one score document per
-game because the score document ID must match the signed-in user's Firebase UID.
-Students can play any number of attempts. The leaderboard keeps their highest
-score for each game and their highest saved answer streak for the streak board.
+Student leaderboard names come from the user's Google account. Teacher accounts
+can customise their leaderboard name in Settings. Each Google account can have
+one score document per game because the score document ID must match the
+signed-in user's Firebase UID. Students can play any number of attempts. The
+leaderboard keeps their highest score for each game and their highest saved
+answer streak for the streak board.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
 and `year12`. Students can submit scores for skill challenges at their saved
@@ -80,7 +81,7 @@ Teachers open **Settings**, choose the year levels they teach, and the website
 creates or updates their `teachers/{uid}` profile automatically with:
 
 - `uid`: the teacher's Firebase UID
-- `name`: the teacher's Google display name
+- `name`: the teacher's chosen leaderboard name
 - `email`: the teacher's school email address in lowercase
 - `approved`: `true`
 - `yearLevels`: an array, for example `["year7", "year8"]`

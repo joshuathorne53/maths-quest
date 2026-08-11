@@ -46,9 +46,9 @@ Year 10 student can play Year 7, Year 8, Year 9, and Year 10 skills, but not
 Year 11 or Year 12 skills.
 
 `@baysidecc.vic.edu.au` Google accounts are treated as teachers automatically.
-Teachers choose the year levels they teach in Settings and can appear in the
-teacher views: no teachers, year-level teachers, or all teachers. Follow
-[FIREBASE_SETUP.md](FIREBASE_SETUP.md) once to connect it.
+Teachers choose the leaderboard name and year levels they teach in Settings,
+then can appear in the teacher views: no teachers, year-level teachers, or all
+teachers. Follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md) once to connect it.
 
 Until Firebase is configured, scores automatically fall back to the browser's
 `localStorage` and are visible only on that device.
