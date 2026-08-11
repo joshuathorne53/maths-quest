@@ -2005,76 +2005,6 @@ function stopSharedBoardListeners({ clearScores = false } = {}) {
   }
 }
 
-function getScoreKey(entry) {
-  return entry.uid || entry.id || `${entry.role}:${entry.name}:${entry.yearLevel || entry.teacherYearLevels?.join("-") || "teacher"}`;
-}
-
-function getTotalScores(gameIds) {
-  const totals = new Map();
-
-  gameIds.forEach((gameId) => {
-    filterScoresForBoard(getRawScores(gameId), state.boardYearLevel, state.teacherFilter, { scoreLimit: null })
-      .forEach((entry) => {
-        const key = getScoreKey(entry);
-        const existing = totals.get(key) || {
-          id: key,
-          uid: key,
-          name: entry.name,
-          score: 0,
-          role: entry.role,
-          yearLevel: entry.yearLevel,
-          teacherYearLevels: entry.teacherYearLevels,
-          games: 0,
-        };
-
-        existing.score += entry.score;
-        existing.games += 1;
-        totals.set(key, existing);
-      });
-  });
-
-  return [...totals.values()]
-    .sort((a, b) => b.score - a.score || b.games - a.games)
-    .slice(0, 20);
-}
-
-function getHighestStreakScores(gameIds) {
-  const totals = new Map();
-
-  gameIds.forEach((gameId) => {
-    filterScoresForBoard(getRawScores(gameId), state.boardYearLevel, state.teacherFilter, { scoreLimit: null })
-      .forEach((entry) => {
-        const key = getScoreKey(entry);
-        const streak = Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0;
-        const existing = totals.get(key) || {
-          id: key,
-          uid: key,
-          name: entry.name,
-          score: 0,
-          totalScore: 0,
-          role: entry.role,
-          yearLevel: entry.yearLevel,
-          teacherYearLevels: entry.teacherYearLevels,
-          games: 0,
-          streakGame: "",
-        };
-
-        existing.totalScore += entry.score;
-        existing.games += 1;
-        if (streak > existing.score) {
-          existing.score = streak;
-          existing.streakGame = gameInfo[gameId]?.name || "";
-        }
-        totals.set(key, existing);
-      });
-  });
-
-  return [...totals.values()]
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score || b.totalScore - a.totalScore || b.games - a.games)
-    .slice(0, 20);
-}
-
 function getCurrentPlayerBestScore(gameId) {
   const currentScores = [
     ...normalizeScores(getRawScores(gameId)),
@@ -2603,8 +2533,6 @@ function renderScoreRows(
   emptyMessage,
   {
     scoreLimit = 10,
-    showGameCount = false,
-    showStreakGame = false,
     valueFormatter = (entry) => entry.score.toLocaleString(),
   } = {},
 ) {
@@ -2615,20 +2543,13 @@ function renderScoreRows(
   return scores
     .slice(0, scoreLimit)
     .map((entry, index) => {
-      const gameCountLabel = showGameCount
-        ? ` • ${entry.games} ${entry.games === 1 ? "game" : "games"}`
-        : "";
-      const streakGameLabel = showStreakGame && entry.streakGame
-        ? ` • ${entry.streakGame}`
-        : "";
-
       return `
         <li class="score-row ${scoreMatchesCurrentPlayer(entry) ? "current-player" : ""} ${entry.role === "teacher" ? "teacher-score" : ""}">
           <span class="score-rank">${index + 1}</span>
           <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
           <span class="score-name">
             ${escapeHtml(entry.name)}
-            <small>${escapeHtml(`${getScoreMeta(entry)}${gameCountLabel}${streakGameLabel}`)}</small>
+            <small>${escapeHtml(getScoreMeta(entry))}</small>
           </span>
           <span class="score-points">${escapeHtml(valueFormatter(entry))}</span>
         </li>
@@ -2919,41 +2840,25 @@ function renderLeaderboardGridCard({
   title,
   description,
   scores,
-  total = false,
-  streak = false,
 }) {
   const info = gameInfo[gameId] || {};
-  const classes = total || streak
-    ? `leaderboard-grid-card summary-leaderboard-card ${total ? "total-leaderboard-card" : "streak-leaderboard-card"}`
-    : "leaderboard-grid-card";
-  const meta = streak
-    ? `${scores.length ? "Highest saved streaks" : "Waiting for streaks"} • ${getVisibleBoardGameIds().length} games`
-    : total
-    ? `${scores.length ? "Combined best scores" : "Waiting for scores"} • ${getVisibleBoardGameIds().length} games`
-    : `${getGameDurationLabel(gameId)} • ${getTopicSkillSummary(gameId, state.boardYearLevel)}`;
+  const meta = `${getGameDurationLabel(gameId)} • ${getTopicSkillSummary(gameId, state.boardYearLevel)}`;
 
   return `
-    <article class="${classes}">
+    <article class="leaderboard-grid-card">
       <div class="leaderboard-grid-card-head">
         <div>
           <p>${escapeHtml(meta)}</p>
           <h3>${escapeHtml(title)}</h3>
         </div>
-        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(total ? "Σ" : streak ? "↯" : info.icon)}</span>
+        <span class="mini-game-icon" aria-hidden="true">${escapeHtml(info.icon)}</span>
       </div>
       <p class="leaderboard-grid-description">${escapeHtml(description)}</p>
       <ol class="compact-score-list">
         ${renderScoreRows(
           scores,
-          streak
-            ? `No ${getYearLabel(state.boardYearLevel)} streaks saved yet.`
-            : `No ${getYearLabel(state.boardYearLevel)} scores yet.`,
-          {
-            scoreLimit: 10,
-            showGameCount: total,
-            showStreakGame: streak,
-            valueFormatter: streak ? (entry) => `${entry.score.toLocaleString()} streak` : undefined,
-          },
+          `No ${getYearLabel(state.boardYearLevel)} scores yet.`,
+          { scoreLimit: 10 },
         )}
       </ol>
     </article>
