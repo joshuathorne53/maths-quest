@@ -20,8 +20,9 @@ in to GitHub.
 5. Firebase displays a `firebaseConfig` object. The current project config has
    already been copied into [`firebase-config.js`](firebase-config.js).
 6. The school Google domains are already set in [`firebase-config.js`](firebase-config.js):
-   `bcc.vic.edu.au` accounts are students and `baysidecc.vic.edu.au` accounts
-   are teachers. If this ever changes, use only the part after the `@` symbol.
+   `baysidecc.vic.edu.au` accounts are teachers. Student year levels and score
+   access come from the Firestore `studentDirectory` collection. If the teacher
+   domain ever changes, use only the part after the `@` symbol.
    For example:
 
    ```js
@@ -51,29 +52,30 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
 ## 5. Publish the security rules
 
 1. In **Firestore Database**, open the **Rules** tab.
-2. [`firestore.rules`](firestore.rules) is already set to allow only
-   `bcc.vic.edu.au` and `baysidecc.vic.edu.au` Google accounts.
+2. [`firestore.rules`](firestore.rules) is already set to lock student scores to
+   imported `studentDirectory` entries and teacher scores to
+   `baysidecc.vic.edu.au` accounts.
 3. Replace the existing Firebase rules with the contents of
    [`firestore.rules`](firestore.rules).
 4. Select **Publish**.
 
-These rules let anyone read the game leaderboards. Only school Google users can
-save profiles and add scores. `@bcc.vic.edu.au` users can only save student
-profiles and student scores. `@baysidecc.vic.edu.au` users can only save teacher
-profiles and teacher scores. Score values are limited, and existing score
-entries can only keep the same score or move higher.
+These rules let signed-in users read only the leaderboards they are allowed to
+see. Students must have their email in `studentDirectory` before they can submit
+scores. Teachers must use `@baysidecc.vic.edu.au` Google accounts. Score values
+are limited, and existing score entries can only keep the same score or move
+higher.
 
 Student leaderboard names come from the user's Google account. Teacher accounts
 can customise their leaderboard name in Settings. Students can have one score
-document per game per selected year level, using document IDs such as
+document per game per assigned year level, using document IDs such as
 `{uid}_year7`; older `{uid}` student score documents remain valid so existing
 scores keep showing. Teacher accounts keep one score document per game. Students
 can play any number of attempts. The leaderboard keeps their highest score for
-each game in their selected year level and their highest saved answer streak for
+each game in their assigned year level and their highest saved answer streak for
 the streak board.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
-and `year12`. Students can submit scores for skill challenges at their saved
+and `year12`. Students can submit scores for skill challenges at their assigned
 year level and lower. For example, a `year10` student can play skills such as
 `y7-integers`, `y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not
 Year 11 or Year 12 skills.
@@ -100,12 +102,33 @@ Year-level leaderboards include teacher filters at the bottom:
 - **Year level teachers:** students plus teachers who teach the selected year.
 - **All teachers:** students plus all teachers with scores.
 
-After this update, only signed-in Google users from the matching school domain
-can add the matching kind of score. Personal Gmail accounts, other domains, and
-student accounts attempting teacher scores are blocked by the database rules,
-even if someone edits the website code in their browser.
+After this update, only signed-in Google users with a matching student directory
+entry can add student scores. Teacher scores require a
+`@baysidecc.vic.edu.au` account. Accounts attempting the wrong score type are
+blocked by the database rules, even if someone edits the website code in their
+browser.
 
-## 6. Upload and test
+## 6. Import student year levels
+
+The private spreadsheet is not committed to GitHub. Import it from this machine
+with the Firebase CLI logged in:
+
+```bash
+python3 tools/import-student-directory.py "/Users/joshua.thorne/Downloads/Student Emails.xlsx" --project bayside-maths-challenge
+```
+
+Use `--dry-run` first to preview the number of rows without uploading. The import
+creates or updates `studentDirectory/{lowercase-email}` documents and does not
+delete any existing manual assignments.
+
+If a student signs in with an email that is not in `studentDirectory`, the site
+creates `yearLevelRequests/{uid}` with their name and email. The Requests page
+appears in the sidebar only for `joshua.thorne@baysidecc.vic.edu.au`, where the
+admin can assign the missing student to Year 7-12. Because this is a static
+GitHub Pages site, it does not send a real email by itself; the request is stored
+in Firestore for the admin page.
+
+## 7. Upload and test
 
 Upload all project files to the GitHub repository, including:
 

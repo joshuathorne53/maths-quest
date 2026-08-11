@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=student-year-score-20260811" />
-    <script src="script.js?v=student-year-score-20260811" defer></script>
-    <script type="module" src="firebase-leaderboard.js?v=student-year-score-20260811"></script>
+    <link rel="stylesheet" href="styles.css?v=student-directory-20260811" />
+    <script src="script.js?v=student-directory-20260811" defer></script>
+    <script type="module" src="firebase-leaderboard.js?v=student-directory-20260811"></script>
   </head>
   <body>
     <header class="site-header">
@@ -67,13 +67,23 @@
 
                 <div class="account-tools">
                   <form class="account-card" id="student-profile-form">
-                    <label class="select-field" for="student-year-select">
+                    <div class="teacher-card-heading">
+                      <h4>Student account</h4>
+                      <span id="student-directory-badge">Directory</span>
+                    </div>
+                    <p id="student-directory-status">Your year level is assigned by the school list.</p>
+                    <label class="select-field" id="student-year-select-wrap" for="student-year-select">
                       <span>Student year level</span>
-                      <select id="student-year-select" required>
+                      <select id="student-year-select" disabled>
                         <option value="">Choose your year level</option>
                       </select>
                     </label>
-                    <button class="button button-primary button-compact" type="submit">Save year level</button>
+                    <button class="button button-primary button-compact" id="student-year-save" type="submit" hidden>
+                      Save year level
+                    </button>
+                    <button class="button button-primary button-compact" id="student-request-button" type="button">
+                      Request year level
+                    </button>
                   </form>
 
                   <div class="account-card" id="teacher-panel">
@@ -141,6 +151,7 @@
             <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
             <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">√</span>
@@ -282,6 +293,7 @@
             <a class="active" href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
             <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">🎯</span>
@@ -330,6 +342,7 @@
             <a class="active" href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
             <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">▶</span>
@@ -528,6 +541,7 @@
             <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
             <a class="active" href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">★</span>
@@ -582,6 +596,7 @@
             <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
             <a class="active" href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
             <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
           </nav>
           <div class="dashboard-side-note">
             <span aria-hidden="true">Σ</span>
@@ -626,6 +641,61 @@
             <span></span>
             Connecting to the shared leaderboards...
           </p>
+        </div>
+      </section>
+
+      <section class="admin-section app-dashboard-page" id="admin" hidden>
+        <aside class="dashboard-sidebar" aria-label="Student request navigation">
+          <a class="dashboard-logo" href="#home" aria-label="Bayside Maths Challenge dashboard">
+            <img src="assets/bcc-logo-square.png?v=school-brand-20260810" alt="" width="512" height="512" />
+            <strong>Bayside Maths Challenge</strong>
+          </a>
+          <nav class="dashboard-menu" aria-label="Admin shortcuts">
+            <a href="#home"><span aria-hidden="true">⌂</span> Dashboard</a>
+            <a href="#games"><span aria-hidden="true">🎮</span> Games</a>
+            <a href="#leaderboards"><span aria-hidden="true">🏆</span> Leaderboards</a>
+            <a href="#progress"><span aria-hidden="true">↗</span> My progress</a>
+            <a class="active" data-admin-nav href="#admin" hidden><span aria-hidden="true">✉</span> Requests</a>
+          </nav>
+          <div class="dashboard-side-note">
+            <span aria-hidden="true">✓</span>
+            <p>Assign year levels for students who are not in the imported directory yet.</p>
+          </div>
+        </aside>
+
+        <div class="dashboard-main dashboard-main-wide">
+          <section class="page-hero-card admin-page-hero" aria-labelledby="admin-heading">
+            <div>
+              <p class="eyebrow"><span></span> Admin</p>
+              <h1 id="admin-heading">Student year level requests.</h1>
+              <p>
+                Only the site admin can see this page. When a student signs in and their
+                email is not in the uploaded directory, their name and email appear here.
+              </p>
+            </div>
+            <div class="page-hero-stats" aria-label="Request summary">
+              <div><strong id="admin-request-count">0</strong><span>pending</span></div>
+              <div><strong id="admin-assigned-count">0</strong><span>assigned</span></div>
+              <div><strong>7-12</strong><span>year levels</span></div>
+            </div>
+          </section>
+
+          <section class="dashboard-card admin-request-card" aria-label="Student requests">
+            <div class="dashboard-section-head">
+              <div>
+                <p class="eyebrow"><span></span> Requests</p>
+                <h2>Assign student year levels</h2>
+              </div>
+              <button class="button button-secondary button-compact" id="admin-refresh-button" type="button">
+                Refresh
+              </button>
+            </div>
+            <div class="admin-request-list" id="admin-request-list"></div>
+            <p class="leaderboard-note" id="admin-status" data-status="connecting" aria-live="polite">
+              <span></span>
+              Loading student requests...
+            </p>
+          </section>
         </div>
       </section>
     </main>

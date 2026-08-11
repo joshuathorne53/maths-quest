@@ -1509,7 +1509,8 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 
 .games-section.app-dashboard-page,
 .progress-section.app-dashboard-page,
-.leaderboard-section.app-dashboard-page {
+.leaderboard-section.app-dashboard-page,
+.admin-section.app-dashboard-page {
   padding: 0 max(18px, calc((100vw - 1440px) / 2)) 58px;
 }
 
@@ -1530,6 +1531,14 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   color: var(--navy);
   background:
     radial-gradient(circle at 88% 8%, rgba(140, 198, 230, 0.22), transparent 24%),
+    radial-gradient(circle at 8% 90%, rgba(53, 143, 208, 0.12), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+}
+
+.admin-section.app-dashboard-page {
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(255, 199, 44, 0.16), transparent 24%),
     radial-gradient(circle at 8% 90%, rgba(53, 143, 208, 0.12), transparent 24%),
     linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
 }
@@ -3023,6 +3032,71 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   box-shadow: 0 12px 28px rgba(23, 43, 77, 0.06);
 }
 
+.admin-request-card {
+  display: grid;
+  padding: 24px;
+  gap: 20px;
+}
+
+.admin-request-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-request-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  color: var(--navy);
+  background: #f6f8fd;
+  border: 1px solid rgba(23, 43, 77, 0.08);
+  border-radius: 18px;
+}
+
+.admin-request-row.assigned {
+  opacity: 0.72;
+}
+
+.admin-request-person {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-request-person strong {
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.admin-request-person span,
+.admin-request-person small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-request-row .select-field {
+  min-width: 0;
+}
+
+.admin-empty-card {
+  margin: 0;
+  padding: 18px;
+  color: var(--muted);
+  background: #f6f8fd;
+  border: 1px solid rgba(23, 43, 77, 0.08);
+  border-radius: 18px;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .admin-request-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .progress-game-head {
   display: flex;
   align-items: center;
@@ -3239,7 +3313,8 @@ footer > a:last-child {
   .games-section.app-dashboard-page,
   .game-page-section.app-dashboard-page,
   .progress-section.app-dashboard-page,
-  .leaderboard-section.app-dashboard-page {
+  .leaderboard-section.app-dashboard-page,
+  .admin-section.app-dashboard-page {
     padding: 120px 18px 34px;
     grid-template-columns: 1fr;
   }
@@ -3353,7 +3428,8 @@ footer > a:last-child {
   .games-section.app-dashboard-page,
   .game-page-section.app-dashboard-page,
   .progress-section.app-dashboard-page,
-  .leaderboard-section.app-dashboard-page {
+  .leaderboard-section.app-dashboard-page,
+  .admin-section.app-dashboard-page {
     padding: 108px 14px 28px;
     gap: 16px;
   }

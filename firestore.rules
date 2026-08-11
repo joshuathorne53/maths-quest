@@ -16,7 +16,8 @@ service cloud.firestore {
 
     function isStudentUser() {
       return hasValidSchoolGoogleAuth()
-        && userDomain() == 'bcc.vic.edu.au';
+        && exists(studentDirectoryPath())
+        && isValidYearLevel(get(studentDirectoryPath()).data.yearLevel);
     }
 
     function isTeacherUser() {
@@ -30,6 +31,11 @@ service cloud.firestore {
 
     function userEmail() {
       return request.auth.token.email.lower();
+    }
+
+    function isAdminUser() {
+      return hasValidSchoolGoogleAuth()
+        && userEmail() == 'joshua.thorne@baysidecc.vic.edu.au';
     }
 
     function validYearLevels() {
@@ -173,8 +179,8 @@ service cloud.firestore {
         : request.resource.data.approvedAt == request.time;
     }
 
-    function studentProfilePath() {
-      return /databases/$(database)/documents/studentProfiles/$(request.auth.uid);
+    function studentDirectoryPath() {
+      return /databases/$(database)/documents/studentDirectory/$(userEmail());
     }
 
     function teacherProfilePath() {
@@ -192,17 +198,16 @@ service cloud.firestore {
     }
 
     function hasSavedStudentYear(yearLevel) {
-      return exists(studentProfilePath())
-        && get(studentProfilePath()).data.yearLevel == yearLevel;
+      return isStudentUser()
+        && get(studentDirectoryPath()).data.yearLevel == yearLevel;
     }
 
     function savedStudentYearLevel() {
-      return get(studentProfilePath()).data.yearLevel;
+      return get(studentDirectoryPath()).data.yearLevel;
     }
 
     function canStudentReadScore(game) {
       return isStudentUser()
-        && exists(studentProfilePath())
         && canStudentAccessGame(game, savedStudentYearLevel())
         && (
           (
@@ -271,8 +276,105 @@ service cloud.firestore {
         );
     }
 
+    function hasValidStudentDirectoryFields(directoryEmail) {
+      return request.resource.data.keys().hasOnly(['email', 'yearLevel', 'source', 'updatedBy', 'importedAt', 'createdAt', 'updatedAt'])
+        && request.resource.data.email == directoryEmail
+        && isValidYearLevel(request.resource.data.yearLevel)
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidRequestStatus(status) {
+      return status in ['new', 'assigned'];
+    }
+
+    function hasValidYearLevelRequestBaseFields() {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'name',
+          'email',
+          'status',
+          'notifyEmail',
+          'assignedYearLevel',
+          'resolvedBy',
+          'createdAt',
+          'resolvedAt',
+          'updatedAt'
+        ])
+        && request.resource.data.uid is string
+        && isValidName(request.resource.data.name)
+        && request.resource.data.email is string
+        && isValidRequestStatus(request.resource.data.status)
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function hasValidStudentYearLevelRequestCreate() {
+      return hasValidYearLevelRequestBaseFields()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == userEmail()
+        && request.resource.data.status == 'new'
+        && request.resource.data.notifyEmail is string
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function hasValidStudentYearLevelRequestUpdate() {
+      return hasValidYearLevelRequestBaseFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == userEmail()
+        && request.resource.data.status == 'new'
+        && preservesOrBackfillsCreatedAt();
+    }
+
+    function hasValidAdminYearLevelRequestUpdate() {
+      return hasValidYearLevelRequestBaseFields()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && preservesOrBackfillsCreatedAt()
+        && request.resource.data.status == 'assigned'
+        && isValidYearLevel(request.resource.data.assignedYearLevel)
+        && request.resource.data.resolvedBy == userEmail()
+        && request.resource.data.resolvedAt == request.time;
+    }
+
+    match /studentDirectory/{directoryEmail} {
+      allow read: if isAdminUser()
+        || (
+          hasValidSchoolGoogleAuth()
+          && directoryEmail == userEmail()
+        );
+
+      allow create, update: if isAdminUser()
+        && hasValidStudentDirectoryFields(directoryEmail);
+
+      allow delete: if false;
+    }
+
+    match /yearLevelRequests/{requestId} {
+      allow read: if isAdminUser()
+        || (
+          hasValidSchoolGoogleAuth()
+          && resource.data.uid == request.auth.uid
+        );
+
+      allow create: if hasValidSchoolGoogleAuth()
+        && requestId == request.auth.uid
+        && hasValidStudentYearLevelRequestCreate();
+
+      allow update: if (
+          hasValidSchoolGoogleAuth()
+          && requestId == request.auth.uid
+          && hasValidStudentYearLevelRequestUpdate()
+        )
+        || (
+          isAdminUser()
+          && hasValidAdminYearLevelRequestUpdate()
+        );
+
+      allow delete: if false;
+    }
+
     match /studentProfiles/{profileId} {
-      allow read: if isAllowedSchoolGoogleUser()
+      allow read: if hasValidSchoolGoogleAuth()
         && profileId == request.auth.uid;
 
       allow create: if isStudentUser()

@@ -23,12 +23,14 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import {
+  adminEmail,
   allowedEmailDomain,
   allowedEmailDomains,
   firebaseConfig,
   studentEmailDomain,
   teacherEmailDomain,
-} from "./firebase-config.js";
+  yearLevelRequestEmail,
+} from "./firebase-config.js?v=student-directory-20260811";
 
 const validGames = new Set([
   "quick",
@@ -114,6 +116,8 @@ const cleanAllowedDomains = configuredDomains
 const cleanAllowedDomain = cleanAllowedDomains[0] || "";
 const cleanStudentDomain = String(studentEmailDomain || "bcc.vic.edu.au").replace(/^@/, "").trim().toLowerCase();
 const cleanTeacherDomain = String(teacherEmailDomain || "baysidecc.vic.edu.au").replace(/^@/, "").trim().toLowerCase();
+const cleanAdminEmail = cleanEmail(adminEmail || "joshua.thorne@baysidecc.vic.edu.au");
+const cleanYearLevelRequestEmail = cleanEmail(yearLevelRequestEmail || cleanAdminEmail);
 const hasFirebaseConfig = Object.values(firebaseConfig).every(
   (value) => value && !String(value).startsWith("YOUR_"),
 );
@@ -121,6 +125,8 @@ const hasAllowedDomain = cleanAllowedDomains.length > 0;
 const isConfigured = hasFirebaseConfig && hasAllowedDomain;
 
 let studentProfile = null;
+let studentDirectoryEntry = null;
+let yearLevelRequest = null;
 let teacherProfile = null;
 let accountUnsubscribes = [];
 
@@ -135,9 +141,8 @@ function getEmailDomain(email) {
 
 function getAccountTypeForEmail(email) {
   const domain = getEmailDomain(email);
-  if (domain === cleanStudentDomain) return "student";
   if (domain === cleanTeacherDomain) return "teacher";
-  return "";
+  return cleanEmail(email) ? "student" : "";
 }
 
 function emailIsAllowed(email) {
@@ -150,6 +155,10 @@ function cleanEmail(email) {
 
 function getAccountName(user) {
   return user?.displayName || user?.email?.split("@")[0] || "Student";
+}
+
+function isAdminEmail(email) {
+  return cleanEmail(email) === cleanAdminEmail;
 }
 
 function cleanLeaderboardName(name) {
@@ -205,6 +214,8 @@ function makeError(code, message) {
 
 function resetAccountDocuments() {
   studentProfile = null;
+  studentDirectoryEntry = null;
+  yearLevelRequest = null;
   teacherProfile = null;
 }
 
@@ -216,6 +227,7 @@ function stopWatchingAccountDocuments() {
 function getPublicAuthState(user) {
   const email = user?.email || "";
   const accountType = getAccountTypeForEmail(email);
+  const studentDirectoryYearLevel = cleanYearLevel(studentDirectoryEntry?.yearLevel);
   const teacherYearLevels = cleanYearLevels(teacherProfile?.yearLevels);
   const teacherLeaderboardName = accountType === "teacher"
     ? cleanLeaderboardName(teacherProfile?.name)
@@ -233,7 +245,19 @@ function getPublicAuthState(user) {
     allowedEmailDomain: cleanAllowedDomain,
     allowedEmailDomains: cleanAllowedDomains,
     accountType,
-    studentYearLevel: accountType === "student" ? cleanYearLevel(studentProfile?.yearLevel) : "",
+    studentYearLevel: accountType === "student" ? studentDirectoryYearLevel : "",
+    studentYearLevelLocked: accountType === "student",
+    studentDirectoryStatus: accountType === "student"
+      ? studentDirectoryYearLevel ? "found" : "missing"
+      : "",
+    studentYearLevelRequest: accountType === "student" && yearLevelRequest
+      ? {
+          status: yearLevelRequest.status || "new",
+          assignedYearLevel: cleanYearLevel(yearLevelRequest.assignedYearLevel),
+          updatedAt: yearLevelRequest.updatedAt || null,
+        }
+      : null,
+    isAdmin: isAdminEmail(email),
     teacherYearLevels: accountType === "teacher" ? teacherYearLevels : [],
     teacherLeaderboardName: accountType === "teacher" && isValidLeaderboardName(teacherLeaderboardName)
       ? teacherLeaderboardName
@@ -270,6 +294,14 @@ if (!isConfigured) {
     return doc(db, "studentProfiles", user.uid);
   }
 
+  function studentDirectoryRef(email) {
+    return doc(db, "studentDirectory", cleanEmail(email));
+  }
+
+  function yearLevelRequestRef(user) {
+    return doc(db, "yearLevelRequests", user.uid);
+  }
+
   function teacherProfileRef(user) {
     return doc(db, "teachers", user.uid);
   }
@@ -280,8 +312,14 @@ if (!isConfigured) {
     if (!user || !accountType) return;
 
     if (accountType === "student") {
-      const studentSnapshot = await getDoc(studentProfileRef(user));
+      const [studentSnapshot, directorySnapshot, requestSnapshot] = await Promise.all([
+        getDoc(studentProfileRef(user)),
+        getDoc(studentDirectoryRef(user.email)),
+        getDoc(yearLevelRequestRef(user)),
+      ]);
       studentProfile = studentSnapshot.exists() ? studentSnapshot.data() : null;
+      studentDirectoryEntry = directorySnapshot.exists() ? directorySnapshot.data() : null;
+      yearLevelRequest = requestSnapshot.exists() ? requestSnapshot.data() : null;
       return;
     }
 
@@ -297,17 +335,35 @@ if (!isConfigured) {
     if (!user || !accountType) return false;
 
     const handleError = (error) => console.warn("Could not read account setup.", error);
-    accountUnsubscribes = [
-      accountType === "student"
-        ? onSnapshot(
+    accountUnsubscribes = accountType === "student"
+      ? [
+          onSnapshot(
             studentProfileRef(user),
             (snapshot) => {
               studentProfile = snapshot.exists() ? snapshot.data() : null;
               announceAuth(auth.currentUser);
             },
             handleError,
-          )
-        : onSnapshot(
+          ),
+          onSnapshot(
+            studentDirectoryRef(user.email),
+            (snapshot) => {
+              studentDirectoryEntry = snapshot.exists() ? snapshot.data() : null;
+              announceAuth(auth.currentUser);
+            },
+            handleError,
+          ),
+          onSnapshot(
+            yearLevelRequestRef(user),
+            (snapshot) => {
+              yearLevelRequest = snapshot.exists() ? snapshot.data() : null;
+              announceAuth(auth.currentUser);
+            },
+            handleError,
+          ),
+        ]
+      : [
+          onSnapshot(
             teacherProfileRef(user),
             (snapshot) => {
               teacherProfile = snapshot.exists() ? snapshot.data() : null;
@@ -315,7 +371,7 @@ if (!isConfigured) {
             },
             handleError,
           ),
-    ];
+        ];
     return true;
   }
 
@@ -330,7 +386,7 @@ if (!isConfigured) {
 
     if (!emailIsAllowed(credential.user.email)) {
       await signOut(auth);
-      throw new Error("Please sign in with an approved school Google account.");
+      throw new Error("Please sign in with a Google account.");
     }
 
     await readAccountDocuments(credential.user);
@@ -444,7 +500,7 @@ if (!isConfigured) {
   }
 
   function listenToStudentAllowedScores(game, teacherFilter, onScores, onError) {
-    const yearLevel = cleanYearLevel(studentProfile?.yearLevel);
+    const yearLevel = cleanYearLevel(studentDirectoryEntry?.yearLevel);
     if (!yearLevel) {
       onScores([]);
       return () => {};
@@ -510,32 +566,51 @@ if (!isConfigured) {
   async function saveStudentYearLevel(yearLevel) {
     const user = getAllowedUser();
     if (getAccountTypeForEmail(user.email) !== "student") {
-      throw makeError("profile/student-domain-required", "Only bcc.vic.edu.au accounts can save a student year level.");
+      throw makeError("profile/student-domain-required", "Teacher accounts cannot request student year levels.");
     }
 
-    const cleanLevel = cleanYearLevel(yearLevel);
-    if (!cleanLevel) {
-      throw makeError("profile/year-level-needed", "Choose a valid year level.");
+    await readAccountDocuments(user);
+    if (cleanYearLevel(studentDirectoryEntry?.yearLevel)) {
+      announceAuth(user);
+      return getPublicAuthState(user);
     }
 
-    const profileDocument = studentProfileRef(user);
-    const existingProfile = await getDoc(profileDocument);
-    const profileData = {
+    return requestYearLevelAssignment();
+  }
+
+  async function requestYearLevelAssignment() {
+    const user = getAllowedUser();
+    if (getAccountTypeForEmail(user.email) !== "student") {
+      throw makeError("profile/student-domain-required", "Teacher accounts already have teacher access.");
+    }
+
+    const directorySnapshot = await getDoc(studentDirectoryRef(user.email));
+    if (directorySnapshot.exists() && cleanYearLevel(directorySnapshot.data()?.yearLevel)) {
+      studentDirectoryEntry = directorySnapshot.data();
+      announceAuth(user);
+      return getPublicAuthState(user);
+    }
+
+    const requestDocument = yearLevelRequestRef(user);
+    const requestSnapshot = await getDoc(requestDocument);
+    const requestData = {
       uid: user.uid,
       name: getAccountName(user),
       email: cleanEmail(user.email),
-      yearLevel: cleanLevel,
+      status: "new",
+      notifyEmail: cleanYearLevelRequestEmail,
       updatedAt: serverTimestamp(),
     };
 
-    if (existingProfile.exists()) {
-      if (!existingProfile.data()?.createdAt) {
-        profileData.createdAt = serverTimestamp();
+    if (requestSnapshot.exists()) {
+      const currentRequest = requestSnapshot.data();
+      if (!currentRequest.createdAt) {
+        requestData.createdAt = serverTimestamp();
       }
-      await updateDoc(profileDocument, profileData);
+      await updateDoc(requestDocument, requestData);
     } else {
-      await setDoc(profileDocument, {
-        ...profileData,
+      await setDoc(requestDocument, {
+        ...requestData,
         createdAt: serverTimestamp(),
       });
     }
@@ -631,12 +706,18 @@ if (!isConfigured) {
     }
 
     if (getAccountTypeForEmail(user.email) !== "student") {
-      throw makeError("profile/student-domain-required", "Only bcc.vic.edu.au accounts can submit student scores.");
+      throw makeError("profile/student-domain-required", "Only student accounts can submit student scores.");
     }
 
-    const cleanLevel = cleanYearLevel(yearLevel || studentProfile?.yearLevel);
+    const directorySnapshot = await getDoc(studentDirectoryRef(user.email));
+    studentDirectoryEntry = directorySnapshot.exists() ? directorySnapshot.data() : null;
+    const cleanLevel = cleanYearLevel(studentDirectoryEntry?.yearLevel);
     if (!cleanLevel) {
-      throw makeError("profile/year-level-needed", "Choose and save your year level before submitting a score.");
+      throw makeError("profile/year-level-needed", "Your year level needs to be assigned before submitting a score.");
+    }
+
+    if (yearLevel && cleanYearLevel(yearLevel) !== cleanLevel) {
+      throw makeError("profile/year-level-locked", "Your year level is locked by your account setup.");
     }
 
     if (!canStudentAccessGame(game, cleanLevel)) {
@@ -694,6 +775,71 @@ if (!isConfigured) {
     return existingData.yearLevel !== scoreData.yearLevel;
   }
 
+  function requireAdminUser() {
+    const user = getAllowedUser();
+    if (!isAdminEmail(user.email)) {
+      throw makeError("admin/required", "Only the site admin can manage student requests.");
+    }
+    return user;
+  }
+
+  function requestRowsFromSnapshot(snapshot) {
+    return snapshot.docs.map((requestDocument) => ({
+      id: requestDocument.id,
+      ...requestDocument.data(),
+    }));
+  }
+
+  function listenToYearLevelRequests(onRequests, onError) {
+    if (!isAdminEmail(auth.currentUser?.email)) {
+      onRequests([]);
+      return () => {};
+    }
+
+    return onSnapshot(
+      query(collection(db, "yearLevelRequests"), orderBy("updatedAt", "desc"), limit(100)),
+      (snapshot) => onRequests(requestRowsFromSnapshot(snapshot)),
+      onError,
+    );
+  }
+
+  async function assignStudentYearLevel(email, yearLevel, requestId = "") {
+    const user = requireAdminUser();
+    const cleanStudentEmail = cleanEmail(email);
+    const cleanLevel = cleanYearLevel(yearLevel);
+    if (!cleanStudentEmail || !cleanStudentEmail.includes("@")) {
+      throw makeError("admin/email-needed", "Choose a valid student email.");
+    }
+    if (!cleanLevel) {
+      throw makeError("admin/year-needed", "Choose a valid year level.");
+    }
+
+    const directoryDocument = studentDirectoryRef(cleanStudentEmail);
+    await setDoc(directoryDocument, {
+      email: cleanStudentEmail,
+      yearLevel: cleanLevel,
+      source: "admin",
+      updatedBy: cleanEmail(user.email),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+    if (requestId) {
+      const requestDocument = doc(db, "yearLevelRequests", requestId);
+      const requestSnapshot = await getDoc(requestDocument);
+      if (requestSnapshot.exists()) {
+        await updateDoc(requestDocument, {
+          status: "assigned",
+          assignedYearLevel: cleanLevel,
+          resolvedBy: cleanEmail(user.email),
+          resolvedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+
+    return { email: cleanStudentEmail, yearLevel: cleanLevel };
+  }
+
   window.sharedLeaderboard = {
     isConfigured: true,
     allowedEmailDomain: cleanAllowedDomain,
@@ -702,7 +848,10 @@ if (!isConfigured) {
     signIn: signInWithSchoolGoogle,
     signOut: () => signOut(auth),
     saveStudentYearLevel,
+    requestYearLevelAssignment,
     saveTeacherYearLevels,
+    listenToYearLevelRequests,
+    assignStudentYearLevel,
 
     listen(game, onScores, onError, context = {}) {
       const accountType = getAccountTypeForEmail(auth.currentUser?.email);

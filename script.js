@@ -5,6 +5,7 @@ const PROGRESS_KEY = "bayside-maths-challenge-progress-v1";
 const TEACHER_NAME_KEY = "bayside-maths-challenge-teacher-names-v1";
 const DEFAULT_YEAR_LEVEL = "year7";
 const TEST_STUDENT_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
+const STUDENT_REQUEST_ADMIN_EMAIL = "joshua.thorne@baysidecc.vic.edu.au";
 const MR_THORNE_NAMES = new Set(["joshua thorne", "mr thorne"]);
 const MEDAL_GOALS = [
   { id: "bronze", label: "Bronze", score: 1000 },
@@ -384,9 +385,13 @@ const state = {
   authName: "",
   teacherLeaderboardName: "",
   authAllowed: false,
+  isAdmin: false,
   allowedEmailDomain: "",
   allowedEmailDomains: [],
   accountType: "",
+  studentDirectoryStatus: "",
+  studentYearLevelLocked: false,
+  studentYearLevelRequest: null,
   settingsOpen: false,
   settingsUserOpen: false,
   studentYearLevel: "",
@@ -396,8 +401,11 @@ const state = {
   boardUnsubscribes: new Map(),
   pendingSharedScore: null,
   savingSharedScore: false,
+  requestingYearLevel: false,
   sharedScores: cloneSharedScores(),
   boardListenerContexts: new Map(),
+  adminRequests: [],
+  adminRequestsUnsubscribe: null,
 };
 
 const elements = {
@@ -498,7 +506,12 @@ const elements = {
   accountMessage: document.querySelector("#account-message"),
   accountRoleNote: document.querySelector("#account-role-note"),
   studentProfileForm: document.querySelector("#student-profile-form"),
+  studentDirectoryBadge: document.querySelector("#student-directory-badge"),
+  studentDirectoryStatus: document.querySelector("#student-directory-status"),
+  studentYearSelectWrap: document.querySelector("#student-year-select-wrap"),
   studentYearSelect: document.querySelector("#student-year-select"),
+  studentYearSave: document.querySelector("#student-year-save"),
+  studentRequestButton: document.querySelector("#student-request-button"),
   profileStatus: document.querySelector("#profile-status"),
   teacherPanel: document.querySelector("#teacher-panel"),
   teacherBadge: document.querySelector("#teacher-badge"),
@@ -512,6 +525,12 @@ const elements = {
   testStudentToggle: document.querySelector("#test-student-toggle"),
   testStudentYearSelect: document.querySelector("#test-student-year-select"),
   testStudentStatus: document.querySelector("#test-student-status"),
+  adminSection: document.querySelector("#admin"),
+  adminRequestCount: document.querySelector("#admin-request-count"),
+  adminAssignedCount: document.querySelector("#admin-assigned-count"),
+  adminRequestList: document.querySelector("#admin-request-list"),
+  adminRefreshButton: document.querySelector("#admin-refresh-button"),
+  adminStatus: document.querySelector("#admin-status"),
 };
 
 function randomNumber(min, max) {
@@ -1169,6 +1188,24 @@ function canUseTestStudentMode() {
   return cleanEmail(state.authEmail) === TEST_STUDENT_ADMIN_EMAIL;
 }
 
+function canManageStudentRequests() {
+  return state.isAdmin && cleanEmail(state.authEmail) === STUDENT_REQUEST_ADMIN_EMAIL;
+}
+
+function getStudentRequestStatusLabel() {
+  const status = state.studentYearLevelRequest?.status || "";
+  if (status === "assigned") return "Assigned";
+  if (status === "new") return "Request sent";
+  return "Not requested";
+}
+
+function getFirestoreTimestampMillis(timestamp) {
+  if (typeof timestamp?.toMillis === "function") return timestamp.toMillis();
+  if (Number.isFinite(timestamp?.seconds)) return timestamp.seconds * 1000;
+  if (typeof timestamp === "string") return Date.parse(timestamp) || 0;
+  return 0;
+}
+
 function getYearRank(yearLevel) {
   return YEAR_LEVELS.findIndex((level) => level.id === yearLevel);
 }
@@ -1247,7 +1284,7 @@ function getLeaderboardAccessMessage() {
   }
 
   if (!state.authAllowed) {
-    return `Sign in with a ${getAllowedDomainLabel()} account to view shared leaderboards.`;
+    return "Sign in with your Google account to view shared leaderboards.";
   }
 
   if (getActiveAccountType() === "teacher" && !state.teacherYearLevels.length) {
@@ -1255,7 +1292,7 @@ function getLeaderboardAccessMessage() {
   }
 
   if (getActiveAccountType() === "student" && !state.studentYearLevel) {
-    return "Choose and save your year level before viewing shared leaderboards.";
+    return getAccountSetupMessage();
   }
 
   const forcedYearLevel = getForcedLeaderboardYearLevel();
@@ -1272,7 +1309,7 @@ function getProgressAccessMessage() {
   }
 
   if (!state.authAllowed) {
-    return `Sign in with a ${getAllowedDomainLabel()} account to load synced medal progress.`;
+    return "Sign in with your Google account to load synced medal progress.";
   }
 
   if (getActiveAccountType() === "teacher" && !state.teacherYearLevels.length) {
@@ -1280,7 +1317,7 @@ function getProgressAccessMessage() {
   }
 
   if (getActiveAccountType() === "student" && !state.studentYearLevel) {
-    return "Choose and save your year level before loading synced medal progress.";
+    return getAccountSetupMessage();
   }
 
   return "Progress is locked to your account setup.";
@@ -1453,14 +1490,14 @@ function accountSetupRequired() {
     return state.teacherYearLevels.length === 0;
   }
 
-  return !state.studentYearLevel;
+  return !state.studentYearLevel && state.studentYearLevelRequest?.status !== "new";
 }
 
 function getAccountSetupMessage() {
   const accountType = getActiveAccountType();
 
   if (!state.accountType) {
-    return "Sign in with a school Google account before playing.";
+    return "Sign in with your Google account before playing.";
   }
 
   if (accountType === "teacher") {
@@ -1473,7 +1510,13 @@ function getAccountSetupMessage() {
     }
   }
 
-  return "Choose and save your year level before playing.";
+  if (state.studentDirectoryStatus === "missing") {
+    return state.studentYearLevelRequest?.status === "new"
+      ? "Your year level request has been sent. You can play once it has been assigned."
+      : "Your email is not in the student year-level list yet. Send a request before playing.";
+  }
+
+  return "Your year level needs to be assigned before playing.";
 }
 
 function getScoreContext() {
@@ -2016,7 +2059,7 @@ function renderProgressPage() {
           <a class="home-full-link" href="${getGameHash(gameId)}">Play ${escapeHtml(info.shortName)}</a>
         </article>
       `).join("")
-    : `<article class="progress-game-card"><p>No available games yet. Sign in and save your profile to see your games.</p></article>`;
+    : `<article class="progress-game-card"><p>No available games yet. Sign in and get your year level assigned to see your games.</p></article>`;
 
   if (!state.sharedConfigured) {
     setProgressStatus("local", "Firebase setup needed. Progress uses scores saved on this device.");
@@ -2126,6 +2169,11 @@ function setGameBoardStatus(status, message) {
   elements.gameBoardStatus.lastChild.textContent = message;
 }
 
+function setAdminStatus(status, message) {
+  elements.adminStatus.dataset.status = status;
+  elements.adminStatus.lastChild.textContent = message;
+}
+
 function setProfileStatus(message) {
   elements.profileStatus.textContent = message;
 }
@@ -2221,13 +2269,13 @@ function updateStartPanel() {
   }
 
   if (!state.authAllowed) {
-    elements.startPlayer.textContent = `Sign in with ${getAllowedDomainLabel()} to play and submit a score.`;
+    elements.startPlayer.textContent = "Sign in with your Google account to play and submit a score.";
     elements.startGameButton.textContent = "Sign in to play →";
     return;
   }
 
   if (!state.accountType) {
-    elements.startPlayer.textContent = "Sign in with a school Google account before playing.";
+    elements.startPlayer.textContent = "Sign in with your Google account before playing.";
     elements.startGameButton.textContent = "Open settings";
     return;
   }
@@ -2255,8 +2303,10 @@ function updateStartPanel() {
     return;
   }
 
-  elements.startPlayer.textContent = "Choose and save your year level before playing.";
-  elements.startGameButton.textContent = "Choose year level first";
+  elements.startPlayer.textContent = getAccountSetupMessage();
+  elements.startGameButton.textContent = state.studentYearLevelRequest?.status === "new"
+    ? "Waiting for assignment"
+    : "Request year level";
 }
 
 function renderTeacherFilterControls() {
@@ -2402,7 +2452,7 @@ function renderHomeFeaturedGame() {
 
   if (!state.homeFeaturedGame) {
     elements.featuredGameHeading.textContent = "No games available yet";
-    elements.featuredGameDescription.textContent = "Sign in and save your profile to see the games available for your year level.";
+    elements.featuredGameDescription.textContent = "Sign in and get your year level assigned to see your available games.";
     elements.featuredGameIcon.textContent = "?";
     elements.featuredGameMeta.innerHTML = "";
     elements.featuredGameBullets.innerHTML = "";
@@ -2448,7 +2498,7 @@ function renderHomeLeaderboard() {
 
   if (!canRead) {
     elements.homeLeaderboardList.innerHTML = `<li class="home-empty-row">${escapeHtml(getLeaderboardAccessMessage())}</li>`;
-    elements.homeLeaderboardStatus.textContent = "Sign in and save your profile to see your year-level leaderboard.";
+    elements.homeLeaderboardStatus.textContent = "Sign in and get your year level assigned to see your year-level leaderboard.";
     return;
   }
 
@@ -2502,7 +2552,9 @@ function renderHomeAuthCard() {
       ? `Teacher • ${getTeacherYearLabel()}`
       : state.studentYearLevel
         ? `Student • ${getYearLabel(state.studentYearLevel)}`
-        : "Student profile needed";
+        : state.studentYearLevelRequest?.status === "new"
+          ? "Student • year request sent"
+          : "Student • year level needed";
     elements.homeAuthTitle.textContent = "Signed in to BMC";
     elements.homeAuthSummary.textContent = `${getGooglePlayerName()} • ${roleLabel}`;
     elements.homeSignInButton.hidden = true;
@@ -2664,6 +2716,126 @@ function renderAllLeaderboards() {
   }
 }
 
+function stopAdminRequestListener() {
+  if (state.adminRequestsUnsubscribe) {
+    state.adminRequestsUnsubscribe();
+    state.adminRequestsUnsubscribe = null;
+  }
+}
+
+function listenToAdminRequests() {
+  if (!state.sharedConfigured || !canManageStudentRequests()) {
+    stopAdminRequestListener();
+    return;
+  }
+
+  if (state.adminRequestsUnsubscribe) return;
+  state.adminRequestsUnsubscribe = window.sharedLeaderboard.listenToYearLevelRequests(
+    (requests) => {
+      state.adminRequests = Array.isArray(requests) ? requests : [];
+      if (state.page === "admin") renderAdminPage();
+    },
+    (error) => {
+      console.warn("Could not load student requests.", error);
+      state.adminRequests = [];
+      if (state.page === "admin") {
+        renderAdminPage();
+        setAdminStatus("local", "Could not load requests. Check Firestore rules and your admin sign-in.");
+      }
+    },
+  );
+}
+
+function renderAdminPage() {
+  renderAdminNavigation();
+
+  if (!canManageStudentRequests()) {
+    stopAdminRequestListener();
+    elements.adminRequestCount.textContent = "0";
+    elements.adminAssignedCount.textContent = "0";
+    elements.adminRequestList.innerHTML = `
+      <p class="admin-empty-card">This page is only available to ${escapeHtml(STUDENT_REQUEST_ADMIN_EMAIL)}.</p>
+    `;
+    setAdminStatus("local", "Sign in with the admin teacher account to manage student year level requests.");
+    return;
+  }
+
+  listenToAdminRequests();
+  const requests = [...state.adminRequests].sort((left, right) => {
+    const leftAssigned = left.status === "assigned" ? 1 : 0;
+    const rightAssigned = right.status === "assigned" ? 1 : 0;
+    if (leftAssigned !== rightAssigned) return leftAssigned - rightAssigned;
+    return getFirestoreTimestampMillis(right.updatedAt) - getFirestoreTimestampMillis(left.updatedAt);
+  });
+  const pendingRequests = requests.filter((request) => request.status !== "assigned");
+  const assignedRequests = requests.filter((request) => request.status === "assigned");
+
+  elements.adminRequestCount.textContent = String(pendingRequests.length);
+  elements.adminAssignedCount.textContent = String(assignedRequests.length);
+  elements.adminRequestList.innerHTML = requests.length
+    ? requests.map((request) => {
+        const assigned = request.status === "assigned";
+        const selectedYear = cleanYearLevel(request.assignedYearLevel);
+        return `
+          <article class="admin-request-row ${assigned ? "assigned" : ""}" data-request-id="${escapeHtml(request.id)}" data-request-email="${escapeHtml(request.email || "")}">
+            <div class="admin-request-person">
+              <strong>${escapeHtml(request.name || "Student")}</strong>
+              <span>${escapeHtml(request.email || "No email")}</span>
+              <small>${escapeHtml(assigned ? `Assigned to ${getYearLabel(selectedYear)}` : "Waiting for a year level")}</small>
+            </div>
+            <label class="select-field">
+              <span>Year level</span>
+              <select data-admin-year ${assigned ? "disabled" : ""}>
+                <option value="">Choose</option>
+                ${createYearOptions().replace(`value="${selectedYear}"`, `value="${selectedYear}" selected`)}
+              </select>
+            </label>
+            <button class="button button-primary button-compact" type="button" data-admin-assign ${assigned ? "disabled" : ""}>
+              ${assigned ? "Assigned" : "Assign"}
+            </button>
+          </article>
+        `;
+      }).join("")
+    : `<p class="admin-empty-card">No student year level requests yet.</p>`;
+
+  if (!state.sharedConfigured) {
+    setAdminStatus("local", "Firebase setup needed before requests can sync.");
+  } else if (!state.adminRequestsUnsubscribe) {
+    setAdminStatus("connecting", "Loading student requests...");
+  } else {
+    setAdminStatus("shared", "Student requests update live from Firestore.");
+  }
+}
+
+async function assignStudentRequest(row) {
+  if (!row || !canManageStudentRequests()) return;
+  const requestId = row.dataset.requestId || "";
+  const email = row.dataset.requestEmail || "";
+  const yearLevel = cleanYearLevel(row.querySelector("[data-admin-year]")?.value);
+  if (!requestId || !email || !yearLevel) {
+    setAdminStatus("local", "Choose a year level before assigning this request.");
+    return;
+  }
+
+  const button = row.querySelector("[data-admin-assign]");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Assigning...";
+  }
+
+  try {
+    await window.sharedLeaderboard.assignStudentYearLevel(email, yearLevel, requestId);
+    setAdminStatus("shared", `${email} assigned to ${getYearLabel(yearLevel)}.`);
+  } catch (error) {
+    console.error(error);
+    setAdminStatus("local", getFirebaseMessage(error, "Could not assign this student."));
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Assign";
+    }
+  }
+}
+
 function renderBoardTabs() {
   const forcedYearLevel = getForcedLeaderboardYearLevel();
   if (forcedYearLevel) {
@@ -2737,11 +2909,20 @@ function renderAccountPanel() {
   elements.studentProfileForm.hidden = accountType !== "student";
   elements.teacherPanel.hidden = accountType !== "teacher";
   elements.studentYearSelect.value = state.studentYearLevel;
+  elements.studentYearSelectWrap.hidden = !state.studentYearLevel;
+  elements.studentYearSave.hidden = true;
+  elements.studentRequestButton.hidden = accountType !== "student" || Boolean(state.studentYearLevel);
+  elements.studentRequestButton.disabled = state.requestingYearLevel || state.studentYearLevelRequest?.status === "new";
+  elements.studentRequestButton.textContent = state.requestingYearLevel
+    ? "Sending request..."
+    : state.studentYearLevelRequest?.status === "new"
+      ? "Request sent"
+      : "Request year level";
   elements.accountTitle.textContent = needsSetup ? "Finish account setup" : "Settings";
 
   if (!accountType) {
-    elements.accountRoleNote.textContent = "Checking your school email domain...";
-    elements.accountMessage.textContent = "@bcc.vic.edu.au accounts are students. @baysidecc.vic.edu.au accounts are teachers.";
+    elements.accountRoleNote.textContent = "Checking your Google account...";
+    elements.accountMessage.textContent = "Teacher accounts use @baysidecc.vic.edu.au. Student year levels come from the imported student directory.";
     elements.teacherYearPanel.hidden = true;
   } else if (accountType === "teacher") {
     elements.accountRoleNote.textContent = "@baysidecc.vic.edu.au accounts are teacher accounts.";
@@ -2755,8 +2936,16 @@ function renderAccountPanel() {
       elements.teacherNameInput.value = getGooglePlayerName();
     }
   } else {
-    elements.accountRoleNote.textContent = "@bcc.vic.edu.au accounts are student accounts.";
-    elements.accountMessage.textContent = "Save your student year level. It stays saved for this Google account until you change it here.";
+    elements.accountRoleNote.textContent = state.studentYearLevel
+      ? `Student account locked to ${getYearLabel(state.studentYearLevel)}.`
+      : `${getStudentRequestStatusLabel()}: year level needed.`;
+    elements.accountMessage.textContent = "Student year levels are assigned from the uploaded student email list.";
+    elements.studentDirectoryBadge.textContent = state.studentYearLevel ? "Assigned" : "Needed";
+    elements.studentDirectoryStatus.textContent = state.studentYearLevel
+      ? `${getGooglePlayerName()} is assigned to ${getYearLabel(state.studentYearLevel)}.`
+      : state.studentYearLevelRequest?.status === "new"
+        ? "Your request has been sent to Mr Thorne. You will be able to play once it is assigned."
+        : "Your email is not in the student list yet. Send a request so Mr Thorne can assign your year level.";
     elements.teacherYearPanel.hidden = true;
   }
 
@@ -2791,7 +2980,9 @@ function renderAuthControls() {
         ? "Teacher"
         : state.studentYearLevel
           ? getYearLabel(state.studentYearLevel)
-          : "Choose setup";
+          : state.studentYearLevelRequest?.status === "new"
+            ? "Year request sent"
+            : "Year level needed";
     elements.authMessage.textContent = `${state.authEmail} • ${roleLabel}`;
     elements.signInButton.hidden = true;
     elements.settingsWrap.hidden = false;
@@ -2847,7 +3038,11 @@ function getFirebaseMessage(error, fallback) {
   }
 
   if (code.includes("profile/year-level-needed")) {
-    return "Choose and save your year level before submitting a score.";
+    return "Your year level needs to be assigned before submitting a score.";
+  }
+
+  if (code.includes("profile/year-level-locked")) {
+    return "Your year level is locked by the student directory.";
   }
 
   if (code.includes("profile/game-locked")) {
@@ -2855,11 +3050,15 @@ function getFirebaseMessage(error, fallback) {
   }
 
   if (code.includes("profile/student-domain-required")) {
-    return "Use an @bcc.vic.edu.au account for student leaderboards.";
+    return "Use a student Google account for student leaderboards.";
   }
 
   if (code.includes("profile/account-type-needed")) {
-    return "Use the correct school Google domain before submitting a score.";
+    return "Use a Google account before submitting a score.";
+  }
+
+  if (code.includes("admin/required")) {
+    return "Only the site admin can manage student year level requests.";
   }
 
   if (code.includes("teacher/domain-required")) {
@@ -2912,6 +3111,49 @@ function setBoardYearLevel(yearLevel) {
   updateResultMedal();
 }
 
+function renderAdminNavigation() {
+  document.querySelectorAll("[data-admin-nav]").forEach((link) => {
+    link.hidden = !canManageStudentRequests();
+    link.classList.toggle("active", state.page === "admin");
+  });
+}
+
+function shouldRequestStudentYearLevel() {
+  return state.sharedConfigured
+    && state.authAllowed
+    && getActiveAccountType() === "student"
+    && state.studentDirectoryStatus === "missing"
+    && !state.studentYearLevel
+    && !state.studentYearLevelRequest
+    && !state.requestingYearLevel;
+}
+
+async function requestStudentYearLevel({ silent = false } = {}) {
+  if (!state.sharedConfigured || !state.authAllowed || state.requestingYearLevel) return;
+  if (!window.sharedLeaderboard?.requestYearLevelAssignment) return;
+
+  try {
+    state.requestingYearLevel = true;
+    renderAuthControls();
+    if (!silent) setProfileStatus("Sending year level request...");
+    const authState = await window.sharedLeaderboard.requestYearLevelAssignment();
+    applyAuthState(authState);
+    setProfileStatus("Year level request sent. Mr Thorne can assign it from the Requests tab.");
+  } catch (error) {
+    console.error(error);
+    setProfileStatus(getFirebaseMessage(error, "Could not send year level request."));
+  } finally {
+    state.requestingYearLevel = false;
+    renderAuthControls();
+  }
+}
+
+function maybeRequestStudentYearLevel() {
+  if (shouldRequestStudentYearLevel()) {
+    requestStudentYearLevel({ silent: true });
+  }
+}
+
 function applyAuthState(authState) {
   const oldAuthUid = state.authUid;
   const oldAuthAllowed = state.authAllowed;
@@ -2927,6 +3169,7 @@ function applyAuthState(authState) {
   state.authUid = authState?.uid || "";
   state.authEmail = authState?.email || "";
   state.authAllowed = Boolean(authState?.allowed);
+  state.isAdmin = Boolean(authState?.isAdmin);
   state.allowedEmailDomain = authState?.allowedEmailDomain || state.allowedEmailDomain;
   state.allowedEmailDomains = authState?.allowedEmailDomains || state.allowedEmailDomains;
   state.accountType = incomingAccountType;
@@ -2941,6 +3184,9 @@ function applyAuthState(authState) {
     state.authName = incomingName;
   }
   state.studentYearLevel = cleanYearLevel(authState?.studentYearLevel);
+  state.studentYearLevelLocked = Boolean(authState?.studentYearLevelLocked);
+  state.studentDirectoryStatus = authState?.studentDirectoryStatus || "";
+  state.studentYearLevelRequest = authState?.studentYearLevelRequest || null;
   state.teacherYearLevels = Array.isArray(authState?.teacherYearLevels)
     ? authState.teacherYearLevels.map(cleanYearLevel).filter(Boolean)
     : [];
@@ -2978,10 +3224,20 @@ function applyAuthState(authState) {
   } else {
     state.settingsOpen = false;
     state.settingsUserOpen = false;
+    state.studentDirectoryStatus = "";
+    state.studentYearLevelRequest = null;
+    state.isAdmin = false;
   }
 
+  if (!canManageStudentRequests()) {
+    stopAdminRequestListener();
+    state.adminRequests = [];
+  }
+
+  renderAdminNavigation();
   renderAuthControls();
   renderCurrentDataViews();
+  maybeRequestStudentYearLevel();
 
   if (state.authAllowed) {
     if (!oldAccountType && state.accountType) {
@@ -3077,6 +3333,7 @@ function connectSharedLeaderboard() {
 
   renderAuthControls();
   applyAuthState(window.sharedLeaderboard.getAuthState?.());
+  renderAdminNavigation();
   renderBoardTabs();
   listenToSharedBoard(state.board);
 }
@@ -3101,14 +3358,14 @@ async function saveSharedScore() {
       state.score,
       state.game,
       {
-        extraDetail: `Sign in with a ${getAllowedDomainLabel()} account to save this score.`,
+        extraDetail: "Sign in with your Google account to save this score.",
         statusOverride: "blocked",
       },
     );
     renderAuthControls();
     setLeaderboardStatus(
       "local",
-      `Sign in with a ${getAllowedDomainLabel()} account to add this score to the shared leaderboard.`,
+      "Sign in with your Google account to add this score to the shared leaderboard.",
     );
     return;
   }
@@ -3196,7 +3453,7 @@ async function saveSharedScore() {
 async function signInForLeaderboard() {
   if (!state.sharedConfigured) return false;
 
-  setLeaderboardStatus("connecting", `Waiting for ${getAllowedDomainLabel()} Google sign-in...`);
+  setLeaderboardStatus("connecting", "Waiting for Google sign-in...");
 
   try {
     applyAuthState(await window.sharedLeaderboard.signIn());
@@ -3205,7 +3462,7 @@ async function signInForLeaderboard() {
     console.error(error);
     setLeaderboardStatus(
       "local",
-      getFirebaseMessage(error, `Sign in with a ${getAllowedDomainLabel()} account to submit scores.`),
+      getFirebaseMessage(error, "Sign in with your Google account to submit scores."),
     );
     return false;
   }
@@ -3230,22 +3487,7 @@ async function saveStudentProfile(event) {
     if (!signedIn) return;
   }
 
-  const yearLevel = cleanYearLevel(elements.studentYearSelect.value);
-  if (!yearLevel) {
-    setProfileStatus("Choose a year level first.");
-    return;
-  }
-
-  try {
-    setProfileStatus("Saving year level...");
-    applyAuthState(await window.sharedLeaderboard.saveStudentYearLevel(yearLevel));
-    setBoardYearLevel(yearLevel);
-    setLeaderboardStatus("shared", `Scores will now submit to ${getYearLabel(yearLevel)}.`);
-    setSettingsOpen(false, { userAction: true });
-  } catch (error) {
-    console.error(error);
-    setProfileStatus(getFirebaseMessage(error, "Could not save your year level."));
-  }
+  requestStudentYearLevel();
 }
 
 async function saveTeacherYears() {
@@ -3621,6 +3863,7 @@ function renderLeaderboard() {
   if (state.page === "game") renderGameLeaderboard();
   if (state.page === "progress") renderProgressPage();
   if (state.page === "leaderboards") renderAllLeaderboards();
+  if (state.page === "admin") renderAdminPage();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
     if (state.page === "home") listenToSharedBoards(getVisibleBoardGameIds());
     if (state.page === "game") listenToSharedBoard(state.game);
@@ -3636,6 +3879,7 @@ function renderCurrentDataViews() {
   if (state.page === "game") renderGamePage();
   if (state.page === "progress") renderProgressPage();
   if (state.page === "leaderboards") renderAllLeaderboards();
+  if (state.page === "admin") renderAdminPage();
   renderLeaderboard();
 }
 
@@ -3677,6 +3921,10 @@ function parsePageHash() {
     return { page: "games" };
   }
 
+  if (rawHash === "admin") {
+    return { page: "admin" };
+  }
+
   return { page: "home" };
 }
 
@@ -3715,9 +3963,10 @@ function renderCurrentPage({ scroll = false } = {}) {
   const switchingGamePage = previousPage === "game" && route.page === "game" && route.gameId !== previousGame;
   const showingGameLeaderboard = route.page === "game" && route.view === "leaderboard";
   state.page = route.page;
-  document.body.classList.toggle("app-page-active", ["home", "games", "game", "progress", "leaderboards"].includes(route.page));
+  document.body.classList.toggle("app-page-active", ["home", "games", "game", "progress", "leaderboards", "admin"].includes(route.page));
   document.body.classList.toggle("dashboard-page-active", route.page === "home");
   document.body.classList.toggle("leaderboards-page-active", route.page === "leaderboards");
+  renderAdminNavigation();
 
   if (leavingGamePage || switchingGamePage || showingGameLeaderboard) {
     cancelActiveGame();
@@ -3729,6 +3978,7 @@ function renderCurrentPage({ scroll = false } = {}) {
   elements.gamePageSection.hidden = route.page !== "game";
   elements.progressSection.hidden = route.page !== "progress";
   elements.allLeaderboardsSection.hidden = route.page !== "leaderboards";
+  elements.adminSection.hidden = route.page !== "admin";
 
   if (route.page !== "game") {
     elements.playSection.hidden = true;
@@ -3743,6 +3993,8 @@ function renderCurrentPage({ scroll = false } = {}) {
     renderProgressPage();
   } else if (route.page === "leaderboards") {
     renderAllLeaderboards();
+  } else if (route.page === "admin") {
+    renderAdminPage();
   } else {
     renderGameCards();
     if (route.page === "home") {
@@ -3762,9 +4014,11 @@ function renderCurrentPage({ scroll = false } = {}) {
           ? elements.allLeaderboardsSection
           : route.page === "progress"
             ? elements.progressSection
-            : route.page === "games"
-              ? elements.gamesSection
-              : elements.heroSection;
+            : route.page === "admin"
+              ? elements.adminSection
+              : route.page === "games"
+                ? elements.gamesSection
+                : elements.heroSection;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
@@ -3830,6 +4084,7 @@ elements.gameBoardYearSelect.addEventListener("change", () => {
   setBoardYearLevel(elements.gameBoardYearSelect.value);
 });
 elements.studentProfileForm.addEventListener("submit", saveStudentProfile);
+elements.studentRequestButton.addEventListener("click", () => requestStudentYearLevel());
 elements.teacherYearsSave.addEventListener("click", saveTeacherYears);
 elements.testStudentToggle.addEventListener("change", () => {
   if (!canUseTestStudentMode()) {
@@ -3879,6 +4134,15 @@ elements.homeSignInButton.addEventListener("click", signInForLeaderboard);
 elements.homeSettingsButton.addEventListener("click", () => setSettingsOpen(true, { userAction: true }));
 elements.signOutButton.addEventListener("click", signOutOfLeaderboard);
 elements.resultSignIn.addEventListener("click", signInForLeaderboard);
+elements.adminRequestList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-admin-assign]");
+  if (!button) return;
+  assignStudentRequest(button.closest("[data-request-id]"));
+});
+elements.adminRefreshButton.addEventListener("click", () => {
+  stopAdminRequestListener();
+  renderAdminPage();
+});
 
 window.addEventListener("leaderboard-auth-changed", (event) => applyAuthState(event.detail));
 
