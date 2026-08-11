@@ -190,6 +190,14 @@ service cloud.firestore {
         && request.resource.data.bestStreak >= 0
         && request.resource.data.bestStreak <= 1000
         && (
+          !request.resource.data.keys().hasAny(['bestTopicBronzeStreak'])
+          || (
+            request.resource.data.bestTopicBronzeStreak is int
+            && request.resource.data.bestTopicBronzeStreak >= 0
+            && request.resource.data.bestTopicBronzeStreak <= 1000
+          )
+        )
+        && (
           !request.resource.data.keys().hasAny(['bestBronzeStreak'])
           || (
             request.resource.data.bestBronzeStreak is int
@@ -202,7 +210,7 @@ service cloud.firestore {
     }
 
     function hasValidStudentScoreFields(game) {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'uid', 'role', 'yearLevel', 'game', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'bestTopicBronzeStreak', 'uid', 'role', 'yearLevel', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && isStudentUser()
         && request.resource.data.role == 'student'
@@ -212,7 +220,7 @@ service cloud.firestore {
     }
 
     function hasValidTeacherScoreFields(game) {
-      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['name', 'score', 'bestStreak', 'bestBronzeStreak', 'bestTopicBronzeStreak', 'uid', 'role', 'teacherYearLevels', 'game', 'createdAt', 'updatedAt'])
         && hasValidBaseScoreFields(game)
         && isTeacherUser()
         && request.resource.data.role == 'teacher'

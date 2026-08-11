@@ -72,7 +72,7 @@ document per topic area per assigned year level, using document IDs such as
 scores keep showing. Teacher accounts keep one score document per topic area.
 Students can play any number of attempts. The leaderboard keeps their highest
 score for each topic area in their assigned year level. Topic score documents can
-also store `bestBronzeStreak`, the player's longest streak of days earning at
+also store `bestTopicBronzeStreak`, the player's longest streak of days earning at
 least Bronze in a topic-area game.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,

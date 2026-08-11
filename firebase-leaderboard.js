@@ -30,7 +30,7 @@ import {
   studentEmailDomain,
   teacherEmailDomain,
   yearLevelRequestEmail,
-} from "./firebase-config.js?v=summary-progress-20260811";
+} from "./firebase-config.js?v=topic-streak-v2-20260811";
 
 const validGames = new Set([
   "topic-number",
@@ -146,6 +146,33 @@ function cleanTeacherFilter(filter) {
 
 function cleanBestStreak(bestStreak) {
   return Number.isInteger(bestStreak) && bestStreak >= 0 ? bestStreak : 0;
+}
+
+function getFirestoreTimestampMillis(timestamp) {
+  if (!timestamp) return null;
+  if (typeof timestamp.toMillis === "function") return timestamp.toMillis();
+  if (Number.isFinite(timestamp.seconds)) {
+    const nanoseconds = Number.isFinite(timestamp.nanoseconds) ? timestamp.nanoseconds : 0;
+    return (timestamp.seconds * 1000) + Math.floor(nanoseconds / 1000000);
+  }
+  if (timestamp instanceof Date) return timestamp.getTime();
+  return null;
+}
+
+function getLocalDayNumber(timestamp) {
+  const date = new Date(timestamp);
+  return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 86400000);
+}
+
+function getMaxPossibleStreakSince(timestamp) {
+  const startedAt = getFirestoreTimestampMillis(timestamp);
+  if (!Number.isFinite(startedAt)) return Infinity;
+
+  return Math.max(1, getLocalDayNumber(Date.now()) - getLocalDayNumber(startedAt) + 1);
+}
+
+function cleanBestTopicBronzeStreak(bestStreak, scoreData = {}) {
+  return Math.min(cleanBestStreak(bestStreak), getMaxPossibleStreakSince(scoreData.createdAt));
 }
 
 function getYearRank(yearLevel) {
@@ -392,12 +419,12 @@ if (!isConfigured) {
       (highest, scoreData) => Math.max(highest, cleanBestStreak(scoreData.bestStreak)),
       0,
     );
-    const previousBestBronzeStreak = matchingScores.reduce(
-      (highest, scoreData) => Math.max(highest, cleanBestStreak(scoreData.bestBronzeStreak)),
+    const previousBestTopicBronzeStreak = matchingScores.reduce(
+      (highest, scoreData) => Math.max(highest, cleanBestTopicBronzeStreak(scoreData.bestTopicBronzeStreak, scoreData)),
       0,
     );
 
-    return { previousScore, previousBestStreak, previousBestBronzeStreak };
+    return { previousScore, previousBestStreak, previousBestTopicBronzeStreak };
   }
 
   async function getScoreDocumentState(user, game, scoreData) {
@@ -407,8 +434,11 @@ if (!isConfigured) {
       const existingData = existingScore.exists() ? existingScore.data() : null;
       const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
       const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
-      const previousBestBronzeStreak = cleanBestStreak(existingData?.bestBronzeStreak);
-      return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak, previousBestBronzeStreak };
+      const previousBestTopicBronzeStreak = cleanBestTopicBronzeStreak(
+        existingData?.bestTopicBronzeStreak,
+        existingData || {},
+      );
+      return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak, previousBestTopicBronzeStreak };
     }
 
     const yearLevel = cleanYearLevel(scoreData.yearLevel);
@@ -432,7 +462,7 @@ if (!isConfigured) {
         : null,
       legacyMatchesYear ? legacyScoreSnapshot : null,
     ].filter(Boolean);
-    const { previousScore, previousBestStreak, previousBestBronzeStreak } = getHighestScoreData(relevantSnapshots);
+    const { previousScore, previousBestStreak, previousBestTopicBronzeStreak } = getHighestScoreData(relevantSnapshots);
 
     return {
       scoreDocument: preferredScoreDocument,
@@ -440,15 +470,19 @@ if (!isConfigured) {
       existingData,
       previousScore,
       previousBestStreak,
-      previousBestBronzeStreak,
+      previousBestTopicBronzeStreak,
     };
   }
 
   function scoreRowsFromSnapshot(snapshot) {
-    return snapshot.docs.map((document) => ({
-      id: document.id,
-      ...document.data(),
-    }));
+    return snapshot.docs.map((document) => {
+      const scoreData = document.data();
+      return {
+        id: document.id,
+        ...scoreData,
+        bestTopicBronzeStreak: cleanBestTopicBronzeStreak(scoreData.bestTopicBronzeStreak, scoreData),
+      };
+    });
   }
 
   function sortLeaderboardRows(scores) {
@@ -623,7 +657,7 @@ if (!isConfigured) {
         teacherYearLevels: yearLevels,
         game,
         bestStreak: cleanBestStreak(scoreData.bestStreak),
-        bestBronzeStreak: cleanBestStreak(scoreData.bestBronzeStreak),
+        bestTopicBronzeStreak: cleanBestTopicBronzeStreak(scoreData.bestTopicBronzeStreak, scoreData),
         ...(scoreData.createdAt ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       });
@@ -876,24 +910,27 @@ if (!isConfigured) {
         ? await getTeacherScorePayload(user, game, score)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
       const currentBestStreak = cleanBestStreak(context.bestStreak);
-      const currentBestBronzeStreak = cleanBestStreak(context.bestBronzeStreak);
       const {
         scoreDocument,
         existingScore,
         existingData,
         previousScore,
         previousBestStreak,
-        previousBestBronzeStreak,
+        previousBestTopicBronzeStreak,
       } = await getScoreDocumentState(user, game, scoreData);
+      const currentBestTopicBronzeStreak = cleanBestTopicBronzeStreak(
+        context.bestTopicBronzeStreak,
+        existingData || { createdAt: new Date() },
+      );
       scoreData.bestStreak = Math.max(previousBestStreak, currentBestStreak);
-      scoreData.bestBronzeStreak = Math.max(previousBestBronzeStreak, currentBestBronzeStreak);
+      scoreData.bestTopicBronzeStreak = Math.max(previousBestTopicBronzeStreak, currentBestTopicBronzeStreak);
 
       if (previousScore !== null && score <= previousScore) {
         const preferredScore = Number.isInteger(existingData?.score) ? existingData.score : null;
         if (
           shouldSyncScoreMetadata(existingData, scoreData)
           || scoreData.bestStreak > previousBestStreak
-          || scoreData.bestBronzeStreak > previousBestBronzeStreak
+          || scoreData.bestTopicBronzeStreak > previousBestTopicBronzeStreak
           || preferredScore === null
           || previousScore > preferredScore
         ) {
@@ -919,7 +956,7 @@ if (!isConfigured) {
           role: scoreData.role,
           score: previousScore,
           bestStreak: scoreData.bestStreak,
-          bestBronzeStreak: scoreData.bestBronzeStreak,
+          bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
         };
       }
 
@@ -947,7 +984,7 @@ if (!isConfigured) {
         role: scoreData.role,
         score,
         bestStreak: scoreData.bestStreak,
-        bestBronzeStreak: scoreData.bestBronzeStreak,
+        bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
       };
     },
   };

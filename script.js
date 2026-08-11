@@ -1645,7 +1645,7 @@ function normalizeScores(scores) {
   return scores.filter((entry) => {
     if (!entry || typeof entry.name !== "string" || !Number.isInteger(entry.score)) return false;
     if (entry.bestStreak !== undefined && !Number.isInteger(entry.bestStreak)) return false;
-    if (entry.bestBronzeStreak !== undefined && !Number.isInteger(entry.bestBronzeStreak)) return false;
+    if (entry.bestTopicBronzeStreak !== undefined && !Number.isInteger(entry.bestTopicBronzeStreak)) return false;
     if (entry.role === "teacher") return Array.isArray(entry.teacherYearLevels);
     return entry.role === "student" && validYearLevels.has(entry.yearLevel);
   });
@@ -1819,21 +1819,21 @@ function saveLocalScore() {
   const previousBestStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestStreak)
     ? scores[state.game][existingIndex].bestStreak
     : 0;
-  const previousBestBronzeStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestBronzeStreak)
-    ? scores[state.game][existingIndex].bestBronzeStreak
+  const previousBestTopicBronzeStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestTopicBronzeStreak)
+    ? scores[state.game][existingIndex].bestTopicBronzeStreak
     : 0;
   const improved = previousScore === null || state.score > previousScore;
   const bestStreak = Math.max(previousBestStreak, state.bestStreak);
-  const bestBronzeStreak = isTopicArea(state.game)
-    ? Math.max(previousBestBronzeStreak, getBronzeStreak(scoreContext).highestStreak)
-    : previousBestBronzeStreak;
+  const bestTopicBronzeStreak = isTopicArea(state.game)
+    ? Math.max(previousBestTopicBronzeStreak, getBronzeStreak(scoreContext).highestStreak)
+    : previousBestTopicBronzeStreak;
   const entry = {
     id: scoreIdentity.id,
     uid: scoreIdentity.uid,
     name: playerName,
     score: improved ? state.score : previousScore,
     bestStreak,
-    bestBronzeStreak,
+    bestTopicBronzeStreak,
     role: scoreContext.role,
     game: state.game,
   };
@@ -1951,13 +1951,13 @@ function dedupeLeaderboardScores(scores) {
 
     const existingBestStreak = Number.isInteger(existing.bestStreak) ? existing.bestStreak : 0;
     const entryBestStreak = Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0;
-    const existingBestBronzeStreak = Number.isInteger(existing.bestBronzeStreak) ? existing.bestBronzeStreak : 0;
-    const entryBestBronzeStreak = Number.isInteger(entry.bestBronzeStreak) ? entry.bestBronzeStreak : 0;
+    const existingBestTopicBronzeStreak = Number.isInteger(existing.bestTopicBronzeStreak) ? existing.bestTopicBronzeStreak : 0;
+    const entryBestTopicBronzeStreak = Number.isInteger(entry.bestTopicBronzeStreak) ? entry.bestTopicBronzeStreak : 0;
     const bestEntry = entry.score > existing.score ? entry : existing;
     bestScores.set(key, {
       ...bestEntry,
       bestStreak: Math.max(existingBestStreak, entryBestStreak),
-      bestBronzeStreak: Math.max(existingBestBronzeStreak, entryBestBronzeStreak),
+      bestTopicBronzeStreak: Math.max(existingBestTopicBronzeStreak, entryBestTopicBronzeStreak),
     });
   });
 
@@ -2054,7 +2054,7 @@ function aggregateTopicScoreRows(gameIds) {
           uid: entry.uid || entry.id || key,
           name: entry.name,
           score: 0,
-          bestBronzeStreak: 0,
+          bestTopicBronzeStreak: 0,
           role: entry.role,
           yearLevel: entry.yearLevel,
           teacherYearLevels: entry.teacherYearLevels,
@@ -2062,9 +2062,9 @@ function aggregateTopicScoreRows(gameIds) {
         };
 
         existing.score += entry.score;
-        existing.bestBronzeStreak = Math.max(
-          existing.bestBronzeStreak,
-          Number.isInteger(entry.bestBronzeStreak) ? entry.bestBronzeStreak : 0,
+        existing.bestTopicBronzeStreak = Math.max(
+          existing.bestTopicBronzeStreak,
+          Number.isInteger(entry.bestTopicBronzeStreak) ? entry.bestTopicBronzeStreak : 0,
         );
         existing.games += 1;
         totals.set(key, existing);
@@ -2084,10 +2084,10 @@ function getCombinedTopicScores(gameIds, scoreLimit = 10) {
 
 function getTopicBronzeStreakScores(gameIds, scoreLimit = 10) {
   const scores = aggregateTopicScoreRows(gameIds)
-    .filter((entry) => entry.bestBronzeStreak > 0)
+    .filter((entry) => entry.bestTopicBronzeStreak > 0)
     .map((entry) => ({
       ...entry,
-      score: entry.bestBronzeStreak,
+      score: entry.bestTopicBronzeStreak,
       totalScore: entry.score,
     }))
     .sort((a, b) => b.score - a.score || b.totalScore - a.totalScore || b.games - a.games);
@@ -3764,7 +3764,7 @@ async function saveSharedScore() {
       game: state.game,
       score: state.score,
       bestStreak: state.bestStreak,
-      bestBronzeStreak: currentBronzeStreak.highestStreak,
+      bestTopicBronzeStreak: currentBronzeStreak.highestStreak,
       context: currentScoreContext,
     };
     setResultMedalDisplay(
@@ -3788,7 +3788,7 @@ async function saveSharedScore() {
       game: state.game,
       score: state.score,
       bestStreak: state.bestStreak,
-      bestBronzeStreak: currentBronzeStreak.highestStreak,
+      bestTopicBronzeStreak: currentBronzeStreak.highestStreak,
       context: currentScoreContext,
     };
     setResultMedalDisplay(
@@ -3811,7 +3811,7 @@ async function saveSharedScore() {
         context: {
           ...currentScoreContext,
           bestStreak: state.pendingSharedScore.bestStreak || 0,
-          bestBronzeStreak: state.pendingSharedScore.bestBronzeStreak || 0,
+          bestTopicBronzeStreak: state.pendingSharedScore.bestTopicBronzeStreak || 0,
         },
       }
     : {
@@ -3820,7 +3820,7 @@ async function saveSharedScore() {
         context: {
           ...currentScoreContext,
           bestStreak: state.bestStreak,
-          bestBronzeStreak: currentBronzeStreak.highestStreak,
+          bestTopicBronzeStreak: currentBronzeStreak.highestStreak,
         },
       };
 
