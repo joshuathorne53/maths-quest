@@ -30,7 +30,7 @@ import {
   studentEmailDomain,
   teacherEmailDomain,
   yearLevelRequestEmail,
-} from "./firebase-config.js?v=topic-areas-20260811";
+} from "./firebase-config.js?v=topic-skills-20260811";
 
 const validGames = new Set([
   "topic-number",

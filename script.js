@@ -547,6 +547,10 @@ const elements = {
   gamePagePrep: document.querySelector("#game-page-prep"),
   gameGoalStatus: document.querySelector("#game-goal-status"),
   gamePageStart: document.querySelector("#game-page-start"),
+  topicPageSkills: document.querySelector("#topic-page-skills"),
+  topicPageSkillsTitle: document.querySelector("#topic-page-skills-title"),
+  topicPageSkillsSummary: document.querySelector("#topic-page-skills-summary"),
+  topicPageSkillGrid: document.querySelector("#topic-page-skill-grid"),
   gamePageLeaderboard: document.querySelector(".game-page-leaderboard"),
   gamePageLeaderboardTitle: document.querySelector("#game-page-leaderboard-title"),
   gameBoardYearSelect: document.querySelector("#game-board-year-select"),
@@ -2834,7 +2838,47 @@ function renderGamePage() {
   elements.resultLeaderboardLink.textContent = hasTopicLeaderboard
     ? "See leaderboard"
     : `See ${gameInfo[topicId]?.shortName || "topic"} leaderboard`;
+  renderTopicPageSkills();
   renderGameLeaderboard();
+}
+
+function renderTopicPageSkills() {
+  const isTopicPage = isTopicArea(state.game);
+  elements.topicPageSkills.hidden = !isTopicPage;
+  if (!isTopicPage) {
+    elements.topicPageSkillGrid.innerHTML = "";
+    return;
+  }
+
+  const availableSkillIds = getTopicSkillIds(state.game, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+  const yearLabel = getYearLabel(getEffectiveChallengeYearLevel());
+  elements.topicPageSkillsTitle.textContent = `${gameInfo[state.game].name} sub skills`;
+  elements.topicPageSkillsSummary.textContent = availableSkillIds.length
+    ? `${availableSkillIds.length} ${availableSkillIds.length === 1 ? "skill is" : "skills are"} available for ${yearLabel}. Practise one exact question type, then play the topic area game for the shared leaderboard.`
+    : `No sub skills are unlocked for ${yearLabel} yet.`;
+
+  elements.topicPageSkillGrid.innerHTML = availableSkillIds.length
+    ? availableSkillIds.map((skillId) => {
+        const skill = gameInfo[skillId];
+        const bestScore = getCurrentPlayerBestScore(skillId);
+        const medal = getBestMedalForScore(bestScore, getMedalGoalsForGame(skillId));
+        return `
+          <article class="topic-page-skill-card ${skill.cardClass}">
+            <div class="mini-game-icon" aria-hidden="true">${escapeHtml(skill.icon)}</div>
+            <div>
+              <p>${escapeHtml(getYearLabel(skill.accessYear))} skill</p>
+              <h3>${escapeHtml(skill.name)}</h3>
+              <span>${escapeHtml(skill.cardDescription)}</span>
+            </div>
+            <div class="topic-page-skill-meta">
+              <small>${escapeHtml(medal ? medal.label : "No medal yet")}</small>
+              <small>${bestScore ? `${bestScore.toLocaleString()} best` : "No score yet"}</small>
+            </div>
+            <a class="text-link" href="${getGameHash(skillId)}" data-game="${escapeHtml(skillId)}">Practise skill →</a>
+          </article>
+        `;
+      }).join("")
+    : `<article class="topic-page-skill-card"><p>No skills unlocked yet.</p></article>`;
 }
 
 function renderGameLeaderboard() {

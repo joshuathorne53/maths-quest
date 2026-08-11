@@ -1832,6 +1832,7 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 
 .game-page-section.app-dashboard-page .game-page-card,
 .game-page-section.app-dashboard-page .game-page-details,
+.game-page-section.app-dashboard-page .topic-page-skills,
 .game-page-section.app-dashboard-page .game-page-leaderboard {
   border: 1px solid rgba(53, 143, 208, 0.14);
   box-shadow: 0 20px 55px rgba(23, 43, 77, 0.08);
@@ -1869,6 +1870,7 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 
 .game-page-card,
 .game-page-details,
+.topic-page-skills,
 .game-page-leaderboard,
 .leaderboard-grid-card {
   border: 1px solid rgba(23, 43, 77, 0.07);
@@ -1973,6 +1975,140 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 .goal-status {
   color: #236e58;
   background: #e8fff6;
+}
+
+.topic-page-skills {
+  display: grid;
+  margin-top: 22px;
+  padding: 24px;
+  gap: 18px;
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 0 0, rgba(53, 143, 208, 0.1), transparent 30%),
+    white;
+  border-radius: 28px;
+}
+
+.topic-page-skills[hidden] {
+  display: none;
+}
+
+.topic-page-skills-head {
+  display: flex;
+  gap: 18px;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.topic-page-skills-head h2,
+.topic-page-skills-head p {
+  margin: 0;
+}
+
+.topic-page-skills-head h2 {
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.topic-page-skills-head > p {
+  max-width: 430px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.topic-page-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.topic-page-skill-card {
+  position: relative;
+  display: grid;
+  min-height: 245px;
+  padding: 20px;
+  gap: 14px;
+  align-content: start;
+  overflow: hidden;
+  color: var(--navy);
+  background:
+    radial-gradient(circle at 100% 0, rgba(140, 198, 230, 0.16), transparent 32%),
+    #f8fbfe;
+  border: 1px solid rgba(23, 43, 77, 0.08);
+  border-radius: 22px;
+}
+
+.topic-page-skill-card::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), transparent 54%);
+  content: "";
+  pointer-events: none;
+}
+
+.topic-page-skill-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.topic-page-skill-card .mini-game-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  font-size: 1.35rem;
+}
+
+.topic-page-skill-card p,
+.topic-page-skill-card h3,
+.topic-page-skill-card span {
+  margin: 0;
+}
+
+.topic-page-skill-card p {
+  color: var(--blue-dark);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.topic-page-skill-card h3 {
+  margin: 4px 0 8px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.topic-page-skill-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.topic-page-skill-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topic-page-skill-meta small {
+  padding: 7px 10px;
+  color: var(--blue-dark);
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(23, 43, 77, 0.07);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.topic-page-skill-card .text-link {
+  align-self: end;
+  margin-top: auto;
 }
 
 .result-goal-status {
@@ -3669,9 +3805,15 @@ footer > a:last-child {
 
   .game-page-card,
   .game-page-details,
+  .topic-page-skills,
   .game-page-leaderboard {
     padding: 18px;
     border-radius: 24px;
+  }
+
+  .topic-page-skills-head {
+    display: grid;
+    align-items: start;
   }
 
   .goal-grid,

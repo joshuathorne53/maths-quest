@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=topic-areas-20260811" />
-    <script src="script.js?v=topic-areas-20260811" defer></script>
-    <script type="module" src="firebase-leaderboard.js?v=topic-areas-20260811"></script>
+    <link rel="stylesheet" href="styles.css?v=topic-skills-20260811" />
+    <script src="script.js?v=topic-skills-20260811" defer></script>
+    <script type="module" src="firebase-leaderboard.js?v=topic-skills-20260811"></script>
   </head>
   <body>
     <header class="site-header">
@@ -382,6 +382,17 @@
               </div>
             </div>
           </div>
+
+          <section class="topic-page-skills" id="topic-page-skills" aria-labelledby="topic-page-skills-title" hidden>
+            <div class="topic-page-skills-head">
+              <div>
+                <p class="eyebrow"><span></span> Sub skills</p>
+                <h2 id="topic-page-skills-title">Skills in this topic area</h2>
+              </div>
+              <p id="topic-page-skills-summary">Practise one exact skill, then play the topic area game for the shared leaderboard.</p>
+            </div>
+            <div class="topic-page-skill-grid" id="topic-page-skill-grid"></div>
+          </section>
 
           <div class="game-page-leaderboard">
             <div class="compact-leaderboard-head">
