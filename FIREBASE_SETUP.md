@@ -1,8 +1,8 @@
 # Connect the shared Firebase leaderboard
 
 GitHub Pages hosts the website. Firebase Cloud Firestore stores and live-updates
-the leaderboard for everyone. You can use the same Google account you use to sign
-in to GitHub.
+the topic-area leaderboards for everyone. You can use the same Google account you
+use to sign in to GitHub.
 
 ## 1. Create a Firebase project
 
@@ -59,26 +59,26 @@ Authentication and Firestore Security Rules, not by hiding these identifiers.
    [`firestore.rules`](firestore.rules).
 4. Select **Publish**.
 
-These rules let signed-in users read only the leaderboards they are allowed to
-see. Students must have their email in `studentDirectory` before they can submit
-scores. Teachers must use `@baysidecc.vic.edu.au` Google accounts. Score values
-are limited, and existing score entries can only keep the same score or move
-higher.
+These rules let signed-in users read only the topic-area leaderboards they are
+allowed to see. Students must have their email in `studentDirectory` before they
+can submit scores. Teachers must use `@baysidecc.vic.edu.au` Google accounts.
+Score values are limited, and existing score entries can only keep the same
+score or move higher.
 
 Student leaderboard names come from the user's Google account. Teacher accounts
 can customise their leaderboard name in Settings. Students can have one score
-document per game per assigned year level, using document IDs such as
+document per topic area per assigned year level, using document IDs such as
 `{uid}_year7`; older `{uid}` student score documents remain valid so existing
-scores keep showing. Teacher accounts keep one score document per game. Students
-can play any number of attempts. The leaderboard keeps their highest score for
-each game in their assigned year level and their highest saved answer streak for
-the streak board.
+scores keep showing. Teacher accounts keep one score document per topic area.
+Students can play any number of attempts. The leaderboard keeps their highest
+score for each topic area in their assigned year level.
 
 The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
-and `year12`. Students can submit scores for skill challenges at their assigned
-year level and lower. For example, a `year10` student can play skills such as
-`y7-integers`, `y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not
-Year 11 or Year 12 skills.
+and `year12`. Students can submit scores for topic areas at their assigned year
+level and lower. Topic areas can include extra skills at higher year levels; for
+example, a `year10` student can practise topic skills such as `y7-integers`,
+`y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not Year 11 or Year 12
+skills.
 
 Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
 Teachers open **Settings**, choose the year levels they teach, and the website
@@ -96,11 +96,14 @@ creates or updates their `teachers/{uid}` profile automatically with:
 The allowed `yearLevels` values are `year7`, `year8`, `year9`, `year10`,
 `year11`, and `year12`.
 
-Year-level leaderboards include teacher filters at the bottom:
+Year-level topic leaderboards include teacher filters:
 
-- **No teachers:** student scores only.
-- **Year level teachers:** students plus teachers who teach the selected year.
-- **All teachers:** students plus all teachers with scores.
+- **No teachers:** the top 10 student scores only.
+- **Year level teachers:** for students, the signed-in student plus teachers who
+  teach that year; for teachers, the year-level student board plus matching
+  teachers.
+- **All teachers:** for students, the signed-in student plus all teachers with
+  scores; for teachers, the year-level student board plus all teachers.
 
 After this update, only signed-in Google users with a matching student directory
 entry can add student scores. Teacher scores require a
@@ -143,8 +146,9 @@ Wait for GitHub Pages to deploy, then open the site. Below the leaderboard:
 - An orange dot means Firebase is not connected, the user is signed out, or the
   account is not from the approved domain.
 
-Sign in with an approved school Google account, play a game, and finish it. Then
-open the GitHub Pages website on another device to confirm the new score appears.
+Sign in with an approved school Google account, play a topic-area game, and
+finish it. Then open the GitHub Pages website on another device to confirm the
+new score appears.
 
 ## Important limitation
 

@@ -30,40 +30,16 @@ import {
   studentEmailDomain,
   teacherEmailDomain,
   yearLevelRequestEmail,
-} from "./firebase-config.js?v=student-directory-20260811";
+} from "./firebase-config.js?v=topic-areas-20260811";
 
 const validGames = new Set([
-  "quick",
-  "times",
-  "missing",
-  "y7-integers",
-  "y7-fractions",
-  "y7-simplifying-fractions",
-  "y7-add-subtract-fractions",
-  "y7-multiplying-fractions",
-  "y7-percentages",
-  "y7-bidmas",
-  "y7-one-step-equations",
-  "y8-square-powers",
-  "y8-ratios",
-  "y8-percentage-change",
-  "y8-linear-equations",
-  "y9-index-laws",
-  "y9-gradients",
-  "y9-expanding-brackets",
-  "y9-two-step-equations",
-  "y10-quadratics",
-  "y10-pythagoras",
-  "y10-simultaneous-equations",
-  "y10-functions",
-  "y11-derivatives",
-  "y11-logarithms",
-  "y11-arithmetic-sequences",
-  "y11-surds",
-  "y12-calculus-derivatives",
-  "y12-integrals",
-  "y12-complex-numbers",
-  "y12-series",
+  "topic-number",
+  "topic-fractions",
+  "topic-order",
+  "topic-algebra",
+  "topic-graphs-functions",
+  "topic-geometry",
+  "topic-surds-calculus",
 ]);
 const validYearLevels = new Set([
   "year7",
@@ -75,37 +51,13 @@ const validYearLevels = new Set([
 ]);
 const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameAccessYears = new Map([
-  ["quick", "year7"],
-  ["times", "year7"],
-  ["missing", "year7"],
-  ["y7-integers", "year7"],
-  ["y7-fractions", "year7"],
-  ["y7-simplifying-fractions", "year7"],
-  ["y7-add-subtract-fractions", "year7"],
-  ["y7-multiplying-fractions", "year7"],
-  ["y7-percentages", "year7"],
-  ["y7-bidmas", "year7"],
-  ["y7-one-step-equations", "year7"],
-  ["y8-square-powers", "year8"],
-  ["y8-ratios", "year8"],
-  ["y8-percentage-change", "year8"],
-  ["y8-linear-equations", "year8"],
-  ["y9-index-laws", "year9"],
-  ["y9-gradients", "year9"],
-  ["y9-expanding-brackets", "year9"],
-  ["y9-two-step-equations", "year9"],
-  ["y10-quadratics", "year10"],
-  ["y10-pythagoras", "year10"],
-  ["y10-simultaneous-equations", "year10"],
-  ["y10-functions", "year10"],
-  ["y11-derivatives", "year11"],
-  ["y11-logarithms", "year11"],
-  ["y11-arithmetic-sequences", "year11"],
-  ["y11-surds", "year11"],
-  ["y12-calculus-derivatives", "year12"],
-  ["y12-integrals", "year12"],
-  ["y12-complex-numbers", "year12"],
-  ["y12-series", "year12"],
+  ["topic-number", "year7"],
+  ["topic-fractions", "year7"],
+  ["topic-order", "year7"],
+  ["topic-algebra", "year7"],
+  ["topic-graphs-functions", "year9"],
+  ["topic-geometry", "year10"],
+  ["topic-surds-calculus", "year11"],
 ]);
 const configuredDomains = Array.isArray(allowedEmailDomains) && allowedEmailDomains.length
   ? allowedEmailDomains
@@ -501,6 +453,7 @@ if (!isConfigured) {
 
   function listenToStudentAllowedScores(game, teacherFilter, onScores, onError) {
     const yearLevel = cleanYearLevel(studentDirectoryEntry?.yearLevel);
+    const user = auth.currentUser;
     if (!yearLevel) {
       onScores([]);
       return () => {};
@@ -514,20 +467,45 @@ if (!isConfigured) {
       ...latestRows.students,
       ...latestRows.teachers,
     ]));
-    const unsubscribes = [
-      onSnapshot(
-        query(
-          scoreCollection(game),
-          where("role", "==", "student"),
-          where("yearLevel", "==", yearLevel),
+    const unsubscribes = [];
+
+    if (teacherFilter === "none") {
+      unsubscribes.push(
+        onSnapshot(
+          query(
+            scoreCollection(game),
+            where("role", "==", "student"),
+            where("yearLevel", "==", yearLevel),
+          ),
+          (snapshot) => {
+            latestRows.students = scoreRowsFromSnapshot(snapshot);
+            emitRows();
+          },
+          onError,
         ),
-        (snapshot) => {
-          latestRows.students = scoreRowsFromSnapshot(snapshot);
-          emitRows();
-        },
-        onError,
-      ),
-    ];
+      );
+    } else if (user) {
+      const studentRowsByDocument = new Map();
+      const updateStudentRow = (snapshot) => {
+        if (snapshot.exists() && isMatchingStudentScore(snapshot.data(), user, game, yearLevel)) {
+          studentRowsByDocument.set(snapshot.id, {
+            id: snapshot.id,
+            ...snapshot.data(),
+          });
+        } else {
+          studentRowsByDocument.delete(snapshot.id);
+        }
+        latestRows.students = [...studentRowsByDocument.values()];
+        emitRows();
+      };
+
+      [
+        doc(scoreCollection(game), getStudentScoreDocumentId(user, yearLevel)),
+        doc(scoreCollection(game), user.uid),
+      ].forEach((scoreDocument) => {
+        unsubscribes.push(onSnapshot(scoreDocument, updateStudentRow, onError));
+      });
+    }
 
     if (teacherFilter === "year") {
       unsubscribes.push(

@@ -339,7 +339,132 @@ const gameInfo = {
   },
 };
 
-const GAME_IDS = Object.keys(gameInfo);
+const skillTopicMap = {
+  quick: "topic-number",
+  times: "topic-number",
+  missing: "topic-number",
+  "y7-integers": "topic-number",
+  "y8-square-powers": "topic-number",
+  "y9-index-laws": "topic-number",
+  "y11-logarithms": "topic-number",
+  "y12-complex-numbers": "topic-number",
+  "y7-fractions": "topic-fractions",
+  "y7-simplifying-fractions": "topic-fractions",
+  "y7-add-subtract-fractions": "topic-fractions",
+  "y7-multiplying-fractions": "topic-fractions",
+  "y7-percentages": "topic-fractions",
+  "y8-ratios": "topic-fractions",
+  "y8-percentage-change": "topic-fractions",
+  "y7-bidmas": "topic-order",
+  "y7-one-step-equations": "topic-algebra",
+  "y8-linear-equations": "topic-algebra",
+  "y9-expanding-brackets": "topic-algebra",
+  "y9-two-step-equations": "topic-algebra",
+  "y10-quadratics": "topic-algebra",
+  "y10-simultaneous-equations": "topic-algebra",
+  "y11-arithmetic-sequences": "topic-algebra",
+  "y9-gradients": "topic-graphs-functions",
+  "y10-functions": "topic-graphs-functions",
+  "y10-pythagoras": "topic-geometry",
+  "y11-surds": "topic-surds-calculus",
+  "y11-derivatives": "topic-surds-calculus",
+  "y12-calculus-derivatives": "topic-surds-calculus",
+  "y12-integrals": "topic-surds-calculus",
+  "y12-series": "topic-surds-calculus",
+};
+
+const topicAreaInfo = {
+  "topic-number": {
+    name: "Number Fluency",
+    shortName: "Number",
+    description: "A mixed number-fluency game using arithmetic, integers, powers, indices, logarithms, and complex-number basics as they unlock.",
+    cardDescription: "Build fast number sense. Higher years add powers, indices, logs, and complex-number fluency.",
+    bullets: ["Combined topic game", "Arithmetic to advanced number"],
+    icon: "∑",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "topic-fractions": {
+    name: "Fractions, Ratios & Percentages",
+    shortName: "Fractions",
+    description: "A combined topic game for fractions, simplifying, fraction operations, ratios, and percentage change.",
+    cardDescription: "Practise fractions first, then add ratios and percentage change as the years climb.",
+    bullets: ["Fractions and percentages", "Ratios unlock later"],
+    icon: "½",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "topic-order": {
+    name: "Order of Operations",
+    shortName: "BIDMAS",
+    description: "A combined topic game for BIDMAS and operation-order fluency.",
+    cardDescription: "Work through brackets, indices, division, multiplication, addition, and subtraction.",
+    bullets: ["BIDMAS", "Operation order"],
+    icon: "≡",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "topic-algebra": {
+    name: "Algebra",
+    shortName: "Algebra",
+    description: "A combined algebra game that grows from one-step equations to brackets, quadratics, simultaneous equations, and sequences.",
+    cardDescription: "Start with equations, then unlock richer algebra skills in the higher years.",
+    bullets: ["Equations and brackets", "Quadratics and sequences later"],
+    icon: "x",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "topic-graphs-functions": {
+    name: "Graphs & Functions",
+    shortName: "Graphs",
+    description: "A combined topic game for gradients and function notation.",
+    cardDescription: "Connect graph fluency with substitution and function notation.",
+    bullets: ["Gradients", "Function values"],
+    icon: "ƒ",
+    cardClass: "game-card-sun",
+    accessYear: "year9",
+  },
+  "topic-geometry": {
+    name: "Geometry & Measurement",
+    shortName: "Geometry",
+    description: "A combined topic game for geometry and measurement skills, starting with Pythagoras.",
+    cardDescription: "Use right-triangle facts and exact side-length thinking.",
+    bullets: ["Pythagoras", "Measurement fluency"],
+    icon: "△",
+    cardClass: "game-card-coral",
+    accessYear: "year10",
+  },
+  "topic-surds-calculus": {
+    name: "Surds, Calculus & Series",
+    shortName: "Calculus",
+    description: "A combined senior topic game for surds, derivative skills, integrals, and series.",
+    cardDescription: "Senior fluency with exact forms, calculus, and series questions.",
+    bullets: ["Surds and derivatives", "Integrals and series later"],
+    icon: "∫",
+    cardClass: "game-card-sky",
+    accessYear: "year11",
+  },
+};
+
+Object.entries(skillTopicMap).forEach(([skillId, topicId]) => {
+  if (!gameInfo[skillId]) return;
+  gameInfo[skillId] = {
+    ...gameInfo[skillId],
+    type: "skill",
+    topicId,
+  };
+});
+
+Object.entries(topicAreaInfo).forEach(([topicId, info]) => {
+  gameInfo[topicId] = {
+    ...info,
+    type: "topic",
+  };
+});
+
+const TOPIC_AREA_IDS = Object.keys(topicAreaInfo);
+const SKILL_IDS = Object.keys(skillTopicMap).filter((skillId) => gameInfo[skillId]);
+const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
 const PEN_AND_PAPER_GAME_IDS = new Set([
   "y10-quadratics",
   "y10-pythagoras",
@@ -357,12 +482,12 @@ const PEN_AND_PAPER_GAME_IDS = new Set([
 
 const state = {
   page: "home",
-  game: "quick",
-  board: "quick",
+  game: "topic-number",
+  board: "topic-number",
   boardYearLevel: DEFAULT_YEAR_LEVEL,
   teacherFilter: "none",
   homeLeaderboardView: "students",
-  homeFeaturedGame: "quick",
+  homeFeaturedGame: "topic-number",
   player: "",
   score: 0,
   streak: 0,
@@ -546,6 +671,19 @@ function formatSigned(value) {
 }
 
 function createQuestion(mode) {
+  if (isTopicArea(mode)) {
+    const skillIds = getTopicSkillIds(mode, getEffectiveChallengeYearLevel())
+      .filter((skillId) => skillQuestionGenerators[skillId] || ["quick", "times", "missing"].includes(skillId));
+    const fallbackSkillIds = getTopicSkillIds(mode)
+      .filter((skillId) => skillQuestionGenerators[skillId] || ["quick", "times", "missing"].includes(skillId));
+    const skillId = sample(skillIds.length ? skillIds : fallbackSkillIds);
+    const question = createQuestion(skillId);
+    return {
+      ...question,
+      skillId,
+    };
+  }
+
   const skillGenerator = skillQuestionGenerators[mode];
   if (skillGenerator) return skillGenerator();
 
@@ -1206,6 +1344,34 @@ function getFirestoreTimestampMillis(timestamp) {
   return 0;
 }
 
+function isTopicArea(gameId) {
+  return gameInfo[gameId]?.type === "topic";
+}
+
+function isSkillGame(gameId) {
+  return gameInfo[gameId]?.type === "skill";
+}
+
+function getSkillTopicId(skillId) {
+  return gameInfo[skillId]?.topicId || "";
+}
+
+function getLeaderboardGameId(gameId) {
+  return isSkillGame(gameId) ? getSkillTopicId(gameId) : gameId;
+}
+
+function getGameTypeLabel(gameId) {
+  return isTopicArea(gameId) ? "topic area" : "skill";
+}
+
+function getEffectiveChallengeYearLevel() {
+  if (isTeacherTestingAsStudent()) return cleanYearLevel(state.testStudentYearLevel) || DEFAULT_YEAR_LEVEL;
+  if (getActiveAccountType() === "student") {
+    return cleanYearLevel(state.studentYearLevel) || cleanYearLevel(state.boardYearLevel) || DEFAULT_YEAR_LEVEL;
+  }
+  return cleanYearLevel(state.boardYearLevel) || DEFAULT_YEAR_LEVEL;
+}
+
 function getYearRank(yearLevel) {
   return YEAR_LEVELS.findIndex((level) => level.id === yearLevel);
 }
@@ -1214,8 +1380,27 @@ function getGameRequiredYear(gameId) {
   return cleanYearLevel(gameInfo[gameId]?.accessYear) || DEFAULT_YEAR_LEVEL;
 }
 
+function getTopicSkillIds(topicId, yearLevel = "") {
+  const cleanLevel = cleanYearLevel(yearLevel);
+  return SKILL_IDS.filter((skillId) => {
+    if (getSkillTopicId(skillId) !== topicId) return false;
+    return !cleanLevel || canYearAccessGame(cleanLevel, skillId);
+  });
+}
+
+function getTopicSkillSummary(topicId, yearLevel = getEffectiveChallengeYearLevel()) {
+  const skillCount = getTopicSkillIds(topicId, yearLevel).length;
+  return `${skillCount} ${skillCount === 1 ? "skill" : "skills"} unlocked`;
+}
+
+function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
+  if (PEN_AND_PAPER_GAME_IDS.has(gameId)) return true;
+  if (!isTopicArea(gameId)) return false;
+  return getTopicSkillIds(gameId, yearLevel).some((skillId) => PEN_AND_PAPER_GAME_IDS.has(skillId));
+}
+
 function getGameDuration(gameId) {
-  return PEN_AND_PAPER_GAME_IDS.has(gameId) ? PAPER_GAME_SECONDS : GAME_SECONDS;
+  return hasPenAndPaperSkill(gameId) ? PAPER_GAME_SECONDS : GAME_SECONDS;
 }
 
 function getGameDurationLabel(gameId) {
@@ -1224,7 +1409,7 @@ function getGameDurationLabel(gameId) {
 }
 
 function getPenAndPaperNote(gameId) {
-  return PEN_AND_PAPER_GAME_IDS.has(gameId)
+  return hasPenAndPaperSkill(gameId)
     ? "Pen and paper recommended. This challenge gives 5 minutes so you can write working out."
     : "";
 }
@@ -1232,6 +1417,10 @@ function getPenAndPaperNote(gameId) {
 function getGameHash(gameId, { view = "" } = {}) {
   const suffix = view === "leaderboard" ? "/leaderboard" : "";
   return `#game/${encodeURIComponent(gameId)}${suffix}`;
+}
+
+function getLeaderboardHash(gameId) {
+  return getGameHash(getLeaderboardGameId(gameId), { view: "leaderboard" });
 }
 
 function canYearAccessGame(yearLevel, gameId) {
@@ -1274,6 +1463,7 @@ function canReadSharedLeaderboards() {
 
 function canReadGameLeaderboard(gameId) {
   if (!canReadSharedLeaderboards()) return false;
+  if (!isTopicArea(gameId)) return false;
   const forcedYearLevel = getForcedLeaderboardYearLevel();
   return !forcedYearLevel || canYearAccessGame(forcedYearLevel, gameId);
 }
@@ -1297,7 +1487,7 @@ function getLeaderboardAccessMessage() {
 
   const forcedYearLevel = getForcedLeaderboardYearLevel();
   if (forcedYearLevel && !canYearAccessGame(forcedYearLevel, state.game)) {
-    return `This skill leaderboard is locked for ${getYearLabel(forcedYearLevel)} students.`;
+    return `This topic leaderboard is locked for ${getYearLabel(forcedYearLevel)} students.`;
   }
 
   return "Leaderboards are locked to your account setup.";
@@ -1342,13 +1532,23 @@ function shouldHideInaccessibleGames() {
 }
 
 function getVisibleGameIds() {
+  return getVisibleTopicAreaIds();
+}
+
+function getVisibleTopicAreaIds() {
+  return shouldHideInaccessibleGames()
+    ? TOPIC_AREA_IDS.filter(canAccessGame)
+    : TOPIC_AREA_IDS;
+}
+
+function getVisibleProgressGameIds() {
   return shouldHideInaccessibleGames()
     ? GAME_IDS.filter(canAccessGame)
     : GAME_IDS;
 }
 
 function getVisibleBoardGameIds() {
-  const boardGameIds = GAME_IDS.filter((gameId) => canYearAccessGame(state.boardYearLevel, gameId));
+  const boardGameIds = TOPIC_AREA_IDS.filter((gameId) => canYearAccessGame(state.boardYearLevel, gameId));
   return shouldHideInaccessibleGames()
     ? boardGameIds.filter(canAccessGame)
     : boardGameIds;
@@ -1379,7 +1579,7 @@ function getGameAccessMessage(gameId) {
   }
 
   if (!state.studentYearLevel) {
-    return "Save your year level to see available challenges.";
+    return "Get your year level assigned to see available challenges.";
   }
 
   if (canAccessGame(gameId)) {
@@ -1747,7 +1947,8 @@ function dedupeLeaderboardScores(scores) {
   return [...bestScores.values()];
 }
 
-function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
+function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 10 } = {}) {
+  const currentViewerIsStudent = getActiveAccountType() === "student" && !isTeacherTestingAsStudent();
   const matchingScores = applyCurrentTeacherScoreName(scores).filter((entry) => {
     if (entry.role === "teacher") {
       if (teacherFilter === "none") return false;
@@ -1755,21 +1956,38 @@ function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 2
       return entry.teacherYearLevels.includes(yearLevel);
     }
 
+    if (currentViewerIsStudent && teacherFilter !== "none") {
+      return entry.yearLevel === yearLevel && scoreMatchesCurrentPlayer(entry, { role: "student", yearLevel });
+    }
+
     return entry.yearLevel === yearLevel;
   });
   const filteredScores = dedupeLeaderboardScores(matchingScores)
     .sort((a, b) => b.score - a.score);
 
+  if (currentViewerIsStudent && teacherFilter !== "none" && scoreLimit !== null) {
+    const currentStudentIndex = filteredScores.findIndex(
+      (entry) => entry.role === "student" && scoreMatchesCurrentPlayer(entry, { role: "student", yearLevel }),
+    );
+    if (currentStudentIndex >= scoreLimit) {
+      const currentStudentScore = filteredScores[currentStudentIndex];
+      const visibleWithoutCurrentStudent = filteredScores
+        .filter((_, index) => index !== currentStudentIndex)
+        .slice(0, Math.max(scoreLimit - 1, 0));
+      return [...visibleWithoutCurrentStudent, currentStudentScore];
+    }
+  }
+
   return scoreLimit === null ? filteredScores : filteredScores.slice(0, scoreLimit);
 }
 
 function getRawScores(game) {
-  const rawScores = state.sharedScores[game] !== null ? state.sharedScores[game] : getLocalScores()[game];
+  const rawScores = Array.isArray(state.sharedScores[game]) ? state.sharedScores[game] : getLocalScores()[game];
   return applyCurrentTeacherScoreName(rawScores);
 }
 
 function getVisibleScores(game = state.board, options = {}) {
-  const rawScores = state.sharedScores[game] !== null ? state.sharedScores[game] : getLocalScores()[game];
+  const rawScores = Array.isArray(state.sharedScores[game]) ? state.sharedScores[game] : getLocalScores()[game];
   return filterScoresForBoard(rawScores, state.boardYearLevel, state.teacherFilter, options);
 }
 
@@ -1854,13 +2072,12 @@ function getHighestStreakScores(gameIds) {
 }
 
 function getCurrentPlayerBestScore(gameId) {
-  const score = filterScoresForBoard(
-    getRawScores(gameId),
-    state.boardYearLevel,
-    state.teacherFilter,
-    { scoreLimit: null },
-  ).find(scoreMatchesCurrentPlayer);
-  return Number.isInteger(score?.score) ? score.score : 0;
+  const currentScores = [
+    ...normalizeScores(getRawScores(gameId)),
+    ...normalizeScores(getLocalScores()[gameId] || []),
+  ].filter(scoreMatchesCurrentPlayer);
+
+  return currentScores.reduce((best, entry) => Math.max(best, entry.score), 0);
 }
 
 function getLocalDateKey(date = new Date()) {
@@ -2000,9 +2217,9 @@ function setProgressStatus(status, message) {
 }
 
 function renderProgressPage() {
-  const gameIds = getVisibleGameIds();
+  const gameIds = getVisibleProgressGameIds();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
-    listenToSharedBoards(gameIds, { teacherFilterOverride: "all" });
+    listenToSharedBoards(getVisibleBoardGameIds(), { teacherFilterOverride: "all" });
   }
 
   const rows = gameIds.map((gameId) => {
@@ -2041,6 +2258,7 @@ function renderProgressPage() {
             <div>
               <p>${escapeHtml(getGameDurationLabel(gameId))}</p>
               <h3>${escapeHtml(info.name)}</h3>
+              <small>${escapeHtml(getGameTypeLabel(gameId))}</small>
             </div>
           </div>
           <div class="progress-best-score">
@@ -2065,14 +2283,15 @@ function renderProgressPage() {
     setProgressStatus("local", "Firebase setup needed. Progress uses scores saved on this device.");
   } else if (!canReadSharedLeaderboards()) {
     setProgressStatus("local", getProgressAccessMessage());
-  } else if (gameIds.some((gameId) => state.sharedScores[gameId] === null)) {
+  } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
     setProgressStatus("connecting", "Loading your medal progress and Mr Thorne targets...");
   } else {
-    setProgressStatus("shared", "Progress is using your saved best scores. Daily streaks are kept on this device from new bronze-or-better attempts.");
+    setProgressStatus("shared", "Topic medals use shared best scores. Skill medals and daily streaks are kept on this device from new bronze-or-better attempts.");
   }
 }
 
 function getCurrentPlayerGameRank(gameId) {
+  if (!isTopicArea(gameId)) return 0;
   const rankIndex = filterScoresForBoard(
     getRawScores(gameId),
     state.boardYearLevel,
@@ -2087,10 +2306,27 @@ function formatGameRank(rank) {
 }
 
 function getGameRankLabel(gameId) {
+  if (!isTopicArea(gameId)) {
+    const bestScore = getCurrentPlayerBestScore(gameId);
+    const medal = getBestMedalForScore(bestScore, getMedalGoalsForGame(gameId));
+    return medal ? medal.label : "No medal";
+  }
+
   return formatGameRank(getCurrentPlayerGameRank(gameId));
 }
 
 function getGameRankStatusMessage(gameId) {
+  if (!isTopicArea(gameId)) {
+    const topicId = getLeaderboardGameId(gameId);
+    const topicName = gameInfo[topicId]?.name || "the topic area";
+    const bestScore = getCurrentPlayerBestScore(gameId);
+    const medal = getBestMedalForScore(bestScore, getMedalGoalsForGame(gameId));
+    if (medal) {
+      return `You have earned ${medal.label} for this skill. Play ${topicName} for the shared leaderboard.`;
+    }
+    return `This skill earns medals only. Play ${topicName} for the shared leaderboard.`;
+  }
+
   if (!canReadGameLeaderboard(gameId) && state.sharedConfigured) {
     return getLeaderboardAccessMessage();
   }
@@ -2106,7 +2342,7 @@ function getGameRankStatusMessage(gameId) {
     return `Your best score is ${bestScore.toLocaleString()} pts. Check the leaderboard once it updates to see your rank.`;
   }
 
-  return "Play this game to earn a leaderboard rank.";
+  return "Play this topic area to earn medals and a leaderboard place.";
 }
 
 function getMedalResultForScore(gameId, score) {
@@ -2319,11 +2555,21 @@ function renderTeacherFilterControls() {
 }
 
 function renderGameCards() {
-  const visibleGameIds = getVisibleGameIds();
-  elements.gameGrid.innerHTML = visibleGameIds.map((gameId) => {
-    const info = gameInfo[gameId];
-    const locked = !canAccessGame(gameId);
+  const visibleTopicIds = getVisibleTopicAreaIds();
+  elements.gameGrid.innerHTML = visibleTopicIds.map((topicId) => {
+    const info = gameInfo[topicId];
+    const locked = !canAccessGame(topicId);
     const buttonLabel = locked ? "Locked for now" : `Open ${info.shortName}`;
+    const availableSkillIds = getTopicSkillIds(topicId, getEffectiveChallengeYearLevel()).filter(canAccessGame);
+    const skillLinks = availableSkillIds.map((skillId) => {
+      const skill = gameInfo[skillId];
+      return `
+        <a class="topic-skill-link" href="${getGameHash(skillId)}" data-game="${escapeHtml(skillId)}">
+          <span>${escapeHtml(skill.icon)}</span>
+          ${escapeHtml(skill.shortName)}
+        </a>
+      `;
+    }).join("");
 
     return `
       <article class="game-card ${info.cardClass} ${locked ? "game-card-locked" : ""}">
@@ -2331,13 +2577,16 @@ function renderGameCards() {
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.cardDescription)}</p>
         <div class="game-card-meta">
-          <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
-          <span>Rank ${escapeHtml(getGameRankLabel(gameId))}</span>
+          <span>${escapeHtml(getGameDurationLabel(topicId))}</span>
+          <span>${escapeHtml(getTopicSkillSummary(topicId))}</span>
         </div>
         <ul>
           ${info.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}
         </ul>
-        <a class="play-button ${locked ? "disabled" : ""}" href="${locked ? "#games" : getGameHash(gameId)}" data-game="${escapeHtml(gameId)}" aria-disabled="${locked}">
+        <div class="topic-skill-list" aria-label="${escapeHtml(info.name)} skills">
+          ${skillLinks || `<span class="topic-skill-empty">No skills unlocked yet.</span>`}
+        </div>
+        <a class="play-button ${locked ? "disabled" : ""}" href="${locked ? "#games" : getGameHash(topicId)}" data-game="${escapeHtml(topicId)}" aria-disabled="${locked}">
           ${escapeHtml(buttonLabel)} <span aria-hidden="true">→</span>
         </a>
       </article>
@@ -2349,7 +2598,7 @@ function renderScoreRows(
   scores,
   emptyMessage,
   {
-    scoreLimit = 7,
+    scoreLimit = 10,
     showGameCount = false,
     showStreakGame = false,
     valueFormatter = (entry) => entry.score.toLocaleString(),
@@ -2385,39 +2634,21 @@ function renderScoreRows(
 }
 
 function getHomeLeaderboardScores(view = state.homeLeaderboardView) {
-  const totals = new Map();
-  const gameIds = getVisibleBoardGameIds();
+  const topicId = isTopicArea(state.homeFeaturedGame)
+    ? state.homeFeaturedGame
+    : getVisibleBoardGameIds()[0];
+  if (!topicId) return [];
 
-  gameIds.forEach((gameId) => {
-    const matchingScores = normalizeScores(getRawScores(gameId)).filter((entry) => {
-      if (view === "teachers") {
-        return entry.role === "teacher" && entry.teacherYearLevels.includes(state.boardYearLevel);
-      }
+  const matchingScores = normalizeScores(getRawScores(topicId)).filter((entry) => {
+    if (view === "teachers") {
+      return entry.role === "teacher" && entry.teacherYearLevels.includes(state.boardYearLevel);
+    }
 
-      return entry.role === "student" && entry.yearLevel === state.boardYearLevel;
-    });
-
-    dedupeLeaderboardScores(matchingScores).forEach((entry) => {
-      const key = getScoreKey(entry);
-      const existing = totals.get(key) || {
-        id: key,
-        uid: key,
-        name: entry.name,
-        score: 0,
-        role: entry.role,
-        yearLevel: entry.yearLevel,
-        teacherYearLevels: entry.teacherYearLevels,
-        games: 0,
-      };
-
-      existing.score += entry.score;
-      existing.games += 1;
-      totals.set(key, existing);
-    });
+    return entry.role === "student" && entry.yearLevel === state.boardYearLevel;
   });
 
-  return [...totals.values()]
-    .sort((a, b) => b.score - a.score || b.games - a.games)
+  return dedupeLeaderboardScores(matchingScores)
+    .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 }
 
@@ -2451,18 +2682,18 @@ function renderHomeFeaturedGame() {
   ensureHomeFeaturedGame();
 
   if (!state.homeFeaturedGame) {
-    elements.featuredGameHeading.textContent = "No games available yet";
-    elements.featuredGameDescription.textContent = "Sign in and get your year level assigned to see your available games.";
+    elements.featuredGameHeading.textContent = "No topic areas available yet";
+    elements.featuredGameDescription.textContent = "Sign in and get your year level assigned to see your available topic areas.";
     elements.featuredGameIcon.textContent = "?";
     elements.featuredGameMeta.innerHTML = "";
     elements.featuredGameBullets.innerHTML = "";
     elements.featuredGamePlay.href = "#home";
-    elements.featuredGamePlay.textContent = "Choose a game";
+    elements.featuredGamePlay.textContent = "Choose a topic";
     elements.featuredGamePlay.classList.add("disabled");
     elements.featuredGamePlay.setAttribute("aria-disabled", "true");
     elements.featuredGameLeaderboard.href = "#leaderboards";
     elements.featuredGameGoal.textContent = "No rank";
-    elements.featuredGameGoalLabel.textContent = "Pick a game to see your rank.";
+    elements.featuredGameGoalLabel.textContent = "Pick a topic area to see your rank.";
     return;
   }
 
@@ -2476,7 +2707,7 @@ function renderHomeFeaturedGame() {
   elements.featuredGameDescription.textContent = info.description;
   elements.featuredGameMeta.innerHTML = `
     <span>${escapeHtml(getGameDurationLabel(gameId))}</span>
-    <span>Rank ${escapeHtml(getGameRankLabel(gameId))}</span>
+    <span>${escapeHtml(getTopicSkillSummary(gameId))}</span>
   `;
   elements.featuredGameBullets.innerHTML = info.bullets
     .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
@@ -2485,7 +2716,7 @@ function renderHomeFeaturedGame() {
   elements.featuredGamePlay.textContent = playLabel;
   elements.featuredGamePlay.classList.toggle("disabled", locked);
   elements.featuredGamePlay.setAttribute("aria-disabled", String(locked));
-  elements.featuredGameLeaderboard.href = getGameHash(gameId, { view: "leaderboard" });
+  elements.featuredGameLeaderboard.href = getLeaderboardHash(gameId);
   elements.featuredGameGoal.textContent = getGameRankLabel(gameId);
   elements.featuredGameGoalLabel.textContent = getGameRankStatusMessage(gameId);
 }
@@ -2503,10 +2734,10 @@ function renderHomeLeaderboard() {
   }
 
   const scores = getHomeLeaderboardScores();
-  const viewLabel = state.homeLeaderboardView === "teachers" ? "teachers" : "students";
+  const topicName = gameInfo[state.homeFeaturedGame]?.name || "selected topic";
   const emptyMessage = state.homeLeaderboardView === "teachers"
-    ? `No teacher scores yet for ${getYearLabel(state.boardYearLevel)}.`
-    : `No ${getYearLabel(state.boardYearLevel)} student scores yet.`;
+    ? `No teacher scores yet for ${topicName}.`
+    : `No ${getYearLabel(state.boardYearLevel)} student scores yet for ${topicName}.`;
 
   elements.homeLeaderboardList.innerHTML = scores.length
     ? scores.map((entry, index) => `
@@ -2515,7 +2746,7 @@ function renderHomeLeaderboard() {
           <span class="list-avatar">${escapeHtml(initials(entry.name))}</span>
           <span>
             <strong>${escapeHtml(entry.name)}</strong>
-            <small>${escapeHtml(`${getScoreMeta(entry)} • ${entry.games} ${entry.games === 1 ? "game" : "games"}`)}</small>
+            <small>${escapeHtml(getScoreMeta(entry))}</small>
           </span>
           <b>${entry.score.toLocaleString()}</b>
         </li>
@@ -2523,18 +2754,18 @@ function renderHomeLeaderboard() {
     : `<li class="home-empty-row">${escapeHtml(emptyMessage)}</li>`;
 
   elements.homeLeaderboardStatus.textContent = state.homeLeaderboardView === "teachers"
-    ? `Showing ${getYearLabel(state.boardYearLevel)} teachers separately.`
-    : `Showing ${getYearLabel(state.boardYearLevel)} students only.`;
+    ? `Showing ${getYearLabel(state.boardYearLevel)} teachers for ${topicName}.`
+    : `Showing top ${getYearLabel(state.boardYearLevel)} students for ${topicName}.`;
 
   if (!state.sharedConfigured) {
     elements.homeLeaderboardStatus.textContent += " Local scores are shown until Firebase is connected.";
-  } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
+  } else if (state.sharedScores[state.homeFeaturedGame] === null) {
     elements.homeLeaderboardStatus.textContent += " Shared scores are still loading.";
   }
 }
 
 function renderHomeProgress() {
-  const visibleGameIds = getVisibleBoardGameIds();
+  const visibleGameIds = getVisibleProgressGameIds();
   const bestScores = visibleGameIds
     .map(getCurrentPlayerBestScore)
     .filter((score) => score > 0);
@@ -2543,7 +2774,7 @@ function renderHomeProgress() {
 
   elements.homeGamesPlayed.textContent = String(gamesPlayed);
   elements.homeBestScore.textContent = bestScore.toLocaleString();
-  elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "quick");
+  elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "topic-number");
 }
 
 function renderHomeAuthCard() {
@@ -2578,7 +2809,9 @@ function renderHomeDashboard() {
 }
 
 function renderGamePage() {
-  const info = gameInfo[state.game] || gameInfo.quick;
+  const info = gameInfo[state.game] || gameInfo["topic-number"];
+  const topicId = getLeaderboardGameId(state.game);
+  const hasTopicLeaderboard = isTopicArea(state.game);
   const penNote = getPenAndPaperNote(state.game);
 
   elements.gamePageSection.className = `game-page-section app-dashboard-page ${info.cardClass}`;
@@ -2595,12 +2828,22 @@ function renderGamePage() {
   elements.gameGoalStatus.textContent = getGameRankStatusMessage(state.game);
   elements.gamePageStart.disabled = !canAccessGame(state.game);
   elements.gamePageStart.textContent = canAccessGame(state.game) ? "Start challenge →" : "Locked for now";
+  elements.gamePageLeaderboard.hidden = !hasTopicLeaderboard;
   elements.gamePageLeaderboardTitle.textContent = `${info.name} leaderboard`;
-  elements.resultLeaderboardLink.href = getGameHash(state.game, { view: "leaderboard" });
+  elements.resultLeaderboardLink.href = getLeaderboardHash(state.game);
+  elements.resultLeaderboardLink.textContent = hasTopicLeaderboard
+    ? "See leaderboard"
+    : `See ${gameInfo[topicId]?.shortName || "topic"} leaderboard`;
   renderGameLeaderboard();
 }
 
 function renderGameLeaderboard() {
+  if (!isTopicArea(state.game)) {
+    elements.gameBoardList.innerHTML = "";
+    setGameBoardStatus("local", "Individual skills do not have shared leaderboards. Play the topic area game to join the leaderboard.");
+    return;
+  }
+
   if (!canReadGameLeaderboard(state.game)) {
     elements.gameBoardList.innerHTML = renderScoreRows([], getLeaderboardAccessMessage(), { scoreLimit: 10 });
     setGameBoardStatus("local", getLeaderboardAccessMessage());
@@ -2643,7 +2886,7 @@ function renderLeaderboardGridCard({
     ? `${scores.length ? "Highest saved streaks" : "Waiting for streaks"} • ${getVisibleBoardGameIds().length} games`
     : total
     ? `${scores.length ? "Combined best scores" : "Waiting for scores"} • ${getVisibleBoardGameIds().length} games`
-    : `${getGameDurationLabel(gameId)} • Rank ${getGameRankLabel(gameId)}`;
+    : `${getGameDurationLabel(gameId)} • ${getTopicSkillSummary(gameId, state.boardYearLevel)}`;
 
   return `
     <article class="${classes}">
@@ -2662,7 +2905,7 @@ function renderLeaderboardGridCard({
             ? `No ${getYearLabel(state.boardYearLevel)} streaks saved yet.`
             : `No ${getYearLabel(state.boardYearLevel)} scores yet.`,
           {
-            scoreLimit: total || streak ? 10 : 5,
+            scoreLimit: 10,
             showGameCount: total,
             showStreakGame: streak,
             valueFormatter: streak ? (entry) => `${entry.score.toLocaleString()} streak` : undefined,
@@ -2683,35 +2926,21 @@ function renderAllLeaderboards() {
   const gameIds = getVisibleBoardGameIds();
   if (state.sharedConfigured) listenToSharedBoards(gameIds);
 
-  const totalScores = getTotalScores(gameIds);
-  const totalCard = renderLeaderboardGridCard({
-    title: `${getYearLabel(state.boardYearLevel)} Total Leaderboard`,
-    description: "Adds each student's best score from every available game in this year level.",
-    scores: totalScores,
-    total: true,
-  });
-  const streakCard = renderLeaderboardGridCard({
-    title: `${getYearLabel(state.boardYearLevel)} Highest Streak`,
-    description: "Ranks each player by their best saved answer streak from any visible game.",
-    scores: getHighestStreakScores(gameIds),
-    streak: true,
-  });
-
   const gameCards = gameIds.map((gameId) => renderLeaderboardGridCard({
     gameId,
     title: gameInfo[gameId].name,
     description: gameInfo[gameId].cardDescription,
-    scores: getVisibleScores(gameId, { scoreLimit: 5 }),
+    scores: getVisibleScores(gameId, { scoreLimit: 10 }),
   })).join("");
 
-  elements.leaderboardsGrid.innerHTML = `${totalCard}${streakCard}${gameCards}`;
+  elements.leaderboardsGrid.innerHTML = gameCards;
 
   if (!state.sharedConfigured) {
     setLeaderboardStatus("local", "Firebase setup needed. Until then, the grid uses scores saved on this device.");
   } else {
     setLeaderboardStatus(
       "shared",
-      `Showing all ${getYearLabel(state.boardYearLevel)} leaderboards. Total is calculated from best scores across the games shown.`,
+      `Showing ${getYearLabel(state.boardYearLevel)} topic-area leaderboards only.`,
     );
   }
 }
@@ -3097,7 +3326,7 @@ function setBoardYearLevel(yearLevel) {
   renderBoardTabs();
   if (state.page === "game") {
     renderGamePage();
-    listenToSharedBoard(state.game);
+    if (isTopicArea(state.game)) listenToSharedBoard(state.game);
   }
   if (state.page === "home") {
     renderHomeDashboard();
@@ -3335,11 +3564,16 @@ function connectSharedLeaderboard() {
   applyAuthState(window.sharedLeaderboard.getAuthState?.());
   renderAdminNavigation();
   renderBoardTabs();
-  listenToSharedBoard(state.board);
+  if (isTopicArea(state.board)) listenToSharedBoard(state.board);
 }
 
 async function saveSharedScore() {
   if (!state.sharedConfigured || state.savingSharedScore) return;
+  if (!isTopicArea(state.game)) {
+    state.pendingSharedScore = null;
+    setLeaderboardStatus("local", "Skill score saved for medals. Play the topic-area game to join the shared leaderboard.");
+    return;
+  }
 
   const currentScoreContext = getScoreContext();
   if (!shouldSaveScore(currentScoreContext)) {
@@ -3563,7 +3797,7 @@ function selectGame(mode) {
   }
 
   state.game = mode;
-  state.board = mode;
+  state.board = getLeaderboardGameId(mode);
   const info = gameInfo[mode];
   const penNote = getPenAndPaperNote(mode);
   elements.startTitle.textContent = info.name;
@@ -3630,7 +3864,9 @@ function nextQuestion() {
   elements.answerInput.inputMode = fractionMode ? "text" : "decimal";
   elements.question.classList.toggle("surd-question", surdMode);
   elements.question.textContent = question.text;
-  elements.questionCount.textContent = `Question ${state.questionNumber}`;
+  elements.questionCount.textContent = question.skillId && isTopicArea(state.game)
+    ? `Question ${state.questionNumber} · ${gameInfo[question.skillId]?.name || "Topic skill"}`
+    : `Question ${state.questionNumber}`;
   elements.answerInput.value = "";
   elements.surdCoefficientInput.value = "";
   elements.surdRadicandInput.value = "";
@@ -3759,11 +3995,11 @@ function finishGame() {
           statusOverride: "test",
         },
   );
-  state.board = state.game;
+  state.board = getLeaderboardGameId(state.game);
   setActiveBoardTab();
   renderGamePage();
   renderLeaderboard();
-  listenToSharedBoard(state.board);
+  if (isTopicArea(state.board)) listenToSharedBoard(state.board);
 
   if (saveScore) {
     saveSharedScore();
@@ -3866,7 +4102,7 @@ function renderLeaderboard() {
   if (state.page === "admin") renderAdminPage();
   if (state.sharedConfigured && canReadSharedLeaderboards()) {
     if (state.page === "home") listenToSharedBoards(getVisibleBoardGameIds());
-    if (state.page === "game") listenToSharedBoard(state.game);
+    if (state.page === "game" && isTopicArea(state.game)) listenToSharedBoard(state.game);
     if (state.page === "progress") listenToSharedBoards(getVisibleGameIds(), { teacherFilterOverride: "all" });
     if (state.page === "leaderboards") listenToSharedBoards(getVisibleBoardGameIds());
   }
@@ -3930,7 +4166,7 @@ function parsePageHash() {
 
 function openResultLeaderboard(event) {
   event.preventDefault();
-  const leaderboardHash = getGameHash(state.game, { view: "leaderboard" });
+  const leaderboardHash = getLeaderboardHash(state.game);
 
   if (window.location.hash === leaderboardHash) {
     renderCurrentPage({ scroll: true });
@@ -3986,9 +4222,9 @@ function renderCurrentPage({ scroll = false } = {}) {
 
   if (route.page === "game") {
     state.game = route.gameId;
-    state.board = route.gameId;
+    state.board = getLeaderboardGameId(route.gameId);
     renderGamePage();
-    listenToSharedBoard(state.game);
+    if (isTopicArea(state.game)) listenToSharedBoard(state.game);
   } else if (route.page === "progress") {
     renderProgressPage();
   } else if (route.page === "leaderboards") {

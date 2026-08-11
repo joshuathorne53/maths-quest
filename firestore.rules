@@ -62,37 +62,13 @@ service cloud.firestore {
 
     function isValidGame(game) {
       return game in [
-        'quick',
-        'times',
-        'missing',
-        'y7-integers',
-        'y7-fractions',
-        'y7-simplifying-fractions',
-        'y7-add-subtract-fractions',
-        'y7-multiplying-fractions',
-        'y7-percentages',
-        'y7-bidmas',
-        'y7-one-step-equations',
-        'y8-square-powers',
-        'y8-ratios',
-        'y8-percentage-change',
-        'y8-linear-equations',
-        'y9-index-laws',
-        'y9-gradients',
-        'y9-expanding-brackets',
-        'y9-two-step-equations',
-        'y10-quadratics',
-        'y10-pythagoras',
-        'y10-simultaneous-equations',
-        'y10-functions',
-        'y11-derivatives',
-        'y11-logarithms',
-        'y11-arithmetic-sequences',
-        'y11-surds',
-        'y12-calculus-derivatives',
-        'y12-integrals',
-        'y12-complex-numbers',
-        'y12-series'
+        'topic-number',
+        'topic-fractions',
+        'topic-order',
+        'topic-algebra',
+        'topic-graphs-functions',
+        'topic-geometry',
+        'topic-surds-calculus'
       ];
     }
 
@@ -108,35 +84,14 @@ service cloud.firestore {
 
     function gameRequiredYear(game) {
       return game in [
-          'y8-square-powers',
-          'y8-ratios',
-          'y8-percentage-change',
-          'y8-linear-equations'
-        ] ? 8
-        : game in [
-          'y9-index-laws',
-          'y9-gradients',
-          'y9-expanding-brackets',
-          'y9-two-step-equations'
+          'topic-graphs-functions'
         ] ? 9
         : game in [
-          'y10-quadratics',
-          'y10-pythagoras',
-          'y10-simultaneous-equations',
-          'y10-functions'
+          'topic-geometry'
         ] ? 10
         : game in [
-          'y11-derivatives',
-          'y11-logarithms',
-          'y11-arithmetic-sequences',
-          'y11-surds'
+          'topic-surds-calculus'
         ] ? 11
-        : game in [
-          'y12-calculus-derivatives',
-          'y12-integrals',
-          'y12-complex-numbers',
-          'y12-series'
-        ] ? 12
         : 7;
     }
 
