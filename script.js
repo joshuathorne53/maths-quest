@@ -1497,10 +1497,54 @@ function getScoreContext() {
   };
 }
 
-function scoreMatchesCurrentPlayer(entry) {
+function getStudentScoreId(uid, yearLevel) {
+  const cleanLevel = cleanYearLevel(yearLevel);
+  return uid && cleanLevel ? `${uid}_${cleanLevel}` : uid;
+}
+
+function getScoreIdentity(scoreContext, playerName) {
+  if (state.authUid) {
+    if (scoreContext.role === "student") {
+      return {
+        id: getStudentScoreId(state.authUid, scoreContext.yearLevel),
+        uid: state.authUid,
+      };
+    }
+
+    return {
+      id: state.authUid,
+      uid: state.authUid,
+    };
+  }
+
+  const cleanName = cleanLeaderboardName(playerName) || "Student";
+  const contextKey = scoreContext.role === "teacher"
+    ? "teacher"
+    : `${scoreContext.role}:${scoreContext.yearLevel || state.boardYearLevel}`;
+  const id = `${contextKey}:${cleanName}`;
+  return { id, uid: id };
+}
+
+function scoreMatchesIdentity(entry, scoreContext, scoreIdentity) {
+  if (!entry || entry.role !== scoreContext.role) return false;
+
+  if (scoreContext.role === "student") {
+    if (entry.yearLevel !== cleanYearLevel(scoreContext.yearLevel)) return false;
+    return entry.id === scoreIdentity.id || entry.uid === scoreIdentity.uid;
+  }
+
+  if (scoreContext.role === "teacher") {
+    return entry.id === scoreIdentity.id || entry.uid === scoreIdentity.uid;
+  }
+
+  return entry.id === scoreIdentity.id || entry.uid === scoreIdentity.uid;
+}
+
+function scoreMatchesCurrentPlayer(entry, scoreContext = getScoreContext()) {
   if (isTeacherTestingAsStudent()) return false;
-  if (state.authUid) return entry.id === state.authUid || entry.uid === state.authUid;
-  return entry.name === state.player;
+  const scoreIdentity = getScoreIdentity(scoreContext, state.player || getGooglePlayerName());
+  if (scoreMatchesIdentity(entry, scoreContext, scoreIdentity)) return true;
+  return !state.authUid && entry.name === state.player;
 }
 
 function saveLocalScore() {
@@ -1517,9 +1561,9 @@ function saveLocalScore() {
 
   const scores = getLocalScores();
   const playerName = state.player || getGooglePlayerName();
-  const currentUid = state.authUid || `${scoreContext.role}:${playerName}`;
+  const scoreIdentity = getScoreIdentity(scoreContext, playerName);
   const existingIndex = scores[state.game].findIndex(
-    (entry) => (entry.uid || entry.id) === currentUid,
+    (entry) => scoreMatchesIdentity(entry, scoreContext, scoreIdentity),
   );
   const previousScore = existingIndex >= 0 ? scores[state.game][existingIndex].score : null;
   const previousBestStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestStreak)
@@ -1528,8 +1572,8 @@ function saveLocalScore() {
   const improved = previousScore === null || state.score > previousScore;
   const bestStreak = Math.max(previousBestStreak, state.bestStreak);
   const entry = {
-    id: currentUid,
-    uid: currentUid,
+    id: scoreIdentity.id,
+    uid: scoreIdentity.uid,
     name: playerName,
     score: improved ? state.score : previousScore,
     bestStreak,
@@ -1631,17 +1675,46 @@ function applyCurrentTeacherScoreName(scores) {
   });
 }
 
-function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
-  const filteredScores = applyCurrentTeacherScoreName(scores)
-    .filter((entry) => {
-      if (entry.role === "teacher") {
-        if (teacherFilter === "none") return false;
-        if (teacherFilter === "all") return true;
-        return entry.teacherYearLevels.includes(yearLevel);
-      }
+function getLeaderboardDedupeKey(entry) {
+  const identity = entry.uid || entry.id || entry.name;
+  if (entry.role === "teacher") return `teacher:${identity}`;
+  return `student:${identity}:${entry.yearLevel}`;
+}
 
-      return entry.yearLevel === yearLevel;
-    })
+function dedupeLeaderboardScores(scores) {
+  const bestScores = new Map();
+
+  scores.forEach((entry) => {
+    const key = getLeaderboardDedupeKey(entry);
+    const existing = bestScores.get(key);
+    if (!existing) {
+      bestScores.set(key, entry);
+      return;
+    }
+
+    const existingBestStreak = Number.isInteger(existing.bestStreak) ? existing.bestStreak : 0;
+    const entryBestStreak = Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0;
+    const bestEntry = entry.score > existing.score ? entry : existing;
+    bestScores.set(key, {
+      ...bestEntry,
+      bestStreak: Math.max(existingBestStreak, entryBestStreak),
+    });
+  });
+
+  return [...bestScores.values()];
+}
+
+function filterScoresForBoard(scores, yearLevel, teacherFilter, { scoreLimit = 20 } = {}) {
+  const matchingScores = applyCurrentTeacherScoreName(scores).filter((entry) => {
+    if (entry.role === "teacher") {
+      if (teacherFilter === "none") return false;
+      if (teacherFilter === "all") return true;
+      return entry.teacherYearLevels.includes(yearLevel);
+    }
+
+    return entry.yearLevel === yearLevel;
+  });
+  const filteredScores = dedupeLeaderboardScores(matchingScores)
     .sort((a, b) => b.score - a.score);
 
   return scoreLimit === null ? filteredScores : filteredScores.slice(0, scoreLimit);
@@ -1738,7 +1811,12 @@ function getHighestStreakScores(gameIds) {
 }
 
 function getCurrentPlayerBestScore(gameId) {
-  const score = normalizeScores(getRawScores(gameId)).find(scoreMatchesCurrentPlayer);
+  const score = filterScoresForBoard(
+    getRawScores(gameId),
+    state.boardYearLevel,
+    state.teacherFilter,
+    { scoreLimit: null },
+  ).find(scoreMatchesCurrentPlayer);
   return Number.isInteger(score?.score) ? score.score : 0;
 }
 
@@ -1774,7 +1852,13 @@ function saveProgressStore(store) {
 }
 
 function getProgressPlayerKey(scoreContext = getScoreContext()) {
-  if (state.authUid) return `uid:${state.authUid}`;
+  if (state.authUid) {
+    const contextKey = scoreContext.role === "student"
+      ? scoreContext.yearLevel || state.boardYearLevel
+      : scoreContext.role;
+    return `uid:${state.authUid}:${contextKey}`;
+  }
+
   const playerName = getGooglePlayerName().toLowerCase();
   const contextKey = scoreContext.role === "teacher"
     ? scoreContext.teacherYearLevels.join("-")
@@ -2255,13 +2339,15 @@ function getHomeLeaderboardScores(view = state.homeLeaderboardView) {
   const gameIds = getVisibleBoardGameIds();
 
   gameIds.forEach((gameId) => {
-    normalizeScores(getRawScores(gameId)).forEach((entry) => {
+    const matchingScores = normalizeScores(getRawScores(gameId)).filter((entry) => {
       if (view === "teachers") {
-        if (entry.role !== "teacher" || !entry.teacherYearLevels.includes(state.boardYearLevel)) return;
-      } else if (entry.role !== "student" || entry.yearLevel !== state.boardYearLevel) {
-        return;
+        return entry.role === "teacher" && entry.teacherYearLevels.includes(state.boardYearLevel);
       }
 
+      return entry.role === "student" && entry.yearLevel === state.boardYearLevel;
+    });
+
+    dedupeLeaderboardScores(matchingScores).forEach((entry) => {
       const key = getScoreKey(entry);
       const existing = totals.get(key) || {
         id: key,

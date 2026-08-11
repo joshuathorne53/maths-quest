@@ -357,6 +357,79 @@ if (!isConfigured) {
     return collection(db, "leaderboards", game, "scores");
   }
 
+  function getStudentScoreDocumentId(user, yearLevel) {
+    const cleanLevel = cleanYearLevel(yearLevel);
+    return cleanLevel ? `${user.uid}_${cleanLevel}` : user.uid;
+  }
+
+  function isMatchingStudentScore(scoreData, user, game, yearLevel) {
+    return scoreData?.uid === user.uid
+      && scoreData?.role === "student"
+      && scoreData?.game === game
+      && cleanYearLevel(scoreData?.yearLevel) === yearLevel
+      && Number.isInteger(scoreData?.score)
+      && scoreData.score >= 0;
+  }
+
+  function getHighestScoreData(scoreSnapshots) {
+    const matchingScores = scoreSnapshots
+      .filter((snapshot) => snapshot.exists())
+      .map((snapshot) => snapshot.data())
+      .filter((scoreData) => Number.isInteger(scoreData?.score));
+
+    const previousScore = matchingScores.length
+      ? Math.max(...matchingScores.map((scoreData) => scoreData.score))
+      : null;
+    const previousBestStreak = matchingScores.reduce(
+      (highest, scoreData) => Math.max(highest, cleanBestStreak(scoreData.bestStreak)),
+      0,
+    );
+
+    return { previousScore, previousBestStreak };
+  }
+
+  async function getScoreDocumentState(user, game, scoreData) {
+    if (scoreData.role !== "student") {
+      const scoreDocument = doc(scoreCollection(game), user.uid);
+      const existingScore = await getDoc(scoreDocument);
+      const existingData = existingScore.exists() ? existingScore.data() : null;
+      const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
+      const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
+      return { scoreDocument, existingScore, existingData, previousScore, previousBestStreak };
+    }
+
+    const yearLevel = cleanYearLevel(scoreData.yearLevel);
+    const yearScoreDocument = doc(scoreCollection(game), getStudentScoreDocumentId(user, yearLevel));
+    const legacyScoreDocument = doc(scoreCollection(game), user.uid);
+    const [yearScoreSnapshot, legacyScoreSnapshot] = await Promise.all([
+      getDoc(yearScoreDocument),
+      getDoc(legacyScoreDocument),
+    ]);
+    const legacyMatchesYear = isMatchingStudentScore(legacyScoreSnapshot.data(), user, game, yearLevel);
+    const preferredScoreDocument = !yearScoreSnapshot.exists() && legacyMatchesYear
+      ? legacyScoreDocument
+      : yearScoreDocument;
+    const existingScore = preferredScoreDocument === legacyScoreDocument
+      ? legacyScoreSnapshot
+      : yearScoreSnapshot;
+    const existingData = existingScore.exists() ? existingScore.data() : null;
+    const relevantSnapshots = [
+      yearScoreSnapshot.exists() && isMatchingStudentScore(yearScoreSnapshot.data(), user, game, yearLevel)
+        ? yearScoreSnapshot
+        : null,
+      legacyMatchesYear ? legacyScoreSnapshot : null,
+    ].filter(Boolean);
+    const { previousScore, previousBestStreak } = getHighestScoreData(relevantSnapshots);
+
+    return {
+      scoreDocument: preferredScoreDocument,
+      existingScore,
+      existingData,
+      previousScore,
+      previousBestStreak,
+    };
+  }
+
   function scoreRowsFromSnapshot(snapshot) {
     return snapshot.docs.map((document) => ({
       id: document.id,
@@ -456,6 +529,9 @@ if (!isConfigured) {
     };
 
     if (existingProfile.exists()) {
+      if (!existingProfile.data()?.createdAt) {
+        profileData.createdAt = serverTimestamp();
+      }
       await updateDoc(profileDocument, profileData);
     } else {
       await setDoc(profileDocument, {
@@ -666,15 +742,23 @@ if (!isConfigured) {
         ? await getTeacherScorePayload(user, game, score)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
       const currentBestStreak = cleanBestStreak(context.bestStreak);
-      const scoreDocument = doc(scoreCollection(game), user.uid);
-      const existingScore = await getDoc(scoreDocument);
-      const existingData = existingScore.exists() ? existingScore.data() : null;
-      const previousScore = Number.isInteger(existingData?.score) ? existingData.score : null;
-      const previousBestStreak = cleanBestStreak(existingData?.bestStreak);
+      const {
+        scoreDocument,
+        existingScore,
+        existingData,
+        previousScore,
+        previousBestStreak,
+      } = await getScoreDocumentState(user, game, scoreData);
       scoreData.bestStreak = Math.max(previousBestStreak, currentBestStreak);
 
       if (previousScore !== null && score <= previousScore) {
-        if (shouldSyncScoreMetadata(existingData, scoreData) || scoreData.bestStreak > previousBestStreak) {
+        const preferredScore = Number.isInteger(existingData?.score) ? existingData.score : null;
+        if (
+          shouldSyncScoreMetadata(existingData, scoreData)
+          || scoreData.bestStreak > previousBestStreak
+          || preferredScore === null
+          || previousScore > preferredScore
+        ) {
           try {
             const updateData = {
               ...scoreData,

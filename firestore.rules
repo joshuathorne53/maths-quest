@@ -257,6 +257,20 @@ service cloud.firestore {
       return hasValidStudentScoreFields(game) || hasValidTeacherScoreFields(game);
     }
 
+    function hasValidScoreDocumentId(scoreId) {
+      return (
+          request.resource.data.role == 'teacher'
+          && scoreId == request.auth.uid
+        )
+        || (
+          request.resource.data.role == 'student'
+          && (
+            scoreId == request.auth.uid
+            || scoreId == request.auth.uid + '_' + request.resource.data.yearLevel
+          )
+        );
+    }
+
     match /studentProfiles/{profileId} {
       allow read: if isAllowedSchoolGoogleUser()
         && profileId == request.auth.uid;
@@ -271,7 +285,7 @@ service cloud.firestore {
         && profileId == request.auth.uid
         && hasValidStudentProfileFields()
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.createdAt == resource.data.createdAt
+        && preservesOrBackfillsCreatedAt()
         && request.resource.data.updatedAt == request.time;
 
       allow delete: if false;
@@ -306,16 +320,16 @@ service cloud.firestore {
 
       allow create: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
-        && scoreId == request.auth.uid
         && hasValidScoreFields(game)
+        && hasValidScoreDocumentId(scoreId)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
       allow update: if isAllowedSchoolGoogleUser()
         && isValidGame(game)
-        && scoreId == request.auth.uid
         && resource.data.uid == request.auth.uid
         && hasValidScoreFields(game)
+        && hasValidScoreDocumentId(scoreId)
         && request.resource.data.uid == resource.data.uid
         && preservesOrBackfillsCreatedAt()
         && request.resource.data.updatedAt == request.time

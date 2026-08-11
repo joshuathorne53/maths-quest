@@ -37,8 +37,8 @@ different devices. `@bcc.vic.edu.au` Google accounts are treated as students:
 they save one year level in the toolbar Settings menu, then submit shared scores
 to that year-level leaderboard. Their leaderboard name comes from their Google
 account, and each Google account can try as many times as they like while only
-their highest score per game is kept, along with their highest saved answer
-streak for the streak leaderboard.
+their highest score per game for the selected year level is kept, along with
+their highest saved answer streak for the streak leaderboard.
 
 The site is high-school only: Year 7 to Year 12. Students can access skill
 challenges at their saved year level and every lower year level. For example, a
