@@ -288,7 +288,7 @@ if (!isConfigured) {
     resetAccountDocuments();
 
     const accountType = getAccountTypeForEmail(user?.email);
-    if (!user || !accountType) return;
+    if (!user || !accountType) return false;
 
     const handleError = (error) => console.warn("Could not read account setup.", error);
     accountUnsubscribes = [
@@ -310,11 +310,12 @@ if (!isConfigured) {
             handleError,
           ),
     ];
+    return true;
   }
 
   onAuthStateChanged(auth, (user) => {
-    watchAccountDocuments(user);
-    announceAuth(user);
+    const isWatchingAccount = watchAccountDocuments(user);
+    if (!isWatchingAccount) announceAuth(user);
   });
 
   async function signInWithSchoolGoogle() {
