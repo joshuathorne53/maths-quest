@@ -2541,13 +2541,17 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 }
 
 .answer-form button {
-  padding: 0 22px;
+  display: inline-grid;
+  min-height: 54px;
+  padding: 12px 24px;
   color: white;
   background: var(--navy);
   border: 0;
   border-radius: 15px;
-  font-size: 0.72rem;
+  place-items: center;
+  font-size: 0.82rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .feedback {
