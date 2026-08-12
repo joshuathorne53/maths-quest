@@ -2496,6 +2496,18 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   font-weight: 900;
 }
 
+.choice-toggle {
+  position: relative;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  min-height: 62px;
+  padding: 12px 14px;
+  align-items: center;
+  justify-items: start;
+  text-align: left;
+  font-size: 1rem;
+}
+
 .choice-answer-fields label.prefilled {
   color: var(--muted);
   background: #eef2fa;
@@ -2516,10 +2528,54 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   pointer-events: none;
 }
 
+.choice-toggle::before {
+  content: "";
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 2px solid #9eb9e5;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 2px rgba(9, 31, 72, 0.08);
+}
+
+.choice-toggle:has(input[type="radio"])::before {
+  border-radius: 999px;
+}
+
 .choice-toggle:has(input:checked) {
   background: white;
   border-color: var(--blue);
   box-shadow: 0 8px 20px rgba(18, 90, 181, 0.12);
+}
+
+.choice-toggle:has(input:checked)::before {
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: 0 5px 12px rgba(18, 90, 181, 0.22);
+}
+
+.choice-toggle:has(input[type="checkbox"]:checked)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 23px;
+  width: 7px;
+  height: 13px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: translateY(-62%) rotate(45deg);
+}
+
+.choice-toggle:has(input[type="radio"]:checked)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 21px;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 999px;
+  transform: translateY(-50%);
 }
 
 .choice-answer-fields label:has(input:focus-visible) {
