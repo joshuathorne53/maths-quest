@@ -3721,7 +3721,7 @@ function nextQuestion() {
   const focusTarget = surdMode
     ? elements.surdCoefficientInput
     : choiceMode
-      ? elements.choiceAnswerFields.querySelector("input:not([readonly])") || elements.choiceAnswerFields.querySelector("input")
+      ? null
       : elements.answerInput;
   focusTarget?.focus();
   elements.question.classList.remove("bump");

@@ -2516,11 +2516,15 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   pointer-events: none;
 }
 
-.choice-toggle:has(input:checked),
-.choice-answer-fields label:has(input:focus) {
+.choice-toggle:has(input:checked) {
   background: white;
   border-color: var(--blue);
   box-shadow: 0 8px 20px rgba(18, 90, 181, 0.12);
+}
+
+.choice-answer-fields label:has(input:focus-visible) {
+  outline: 3px solid rgba(18, 90, 181, 0.22);
+  outline-offset: 2px;
 }
 
 .answer-form button {
