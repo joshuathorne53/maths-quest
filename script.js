@@ -26,566 +26,199 @@ const YEAR_LEVELS = [
 const validYearLevels = new Set(YEAR_LEVELS.map((yearLevel) => yearLevel.id));
 const validTeacherFilters = new Set(["none", "year", "all"]);
 
-const gameInfo = {
-  quick: {
-    name: "Addition",
+const gameInfo = {};
+
+Object.assign(gameInfo, {
+  "speed-single-digit-addition": {
+    name: "Single-Digit Addition",
     shortName: "Addition",
-    description: "Solve as many addition questions as you can in 60 seconds.",
-    cardDescription: "Add at speed. A friendly place to warm up your brain.",
-    bullets: ["Addition facts", "Mental methods"],
+    description: "Answer single-digit addition facts quickly.",
+    cardDescription: "Add two single-digit numbers.",
+    bullets: ["Single-digit facts", "Speed operations"],
     icon: "+",
     cardClass: "game-card-sky",
     accessYear: "year7",
   },
-  "y7-subtraction": {
-    name: "Subtraction",
+  "speed-single-digit-subtraction": {
+    name: "Single-Digit Subtraction",
     shortName: "Subtraction",
-    description: "Solve subtraction questions using mental strategies.",
-    cardDescription: "Practise subtraction as one clear question type.",
-    bullets: ["Subtraction facts", "Mental methods"],
-    icon: "−",
+    description: "Answer subtraction facts made from single-digit parts.",
+    cardDescription: "Subtract to find a single-digit answer.",
+    bullets: ["Subtraction facts", "Speed operations"],
+    icon: "-",
     cardClass: "game-card-coral",
     accessYear: "year7",
   },
-  times: {
-    name: "Multiplication Facts",
+  "speed-single-digit-multiplication": {
+    name: "Single-Digit Multiplication",
     shortName: "Multiply",
-    description: "Race through multiplication facts from the 2 to 12 times tables.",
-    cardDescription: "Race through multiplication facts and keep your winning streak alive.",
-    bullets: ["Tables from 2 to 12", "Streak bonuses"],
-    icon: "×",
+    description: "Multiply two single-digit numbers.",
+    cardDescription: "Build speed with single-digit multiplication facts.",
+    bullets: ["Single-digit factors", "Times tables"],
+    icon: "x",
     cardClass: "game-card-sun",
     accessYear: "year7",
   },
-  missing: {
-    name: "Missing Multiplication",
-    shortName: "Missing",
-    description: "Find the mystery number hiding inside each equation.",
-    cardDescription: "Find the missing factor inside each multiplication equation.",
-    bullets: ["Missing factors", "Reverse operations"],
+  "speed-single-digit-division": {
+    name: "Single-Digit Division",
+    shortName: "Division",
+    description: "Divide numbers using single-digit facts.",
+    cardDescription: "Use multiplication facts to divide quickly.",
+    bullets: ["Division facts", "Related multiplication"],
+    icon: "/",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "number-identify-factors": {
+    name: "Identify Factors",
+    shortName: "Factors",
+    description: "List every factor of a number.",
+    cardDescription: "Find all the factors, with 1 and the number already filled in.",
+    bullets: ["Factor pairs", "Complete factor lists"],
+    icon: "[]",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "number-identify-multiples": {
+    name: "Identify Multiples",
+    shortName: "Multiples",
+    description: "Choose every number in the list that is a multiple.",
+    cardDescription: "Select all matching multiples from four choices.",
+    bullets: ["Multiples", "Multi-select"],
+    icon: "✓",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "number-identify-primes": {
+    name: "Identify Prime Numbers",
+    shortName: "Prime or Composite",
+    description: "Decide whether a number is prime or composite.",
+    cardDescription: "Classify numbers from 2 to 100.",
+    bullets: ["Prime numbers", "Composite numbers"],
     icon: "?",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y7-integers": {
-    name: "Integer Addition",
-    shortName: "Int. Add",
-    description: "Practise adding positive and negative integers.",
-    cardDescription: "Get confident adding positive and negative numbers.",
-    bullets: ["Integer addition", "Positive and negative numbers"],
-    icon: "±",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "y7-integer-subtraction": {
-    name: "Integer Subtraction",
-    shortName: "Int. Subtract",
-    description: "Practise subtracting positive and negative integers.",
-    cardDescription: "Work with subtracting negatives as one focused skill.",
-    bullets: ["Integer subtraction", "Positive and negative numbers"],
-    icon: "±",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y7-integer-multiplication": {
-    name: "Integer Multiplication",
-    shortName: "Int. Multiply",
-    description: "Practise multiplying positive and negative integers.",
-    cardDescription: "Build fluency with sign rules in multiplication.",
-    bullets: ["Integer multiplication", "Sign rules"],
-    icon: "±×",
     cardClass: "game-card-sun",
     accessYear: "year7",
   },
-  "y7-fractions": {
-    name: "Fractions",
-    shortName: "Fractions",
-    description: "Find fractions of quantities using common denominators.",
-    cardDescription: "Practise fraction-of-a-quantity questions built for fast recall.",
-    bullets: ["Fractions of amounts", "Common denominators"],
-    icon: "a/b",
-    cardClass: "game-card-sun",
-    accessYear: "year7",
-  },
-  "y7-simplifying-fractions": {
-    name: "Simplifying Fractions",
-    shortName: "Simplify Fractions",
-    description: "Simplify fractions by dividing the numerator and denominator by their highest common factor.",
-    cardDescription: "Reduce fractions to their simplest form.",
-    bullets: ["Highest common factor", "Simplest form"],
-    icon: "↓/",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y7-add-subtract-fractions": {
-    name: "Adding Fractions",
-    shortName: "Add Fractions",
-    description: "Add fractions, including questions with different denominators.",
-    cardDescription: "Build speed with fraction addition.",
-    bullets: ["Common denominators", "Equivalent fractions"],
-    icon: "±/",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y7-subtracting-fractions": {
-    name: "Subtracting Fractions",
-    shortName: "Subtract Fractions",
-    description: "Subtract fractions, including questions with different denominators.",
-    cardDescription: "Build speed with fraction subtraction.",
-    bullets: ["Common denominators", "Equivalent fractions"],
-    icon: "−/",
+  "number-hcf": {
+    name: "Highest Common Factor",
+    shortName: "HCF",
+    description: "Find the highest common factor of two numbers.",
+    cardDescription: "Find the greatest factor shared by both numbers.",
+    bullets: ["Common factors", "Highest common factor"],
+    icon: "H",
     cardClass: "game-card-sky",
     accessYear: "year7",
   },
-  "y7-multiplying-fractions": {
-    name: "Multiplying Fractions",
-    shortName: "Multiply Fractions",
-    description: "Multiply fractions and simplify the result.",
-    cardDescription: "Practise multiplying fractions and whole numbers with fractions.",
-    bullets: ["Fraction products", "Simplifying answers"],
-    icon: "×/",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "y7-percentages": {
-    name: "Percentages",
-    shortName: "Percentages",
-    description: "Calculate friendly percentages of whole numbers.",
-    cardDescription: "Work with 10%, 20%, 25%, 50%, and 75% of useful quantities.",
-    bullets: ["Percentage of amounts", "Mental strategies"],
-    icon: "%",
+  "number-lcm": {
+    name: "Lowest Common Multiple",
+    shortName: "LCM",
+    description: "Find the lowest common multiple of two numbers.",
+    cardDescription: "Find the first multiple shared by both numbers.",
+    bullets: ["Common multiples", "Lowest common multiple"],
+    icon: "L",
     cardClass: "game-card-coral",
     accessYear: "year7",
   },
-  "y7-bidmas": {
-    name: "Multiply Before Add",
-    shortName: "× Before +",
-    description: "Use multiplication before addition in order-of-operations questions.",
-    cardDescription: "Practise multiplication before addition as one exact question type.",
-    bullets: ["Order of operations", "Multiplication before addition"],
-    icon: "×+",
-    cardClass: "game-card-sun",
-    accessYear: "year7",
-  },
-  "y7-bidmas-brackets": {
-    name: "Brackets First",
-    shortName: "Brackets",
-    description: "Calculate inside brackets before multiplying.",
-    cardDescription: "Focus on brackets-first questions.",
-    bullets: ["Brackets first", "Order of operations"],
-    icon: "()",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "y7-bidmas-division": {
-    name: "Division Before Add",
-    shortName: "÷ Before +",
-    description: "Use division before addition in order-of-operations questions.",
-    cardDescription: "Practise division before addition as one exact question type.",
-    bullets: ["Division before addition", "Order of operations"],
-    icon: "÷+",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y8-bidmas-indices": {
-    name: "Indices Before Multiply",
-    shortName: "Indices",
-    description: "Calculate powers before multiplication and addition.",
-    cardDescription: "Focus on index rules inside BIDMAS.",
-    bullets: ["Indices first", "Order of operations"],
-    icon: "^",
-    cardClass: "game-card-sun",
-    accessYear: "year8",
-  },
-  "y9-bidmas-brackets-indices": {
-    name: "Brackets With Indices",
-    shortName: "Brackets + Indices",
-    description: "Use brackets and powers together in order-of-operations questions.",
-    cardDescription: "Combine brackets and indices in one question type.",
-    bullets: ["Brackets", "Indices"],
-    icon: "(^)",
-    cardClass: "game-card-coral",
-    accessYear: "year9",
-  },
-  "y7-one-step-equations": {
-    name: "Addition Equations",
-    shortName: "Add Eq.",
-    description: "Solve one-step equations where x has a number added.",
-    cardDescription: "Find x in equations like x + 7 = 19.",
-    bullets: ["One-step algebra", "Addition equations"],
-    icon: "x+",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "y7-one-step-subtraction-equations": {
-    name: "Subtraction Equations",
-    shortName: "Subtract Eq.",
-    description: "Solve one-step equations where a number is subtracted from x.",
-    cardDescription: "Find x in equations like x − 5 = 14.",
-    bullets: ["One-step algebra", "Subtraction equations"],
-    icon: "x−",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "y7-one-step-multiplication-equations": {
-    name: "Multiplication Equations",
-    shortName: "Multiply Eq.",
-    description: "Solve one-step equations where x is multiplied by a number.",
-    cardDescription: "Find x in equations like 6x = 42.",
-    bullets: ["One-step algebra", "Multiplication equations"],
-    icon: "ax",
-    cardClass: "game-card-sun",
-    accessYear: "year7",
-  },
-  "y7-one-step-division-equations": {
-    name: "Division Equations",
-    shortName: "Divide Eq.",
-    description: "Solve one-step equations where x is divided by a number.",
-    cardDescription: "Find x in equations like x ÷ 4 = 9.",
-    bullets: ["One-step algebra", "Division equations"],
-    icon: "x÷",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "y8-square-powers": {
-    name: "Squares & Powers",
+  "number-evaluate-squares": {
+    name: "Evaluate Squares",
     shortName: "Squares",
-    description: "Practise square numbers, simple powers, and square roots.",
-    cardDescription: "Strengthen square number and power facts for quick skill recall.",
-    bullets: ["Square numbers", "Simple powers"],
+    description: "Evaluate square numbers from 1 to 10.",
+    cardDescription: "Practise square-number facts with superscripts.",
+    bullets: ["Square numbers", "1 to 10"],
     icon: "□",
     cardClass: "game-card-sun",
-    accessYear: "year8",
+    accessYear: "year7",
   },
-  "y8-ratios": {
-    name: "Ratios",
-    shortName: "Ratios",
-    description: "Share quantities in a ratio and identify the larger share.",
-    cardDescription: "Split totals using ratios and keep the arithmetic sharp.",
-    bullets: ["Ratio sharing", "Proportional thinking"],
-    icon: ":",
-    cardClass: "game-card-coral",
-    accessYear: "year8",
-  },
-  "y8-percentage-change": {
-    name: "Percentage Increase",
-    shortName: "Percent Increase",
-    description: "Calculate percentage increases.",
-    cardDescription: "Practise friendly percentage increases on whole-number amounts.",
-    bullets: ["Percentage increase", "Percent strategies"],
-    icon: "%",
-    cardClass: "game-card-sky",
-    accessYear: "year8",
-  },
-  "y8-percentage-decrease": {
-    name: "Percentage Decrease",
-    shortName: "Percent Decrease",
-    description: "Calculate percentage decreases.",
-    cardDescription: "Practise friendly percentage decreases on whole-number amounts.",
-    bullets: ["Percentage decrease", "Percent strategies"],
-    icon: "%",
-    cardClass: "game-card-coral",
-    accessYear: "year8",
-  },
-  "y8-linear-equations": {
-    name: "Linear Addition Equations",
-    shortName: "Linear + Eq.",
-    description: "Solve two-step linear equations in the form ax + b = c.",
-    cardDescription: "Find x in equations like 4x + 7 = 31.",
-    bullets: ["Two-step equations", "Addition constant"],
-    icon: "ax+",
-    cardClass: "game-card-sun",
-    accessYear: "year8",
-  },
-  "y9-index-laws": {
-    name: "Index Laws",
-    shortName: "Index Laws",
-    description: "Use index laws with multiplication and division of powers.",
-    cardDescription: "Practise exponent rules using matching bases.",
-    bullets: ["Index laws", "Same-base powers"],
-    icon: "aⁿ",
-    cardClass: "game-card-coral",
-    accessYear: "year9",
-  },
-  "y9-gradients": {
-    name: "Gradients",
-    shortName: "Gradients",
-    description: "Find gradients between points on a straight line.",
-    cardDescription: "Read rise over run from simple coordinate pairs.",
-    bullets: ["Linear graphs", "Rise over run"],
-    icon: "m",
-    cardClass: "game-card-sky",
-    accessYear: "year9",
-  },
-  "y9-expanding-brackets": {
-    name: "Expanding Brackets",
-    shortName: "Expand",
-    description: "Expand single brackets and identify coefficients or constants.",
-    cardDescription: "Practise distributive multiplication with algebraic terms.",
-    bullets: ["Expanding brackets", "Coefficients"],
-    icon: "(",
-    cardClass: "game-card-sun",
-    accessYear: "year9",
-  },
-  "y9-two-step-equations": {
-    name: "Linear Subtraction Equations",
-    shortName: "Linear − Eq.",
-    description: "Solve two-step linear equations in the form ax − b = c.",
-    cardDescription: "Find x in equations like 5x − 8 = 27.",
-    bullets: ["Two-step equations", "Subtraction constant"],
-    icon: "ax−",
-    cardClass: "game-card-coral",
-    accessYear: "year9",
-  },
-  "y10-quadratics": {
-    name: "Quadratics",
-    shortName: "Quadratics",
-    description: "Solve factorised quadratic equations by finding a root.",
-    cardDescription: "Use simple quadratic patterns to identify roots quickly.",
-    bullets: ["Quadratic roots", "Factorising patterns"],
-    icon: "∪",
-    cardClass: "game-card-sky",
-    accessYear: "year10",
-  },
-  "y10-pythagoras": {
-    name: "Pythagoras Hypotenuse",
-    shortName: "Hypotenuse",
-    description: "Find the hypotenuse using Pythagorean triples.",
-    cardDescription: "Find the hypotenuse in right triangles.",
-    bullets: ["Hypotenuse", "Pythagorean triples"],
-    icon: "△",
-    cardClass: "game-card-sun",
-    accessYear: "year10",
-  },
-  "y10-pythagoras-missing-leg": {
-    name: "Pythagoras Missing Leg",
-    shortName: "Missing Leg",
-    description: "Find a missing shorter side using Pythagorean triples.",
-    cardDescription: "Find the missing leg in right triangles.",
-    bullets: ["Missing leg", "Pythagorean triples"],
-    icon: "△",
-    cardClass: "game-card-coral",
-    accessYear: "year10",
-  },
-  "y10-simultaneous-equations": {
-    name: "Simultaneous Equations",
-    shortName: "Simult.",
-    description: "Solve simple simultaneous equations for x or y.",
-    cardDescription: "Use paired sum and difference equations to solve quickly.",
-    bullets: ["Simultaneous equations", "Elimination thinking"],
-    icon: "{",
-    cardClass: "game-card-coral",
-    accessYear: "year10",
-  },
-  "y10-functions": {
-    name: "Linear Functions",
-    shortName: "Linear Func.",
-    description: "Substitute values into linear functions.",
-    cardDescription: "Evaluate linear f(x) expressions with careful arithmetic.",
-    bullets: ["Linear functions", "Substitution"],
-    icon: "f",
-    cardClass: "game-card-sky",
-    accessYear: "year10",
-  },
-  "y10-quadratic-functions": {
-    name: "Quadratic Functions",
-    shortName: "Quad. Func.",
-    description: "Substitute values into quadratic functions.",
-    cardDescription: "Evaluate quadratic f(x) expressions with careful arithmetic.",
-    bullets: ["Quadratic functions", "Substitution"],
-    icon: "f²",
-    cardClass: "game-card-sun",
-    accessYear: "year10",
-  },
-  "y11-derivatives": {
-    name: "Derivatives",
-    shortName: "Derivatives",
-    description: "Find derivative coefficients using the power rule.",
-    cardDescription: "Practise the power rule for introductory calculus.",
-    bullets: ["Power rule", "Derivative coefficients"],
-    icon: "dy/dx",
-    cardClass: "game-card-sun",
-    accessYear: "year11",
-  },
-  "y11-logarithms": {
-    name: "Logarithms",
-    shortName: "Logs",
-    description: "Evaluate simple logarithms with exact powers.",
-    cardDescription: "Match bases and powers to answer logarithm questions.",
-    bullets: ["Logarithms", "Exact powers"],
-    icon: "log",
-    cardClass: "game-card-coral",
-    accessYear: "year11",
-  },
-  "y11-arithmetic-sequences": {
-    name: "Arithmetic Sequences",
-    shortName: "Sequences",
-    description: "Find terms in arithmetic sequences.",
-    cardDescription: "Use first term and common difference to calculate Tn.",
-    bullets: ["Arithmetic sequences", "nth term"],
-    icon: "Tn",
-    cardClass: "game-card-sky",
-    accessYear: "year11",
-  },
-  "y11-surds": {
-    name: "Simplifying Surds",
-    shortName: "Simplify Surds",
-    description: "Simplify square roots into a whole-number coefficient and a surd.",
-    cardDescription: "Break square roots into a whole-number coefficient and surd part.",
-    bullets: ["Surd simplification", "Exact values"],
+  "number-square-roots": {
+    name: "Square Roots of Perfect Squares",
+    shortName: "Square Roots",
+    description: "Find square roots of perfect squares.",
+    cardDescription: "Use the square-root sign to practise perfect squares.",
+    bullets: ["Square roots", "Perfect squares"],
     icon: "√",
-    cardClass: "game-card-sun",
-    accessYear: "year11",
-  },
-  "y12-calculus-derivatives": {
-    name: "Derivative Values",
-    shortName: "Deriv. Values",
-    description: "Evaluate derivatives at specific x-values.",
-    cardDescription: "Build calculus speed by finding derivative values.",
-    bullets: ["Derivative values", "Power functions"],
-    icon: "f′",
-    cardClass: "game-card-coral",
-    accessYear: "year12",
-  },
-  "y12-integrals": {
-    name: "Integrals",
-    shortName: "Integrals",
-    description: "Find missing coefficients in simple antiderivatives.",
-    cardDescription: "Practise reverse power-rule thinking for integrals.",
-    bullets: ["Antiderivatives", "Power rule"],
-    icon: "∫",
     cardClass: "game-card-sky",
-    accessYear: "year12",
+    accessYear: "year7",
   },
-  "y12-series": {
-    name: "Series",
-    shortName: "Series",
-    description: "Calculate sums of arithmetic series.",
-    cardDescription: "Find simple series totals using efficient formulas.",
-    bullets: ["Series sums", "Arithmetic patterns"],
-    icon: "Σ",
+  "number-add-integers": {
+    name: "Add Integers",
+    shortName: "Add Integers",
+    description: "Add positive and negative integers.",
+    cardDescription: "Practise integer addition.",
+    bullets: ["Positive integers", "Negative integers"],
+    icon: "+-",
     cardClass: "game-card-coral",
-    accessYear: "year12",
+    accessYear: "year7",
   },
-};
+  "number-subtract-integers": {
+    name: "Subtract Integers",
+    shortName: "Subtract Integers",
+    description: "Subtract positive and negative integers.",
+    cardDescription: "Practise subtracting integers, including negatives.",
+    bullets: ["Integer subtraction", "Negative numbers"],
+    icon: "--",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "number-multiply-integers": {
+    name: "Multiply Integers",
+    shortName: "Multiply Integers",
+    description: "Multiply positive and negative integers.",
+    cardDescription: "Practise sign rules for multiplication.",
+    bullets: ["Integer multiplication", "Sign rules"],
+    icon: "x-",
+    cardClass: "game-card-sky",
+    accessYear: "year8",
+  },
+  "number-divide-integers": {
+    name: "Divide Integers",
+    shortName: "Divide Integers",
+    description: "Divide positive and negative integers.",
+    cardDescription: "Practise sign rules for division.",
+    bullets: ["Integer division", "Sign rules"],
+    icon: "/-",
+    cardClass: "game-card-coral",
+    accessYear: "year8",
+  },
+});
 
 const skillTopicMap = {
-  quick: "topic-number",
-  "y7-subtraction": "topic-number",
-  times: "topic-number",
-  missing: "topic-number",
-  "y7-integers": "topic-number",
-  "y7-integer-subtraction": "topic-number",
-  "y7-integer-multiplication": "topic-number",
-  "y8-square-powers": "topic-number",
-  "y9-index-laws": "topic-number",
-  "y11-logarithms": "topic-number",
-  "y7-fractions": "topic-fractions",
-  "y7-simplifying-fractions": "topic-fractions",
-  "y7-add-subtract-fractions": "topic-fractions",
-  "y7-subtracting-fractions": "topic-fractions",
-  "y7-multiplying-fractions": "topic-fractions",
-  "y7-percentages": "topic-fractions",
-  "y8-ratios": "topic-fractions",
-  "y8-percentage-change": "topic-fractions",
-  "y8-percentage-decrease": "topic-fractions",
-  "y7-bidmas": "topic-order",
-  "y7-bidmas-brackets": "topic-order",
-  "y7-bidmas-division": "topic-order",
-  "y8-bidmas-indices": "topic-order",
-  "y9-bidmas-brackets-indices": "topic-order",
-  "y7-one-step-equations": "topic-algebra",
-  "y7-one-step-subtraction-equations": "topic-algebra",
-  "y7-one-step-multiplication-equations": "topic-algebra",
-  "y7-one-step-division-equations": "topic-algebra",
-  "y8-linear-equations": "topic-algebra",
-  "y9-expanding-brackets": "topic-algebra",
-  "y9-two-step-equations": "topic-algebra",
-  "y10-quadratics": "topic-algebra",
-  "y10-simultaneous-equations": "topic-algebra",
-  "y11-arithmetic-sequences": "topic-algebra",
-  "y9-gradients": "topic-graphs-functions",
-  "y10-functions": "topic-graphs-functions",
-  "y10-quadratic-functions": "topic-graphs-functions",
-  "y10-pythagoras": "topic-geometry",
-  "y10-pythagoras-missing-leg": "topic-geometry",
-  "y11-surds": "topic-surds-calculus",
-  "y11-derivatives": "topic-surds-calculus",
-  "y12-calculus-derivatives": "topic-surds-calculus",
-  "y12-integrals": "topic-surds-calculus",
-  "y12-series": "topic-surds-calculus",
+  "speed-single-digit-addition": "topic-speed-operations",
+  "speed-single-digit-subtraction": "topic-speed-operations",
+  "speed-single-digit-multiplication": "topic-speed-operations",
+  "speed-single-digit-division": "topic-speed-operations",
+  "number-identify-factors": "topic-number",
+  "number-identify-multiples": "topic-number",
+  "number-identify-primes": "topic-number",
+  "number-hcf": "topic-number",
+  "number-lcm": "topic-number",
+  "number-evaluate-squares": "topic-number",
+  "number-square-roots": "topic-number",
+  "number-add-integers": "topic-number",
+  "number-subtract-integers": "topic-number",
+  "number-multiply-integers": "topic-number",
+  "number-divide-integers": "topic-number",
 };
 
 const topicAreaInfo = {
+  "topic-speed-operations": {
+    name: "Speed Operations",
+    shortName: "Speed Ops",
+    description: "A combined speed game for single-digit addition, subtraction, multiplication, and division.",
+    cardDescription: "Fast mental arithmetic using single-digit facts.",
+    bullets: ["Addition and subtraction", "Multiplication and division"],
+    icon: "⚡",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
   "topic-number": {
-    name: "Number Fluency",
+    name: "Number",
     shortName: "Number",
-    description: "A mixed number-fluency game using arithmetic, integers, powers, indices, and logarithms as they unlock.",
-    cardDescription: "Build fast number sense. Higher years add powers, indices, and logarithms.",
-    bullets: ["Combined topic game", "Arithmetic to advanced number"],
+    description: "A combined number game for factors, multiples, primes, HCF, LCM, squares, square roots, and integers.",
+    cardDescription: "Build fluency with factors, multiples, powers, roots, and integers.",
+    bullets: ["Factors, multiples, primes", "Squares, roots, and integers"],
     icon: "∑",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "topic-fractions": {
-    name: "Fractions, Ratios & Percentages",
-    shortName: "Fractions",
-    description: "A combined topic game for fractions, simplifying, fraction operations, ratios, and percentage change.",
-    cardDescription: "Practise fractions first, then add ratios and percentage change as the years climb.",
-    bullets: ["Fractions and percentages", "Ratios unlock later"],
-    icon: "½",
     cardClass: "game-card-sun",
     accessYear: "year7",
-  },
-  "topic-order": {
-    name: "Order of Operations",
-    shortName: "BIDMAS",
-    description: "A combined topic game for BIDMAS and operation-order fluency.",
-    cardDescription: "Work through brackets, indices, division, multiplication, addition, and subtraction.",
-    bullets: ["BIDMAS", "Operation order"],
-    icon: "≡",
-    cardClass: "game-card-coral",
-    accessYear: "year7",
-  },
-  "topic-algebra": {
-    name: "Algebra",
-    shortName: "Algebra",
-    description: "A combined algebra game that grows from one-step equations to brackets, quadratics, simultaneous equations, and sequences.",
-    cardDescription: "Start with equations, then unlock richer algebra skills in the higher years.",
-    bullets: ["Equations and brackets", "Quadratics and sequences later"],
-    icon: "x",
-    cardClass: "game-card-sky",
-    accessYear: "year7",
-  },
-  "topic-graphs-functions": {
-    name: "Graphs & Functions",
-    shortName: "Graphs",
-    description: "A combined topic game for gradients and function notation.",
-    cardDescription: "Connect graph fluency with substitution and function notation.",
-    bullets: ["Gradients", "Function values"],
-    icon: "ƒ",
-    cardClass: "game-card-sun",
-    accessYear: "year9",
-  },
-  "topic-geometry": {
-    name: "Geometry & Measurement",
-    shortName: "Geometry",
-    description: "A combined topic game for geometry and measurement skills, starting with Pythagoras.",
-    cardDescription: "Use right-triangle facts and exact side-length thinking.",
-    bullets: ["Pythagoras", "Measurement fluency"],
-    icon: "△",
-    cardClass: "game-card-coral",
-    accessYear: "year10",
-  },
-  "topic-surds-calculus": {
-    name: "Surds, Calculus & Series",
-    shortName: "Calculus",
-    description: "A combined senior topic game for surds, derivative skills, integrals, and series.",
-    cardDescription: "Senior fluency with exact forms, calculus, and series questions.",
-    bullets: ["Surds and derivatives", "Integrals and series later"],
-    icon: "∫",
-    cardClass: "game-card-sky",
-    accessYear: "year11",
   },
 };
 
@@ -608,30 +241,16 @@ Object.entries(topicAreaInfo).forEach(([topicId, info]) => {
 const TOPIC_AREA_IDS = Object.keys(topicAreaInfo);
 const SKILL_IDS = Object.keys(skillTopicMap).filter((skillId) => gameInfo[skillId]);
 const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
-const PEN_AND_PAPER_GAME_IDS = new Set([
-  "y10-quadratics",
-  "y10-pythagoras",
-  "y10-pythagoras-missing-leg",
-  "y10-simultaneous-equations",
-  "y10-functions",
-  "y10-quadratic-functions",
-  "y11-derivatives",
-  "y11-logarithms",
-  "y11-arithmetic-sequences",
-  "y11-surds",
-  "y12-calculus-derivatives",
-  "y12-integrals",
-  "y12-series",
-]);
+const PEN_AND_PAPER_GAME_IDS = new Set();
 
 const state = {
   page: "home",
-  game: "topic-number",
-  board: "topic-number",
+  game: "topic-speed-operations",
+  board: "topic-speed-operations",
   boardYearLevel: DEFAULT_YEAR_LEVEL,
   teacherFilter: "none",
   homeLeaderboardView: "students",
-  homeFeaturedGame: "topic-number",
+  homeFeaturedGame: "topic-speed-operations",
   player: "",
   score: 0,
   streak: 0,
@@ -732,6 +351,7 @@ const elements = {
   surdAnswerFields: document.querySelector("#surd-answer-fields"),
   surdCoefficientInput: document.querySelector("#surd-coefficient-input"),
   surdRadicandInput: document.querySelector("#surd-radicand-input"),
+  choiceAnswerFields: document.querySelector("#choice-answer-fields"),
   question: document.querySelector("#question"),
   questionCount: document.querySelector("#question-count"),
   score: document.querySelector("#score"),
@@ -867,6 +487,31 @@ function greatestCommonDivisor(a, b) {
   return x || 1;
 }
 
+function leastCommonMultiple(a, b) {
+  return Math.abs(a * b) / greatestCommonDivisor(a, b);
+}
+
+function getFactors(number) {
+  const factors = [];
+  for (let factor = 1; factor <= number; factor += 1) {
+    if (number % factor === 0) factors.push(factor);
+  }
+  return factors;
+}
+
+function isPrimeNumber(number) {
+  if (number < 2) return false;
+  for (let factor = 2; factor * factor <= number; factor += 1) {
+    if (number % factor === 0) return false;
+  }
+  return true;
+}
+
+function arraysMatch(left = [], right = []) {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
 function createFractionAnswer(numerator, denominator) {
   if (denominator === 0) return null;
 
@@ -893,6 +538,10 @@ function isFractionAnswer(answer) {
   return answer?.type === "fraction";
 }
 
+function isChoiceAnswer(answer) {
+  return answer?.type === "factors" || answer?.type === "multiChoice" || answer?.type === "singleChoice";
+}
+
 function getFormattedAnswer(answer) {
   if (isSurdAnswer(answer)) {
     return `${answer.coefficient}√${answer.radicand}`;
@@ -902,6 +551,14 @@ function getFormattedAnswer(answer) {
     return answer.denominator === 1
       ? String(answer.numerator)
       : `${answer.numerator}/${answer.denominator}`;
+  }
+
+  if (answer?.type === "factors" || answer?.type === "multiChoice") {
+    return answer.values.join(", ");
+  }
+
+  if (answer?.type === "singleChoice") {
+    return answer.value;
   }
 
   return String(answer);
@@ -957,482 +614,171 @@ function setSurdAnswerMode(enabled) {
   elements.surdRadicandInput.required = enabled;
 }
 
+function setChoiceAnswerMode(answer) {
+  const enabled = isChoiceAnswer(answer);
+  elements.answerForm.classList.toggle("choice-answer-mode", enabled);
+  elements.choiceAnswerFields.hidden = !enabled;
+  elements.choiceAnswerFields.innerHTML = "";
+
+  if (!enabled) return;
+
+  if (answer.type === "factors") {
+    elements.choiceAnswerFields.innerHTML = `
+      <div class="factor-answer-grid">
+        ${answer.values.map((value, index) => {
+          const prefilled = index === 0 || index === answer.values.length - 1;
+          return `
+            <label class="${prefilled ? "prefilled" : ""}">
+              <span>Factor ${index + 1}</span>
+              <input
+                type="number"
+                inputmode="numeric"
+                data-factor-input
+                value="${prefilled ? value : ""}"
+                ${prefilled ? "readonly" : ""}
+                required
+              />
+            </label>
+          `;
+        }).join("")}
+      </div>
+    `;
+    return;
+  }
+
+  const inputType = answer.type === "multiChoice" ? "checkbox" : "radio";
+  elements.choiceAnswerFields.innerHTML = `
+    <div class="choice-option-grid">
+      ${answer.options.map((option) => `
+        <label class="choice-toggle">
+          <input type="${inputType}" name="choice-answer" value="${escapeHtml(option)}" />
+          ${escapeHtml(option)}
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getChoiceGuess(answer) {
+  if (answer?.type === "factors") {
+    return [...elements.choiceAnswerFields.querySelectorAll("[data-factor-input]")]
+      .map((input) => Number(input.value))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+  }
+
+  if (answer?.type === "multiChoice") {
+    return [...elements.choiceAnswerFields.querySelectorAll("input:checked")]
+      .map((input) => Number(input.value))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+  }
+
+  if (answer?.type === "singleChoice") {
+    return elements.choiceAnswerFields.querySelector("input:checked")?.value || "";
+  }
+
+  return null;
+}
+
 const skillQuestionGenerators = {
-  quick: () => {
-    const a = randomNumber(5, 45);
-    const b = randomNumber(2, 35);
+  "speed-single-digit-addition": () => {
+    const a = randomNumber(1, 9);
+    const b = randomNumber(1, 9);
     return { text: `${a} + ${b} = ?`, answer: a + b };
   },
-  "y7-subtraction": () => {
-    const a = randomNumber(15, 70);
-    const b = randomNumber(2, a);
-    return { text: `${a} − ${b} = ?`, answer: a - b };
+  "speed-single-digit-subtraction": () => {
+    const answer = randomNumber(0, 9);
+    const b = randomNumber(1, 9);
+    const a = answer + b;
+    return { text: `${a} - ${b} = ?`, answer };
   },
-  times: () => {
-    const a = randomNumber(2, 12);
-    const b = randomNumber(2, 12);
+  "speed-single-digit-multiplication": () => {
+    const a = randomNumber(1, 9);
+    const b = randomNumber(1, 9);
     return { text: `${a} × ${b} = ?`, answer: a * b };
   },
-  missing: () => {
-    const hidden = randomNumber(2, 12);
-    const multiplier = randomNumber(2, 12);
-    const product = hidden * multiplier;
-    return { text: `? × ${multiplier} = ${product}`, answer: hidden };
+  "speed-single-digit-division": () => {
+    const divisor = randomNumber(2, 9);
+    const quotient = randomNumber(2, 9);
+    return { text: `${divisor * quotient} ÷ ${divisor} = ?`, answer: quotient };
   },
-  "y7-integers": () => {
-    const a = randomNumber(-18, 35);
-    const b = randomNumber(-15, 20);
-    return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
-  },
-  "y7-integer-subtraction": () => {
-    const a = randomNumber(-10, 30);
-    const b = randomNumber(-12, 18);
-    return { text: `${a} − ${formatSigned(b)} = ?`, answer: a - b };
-  },
-  "y7-integer-multiplication": () => {
-    const a = randomNumber(-9, 9) || 3;
-    const b = randomNumber(-9, 9) || -4;
-    return { text: `${a} × ${formatSigned(b)} = ?`, answer: a * b };
-  },
-  "y7-fractions": () => sample([
-    () => {
-      const denominator = sample([4, 5, 8, 10]);
-      const numerator = randomNumber(1, denominator - 1);
-      const multiplier = randomNumber(3, 12);
-      return {
-        text: `${numerator}/${denominator} of ${denominator * multiplier} = ?`,
-        answer: numerator * multiplier,
-      };
-    },
-    () => {
-      const denominator = sample([3, 4, 6, 8]);
-      const multiplier = randomNumber(4, 14);
-      return {
-        text: `1/${denominator} of ${denominator * multiplier} = ?`,
-        answer: multiplier,
-      };
-    },
-  ])(),
-  "y7-simplifying-fractions": () => {
-    const [simplifiedNumerator, simplifiedDenominator] = sample([
-      [1, 2],
-      [1, 3],
-      [2, 3],
-      [1, 4],
-      [3, 4],
-      [1, 5],
-      [2, 5],
-      [3, 5],
-      [4, 5],
-      [1, 6],
-      [5, 6],
-      [2, 7],
-      [3, 7],
-      [4, 7],
-      [5, 7],
-      [3, 8],
-      [5, 8],
-    ]);
-    const factor = sample([2, 3, 4]);
-    const numerator = simplifiedNumerator * factor;
-    const denominator = simplifiedDenominator * factor;
-
+  "number-identify-factors": () => {
+    const number = sample([12, 16, 18, 20, 24, 28, 30, 36, 40, 42, 48, 56, 60, 72]);
+    const values = getFactors(number);
     return {
-      text: `Simplify ${numerator}/${denominator}`,
-      answer: createSimplifiedFractionAnswer(numerator, denominator),
+      text: `List all factors of ${number}`,
+      answer: { type: "factors", values },
     };
   },
-  "y7-add-subtract-fractions": () => sample([
-    () => {
-      const denominator = sample([4, 5, 6, 8, 10, 12]);
-      const left = randomNumber(1, denominator - 2);
-      const right = randomNumber(1, denominator - left - 1);
-      return {
-        text: `${left}/${denominator} + ${right}/${denominator} = ?`,
-        answer: createFractionAnswer(left + right, denominator),
-      };
-    },
-    () => {
-      const smallerDenominator = sample([3, 4, 5, 6]);
-      const largerDenominator = smallerDenominator * sample([2, 3]);
-      const left = randomNumber(1, smallerDenominator - 1);
-      const right = randomNumber(1, largerDenominator - 1);
-      return {
-        text: `${left}/${smallerDenominator} + ${right}/${largerDenominator} = ?`,
-        answer: createFractionAnswer(left * (largerDenominator / smallerDenominator) + right, largerDenominator),
-      };
-    },
-  ])(),
-  "y7-subtracting-fractions": () => sample([
-    () => {
-      const denominator = sample([4, 5, 6, 8, 10, 12]);
-      const left = randomNumber(2, denominator - 1);
-      const right = randomNumber(1, left - 1);
-      return {
-        text: `${left}/${denominator} − ${right}/${denominator} = ?`,
-        answer: createFractionAnswer(left - right, denominator),
-      };
-    },
-    () => {
-      const smallerDenominator = sample([3, 4, 5, 6]);
-      const largerDenominator = smallerDenominator * sample([2, 3]);
-      const left = randomNumber(2, smallerDenominator - 1);
-      const scaledLeft = left * (largerDenominator / smallerDenominator);
-      const right = randomNumber(1, scaledLeft - 1);
-      return {
-        text: `${left}/${smallerDenominator} − ${right}/${largerDenominator} = ?`,
-        answer: createFractionAnswer(scaledLeft - right, largerDenominator),
-      };
-    },
-  ])(),
-  "y7-multiplying-fractions": () => sample([
-    () => {
-      const leftDenominator = sample([3, 4, 5, 6, 8]);
-      const rightDenominator = sample([3, 4, 5, 6, 8]);
-      const left = randomNumber(1, leftDenominator - 1);
-      const right = randomNumber(1, rightDenominator - 1);
-      return {
-        text: `${left}/${leftDenominator} × ${right}/${rightDenominator} = ?`,
-        answer: createFractionAnswer(left * right, leftDenominator * rightDenominator),
-      };
-    },
-    () => {
-      const denominator = sample([3, 4, 5, 6, 8, 10]);
-      const numerator = randomNumber(1, denominator - 1);
-      const wholeNumber = randomNumber(2, 9);
-      return {
-        text: `${wholeNumber} × ${numerator}/${denominator} = ?`,
-        answer: createFractionAnswer(wholeNumber * numerator, denominator),
-      };
-    },
-    () => {
-      const denominator = sample([3, 4, 5, 6, 8, 10]);
-      const numerator = randomNumber(1, denominator - 1);
-      const wholeNumber = randomNumber(2, 9);
-      return {
-        text: `${numerator}/${denominator} of ${wholeNumber} = ?`,
-        answer: createFractionAnswer(numerator * wholeNumber, denominator),
-      };
-    },
-  ])(),
-  "y7-percentages": () => sample([
-    () => {
-      const percent = sample([10, 20, 25, 50, 75]);
-      const base = sample([40, 60, 80, 100, 120, 160]);
-      return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
-    },
-    () => {
-      const percent = sample([5, 10, 20]);
-      const base = sample([100, 200, 300, 400, 500]);
-      return { text: `${percent}% of ${base} = ?`, answer: (percent * base) / 100 };
-    },
-  ])(),
-  "y7-bidmas": () => {
-    const a = randomNumber(2, 20);
-    const b = randomNumber(2, 12);
-    const c = randomNumber(2, 10);
-    return { text: `${a} + ${b} × ${c} = ?`, answer: a + b * c };
+  "number-identify-multiples": () => {
+    const base = randomNumber(3, 9);
+    const correctOne = base * randomNumber(2, 6);
+    const correctTwo = base * randomNumber(7, 10);
+    const distractors = [];
+    while (distractors.length < 2) {
+      const candidate = randomNumber(12, 72);
+      if (candidate % base !== 0 && !distractors.includes(candidate)) distractors.push(candidate);
+    }
+    const options = [correctOne, correctTwo, ...distractors].sort(() => Math.random() - 0.5);
+    return {
+      text: `Which are multiples of ${base}?`,
+      answer: {
+        type: "multiChoice",
+        values: [correctOne, correctTwo].sort((a, b) => a - b),
+        options,
+      },
+    };
   },
-  "y7-bidmas-brackets": () => {
-    const a = randomNumber(2, 10);
-    const b = randomNumber(2, 10);
-    const c = randomNumber(2, 8);
-    return { text: `(${a} + ${b}) × ${c} = ?`, answer: (a + b) * c };
+  "number-identify-primes": () => {
+    const number = randomNumber(2, 100);
+    return {
+      text: `Is ${number} prime or composite?`,
+      answer: {
+        type: "singleChoice",
+        value: isPrimeNumber(number) ? "Prime" : "Composite",
+        options: ["Prime", "Composite"],
+      },
+    };
   },
-  "y7-bidmas-division": () => {
-    const start = randomNumber(2, 20);
-    const divisor = randomNumber(2, 6);
-    const quotient = randomNumber(3, 12);
-    return { text: `${start} + ${quotient * divisor} ÷ ${divisor} = ?`, answer: start + quotient };
+  "number-hcf": () => {
+    const a = sample([18, 24, 30, 36, 42, 48, 54, 60, 72]);
+    const b = sample([24, 30, 36, 48, 54, 60, 72, 84]);
+    return { text: `Find the HCF of ${a} and ${b}`, answer: greatestCommonDivisor(a, b) };
   },
-  "y8-bidmas-indices": () => {
-    const base = randomNumber(2, 8);
-    const multiplier = randomNumber(2, 9);
-    const addend = randomNumber(2, 20);
-    return { text: `${base}² + ${multiplier} × ${addend} = ?`, answer: base ** 2 + multiplier * addend };
+  "number-lcm": () => {
+    const a = randomNumber(4, 12);
+    const b = randomNumber(4, 15);
+    return { text: `Find the LCM of ${a} and ${b}`, answer: leastCommonMultiple(a, b) };
   },
-  "y9-bidmas-brackets-indices": () => {
-    const multiplier = randomNumber(2, 6);
-    const a = randomNumber(2, 8);
-    const b = randomNumber(2, 8);
-    const subtract = randomNumber(1, 15);
-    return { text: `${multiplier} × (${a} + ${b}) − ${subtract} = ?`, answer: multiplier * (a + b) - subtract };
+  "number-evaluate-squares": () => {
+    const number = randomNumber(1, 10);
+    return { text: `${number}² = ?`, answer: number ** 2 };
   },
-  "y7-one-step-equations": () => {
-    const answer = randomNumber(4, 24);
-    const offset = randomNumber(5, 30);
-    return { text: `Solve x + ${offset} = ${answer + offset}`, answer };
+  "number-square-roots": () => {
+    const root = randomNumber(1, 12);
+    return { text: `√${root ** 2} = ?`, answer: root };
   },
-  "y7-one-step-subtraction-equations": () => {
-    const answer = randomNumber(6, 30);
-    const offset = randomNumber(2, 12);
-    return { text: `Solve x − ${offset} = ${answer - offset}`, answer };
+  "number-add-integers": () => {
+    const a = randomNumber(-20, 20);
+    const b = randomNumber(-20, 20);
+    return { text: `${a} + ${formatSigned(b)} = ?`, answer: a + b };
   },
-  "y7-one-step-multiplication-equations": () => {
-    const answer = randomNumber(3, 12);
-    const factor = randomNumber(2, 12);
-    return { text: `Solve ${factor}x = ${answer * factor}`, answer };
+  "number-subtract-integers": () => {
+    const a = randomNumber(-20, 20);
+    const b = randomNumber(-20, 20);
+    return { text: `${a} - ${formatSigned(b)} = ?`, answer: a - b };
   },
-  "y7-one-step-division-equations": () => {
-    const answer = randomNumber(3, 12);
-    const divisor = randomNumber(2, 12);
-    return { text: `Solve x ÷ ${divisor} = ${answer}`, answer: answer * divisor };
+  "number-multiply-integers": () => {
+    const a = randomNumber(-9, 9) || -6;
+    const b = randomNumber(-9, 9) || 8;
+    return { text: `${a} × ${formatSigned(b)} = ?`, answer: a * b };
   },
-  "y8-square-powers": () => sample([
-    () => {
-      const a = randomNumber(2, 5);
-      const b = randomNumber(2, 5);
-      return { text: `${a}² + ${b}² = ?`, answer: a ** 2 + b ** 2 };
-    },
-    () => {
-      const value = randomNumber(6, 15);
-      return { text: `${value}² = ?`, answer: value ** 2 };
-    },
-    () => {
-      const value = randomNumber(4, 14);
-      return { text: `√${value ** 2} = ?`, answer: value };
-    },
-  ])(),
-  "y8-ratios": () => sample([
-    () => {
-      const left = randomNumber(2, 5);
-      const right = randomNumber(3, 8);
-      const total = (left + right) * randomNumber(4, 9);
-      return {
-        text: `Share ${total} in the ratio ${left}:${right}. Larger share = ?`,
-        answer: Math.max(left, right) * (total / (left + right)),
-      };
-    },
-    () => {
-      const left = randomNumber(2, 6);
-      const right = randomNumber(2, 6);
-      const multiplier = randomNumber(5, 12);
-      return {
-        text: `Ratio ${left}:${right}, multiplier ${multiplier}. Total = ?`,
-        answer: (left + right) * multiplier,
-      };
-    },
-  ])(),
-  "y8-percentage-change": () => sample([
-    () => {
-      const percent = sample([10, 20, 25]);
-      const base = sample([40, 60, 80, 100, 120]);
-      return { text: `${base} increased by ${percent}% = ?`, answer: base + (base * percent) / 100 };
-    },
-  ])(),
-  "y8-percentage-decrease": () => sample([
-    () => {
-      const percent = sample([10, 20, 25, 50]);
-      const base = sample([40, 60, 80, 100, 120, 160]);
-      return { text: `${base} decreased by ${percent}% = ?`, answer: base - (base * percent) / 100 };
-    },
-  ])(),
-  "y8-linear-equations": () => sample([
-    () => {
-      const answer = randomNumber(4, 18);
-      const coefficient = randomNumber(2, 6);
-      const offset = randomNumber(5, 20);
-      return { text: `Solve ${coefficient}x + ${offset} = ${coefficient * answer + offset}`, answer };
-    },
-  ])(),
-  "y9-index-laws": () => sample([
-    () => {
-      const base = randomNumber(2, 5);
-      const leftPower = randomNumber(2, 5);
-      const rightPower = randomNumber(2, 5);
-      return { text: `${base}^${leftPower} × ${base}^${rightPower} = ${base}^?`, answer: leftPower + rightPower };
-    },
-    () => {
-      const base = randomNumber(2, 5);
-      const topPower = randomNumber(6, 10);
-      const bottomPower = randomNumber(2, topPower - 2);
-      return { text: `${base}^${topPower} ÷ ${base}^${bottomPower} = ${base}^?`, answer: topPower - bottomPower };
-    },
-  ])(),
-  "y9-gradients": () => sample([
-    () => {
-      const gradient = randomNumber(2, 6);
-      const x = randomNumber(3, 8);
-      const y = gradient * x;
-      return { text: `Gradient from (0, 0) to (${x}, ${y}) = ?`, answer: gradient };
-    },
-    () => {
-      const gradient = randomNumber(-5, 5) || 2;
-      const run = randomNumber(2, 8);
-      return { text: `Line rises ${gradient * run} for run ${run}. Gradient = ?`, answer: gradient };
-    },
-  ])(),
-  "y9-expanding-brackets": () => sample([
-    () => {
-      const coefficient = randomNumber(2, 6);
-      const inner = randomNumber(2, 8);
-      return { text: `Find the coefficient of x in ${coefficient}(${inner}x + 3)`, answer: coefficient * inner };
-    },
-    () => {
-      const coefficient = randomNumber(2, 7);
-      const constant = randomNumber(2, 8);
-      return { text: `Expand ${coefficient}(x + ${constant}). Constant term = ?`, answer: coefficient * constant };
-    },
-  ])(),
-  "y9-two-step-equations": () => sample([
-    () => {
-      const answer = randomNumber(4, 18);
-      const coefficient = randomNumber(2, 6);
-      const offset = randomNumber(5, 20);
-      return { text: `Solve ${coefficient}x − ${offset} = ${coefficient * answer - offset}`, answer };
-    },
-  ])(),
-  "y10-quadratics": () => sample([
-    () => {
-      const rootA = randomNumber(2, 7);
-      const rootB = randomNumber(rootA + 1, 10);
-      return { text: `Find the smaller solution: x² − ${rootA + rootB}x + ${rootA * rootB} = 0`, answer: rootA };
-    },
-    () => {
-      const rootA = randomNumber(2, 7);
-      const rootB = randomNumber(rootA + 1, 10);
-      return { text: `Find the larger solution: x² − ${rootA + rootB}x + ${rootA * rootB} = 0`, answer: rootB };
-    },
-  ])(),
-  "y10-pythagoras": () => sample([
-    () => {
-      const triples = [
-        [3, 4, 5],
-        [5, 12, 13],
-        [8, 15, 17],
-        [7, 24, 25],
-      ];
-      const [a, b, c] = sample(triples);
-      return { text: `Right triangle legs ${a} and ${b}. Hypotenuse = ?`, answer: c };
-    },
-  ])(),
-  "y10-pythagoras-missing-leg": () => sample([
-    () => {
-      const triples = [
-        [3, 4, 5],
-        [5, 12, 13],
-        [8, 15, 17],
-        [7, 24, 25],
-      ];
-      const [a, b, c] = sample(triples);
-      return { text: `Hypotenuse ${c}, one leg ${a}. Other leg = ?`, answer: b };
-    },
-  ])(),
-  "y10-simultaneous-equations": () => sample([
-    () => {
-      const x = randomNumber(3, 12);
-      const y = randomNumber(1, x - 1);
-      return { text: `Find x: x + y = ${x + y}, x − y = ${x - y}`, answer: x };
-    },
-    () => {
-      const x = randomNumber(3, 12);
-      const y = randomNumber(1, x - 1);
-      return { text: `Find y: x + y = ${x + y}, x − y = ${x - y}`, answer: y };
-    },
-  ])(),
-  "y10-functions": () => sample([
-    () => {
-      const x = randomNumber(3, 12);
-      const a = randomNumber(2, 6);
-      const b = randomNumber(4, 20);
-      return { text: `f(x) = ${a}x + ${b}. f(${x}) = ?`, answer: a * x + b };
-    },
-  ])(),
-  "y10-quadratic-functions": () => sample([
-    () => {
-      const x = randomNumber(3, 8);
-      const a = randomNumber(2, 5);
-      const b = randomNumber(1, 8);
-      return { text: `f(x) = ${a}x² − ${b}x. f(${x}) = ?`, answer: a * x ** 2 - b * x };
-    },
-  ])(),
-  "y11-derivatives": () => sample([
-    () => {
-      const coefficient = randomNumber(2, 8);
-      const power = randomNumber(2, 4);
-      return { text: `d/dx (${coefficient}x^${power}) = ?x^${power - 1}`, answer: coefficient * power };
-    },
-    () => {
-      const coefficient = randomNumber(2, 8);
-      return { text: `d/dx (${coefficient}x²) = ?x`, answer: coefficient * 2 };
-    },
-  ])(),
-  "y11-logarithms": () => sample([
-    () => {
-      const base = sample([2, 3, 5]);
-      const power = randomNumber(2, 5);
-      return { text: `log_${base}(${base ** power}) = ?`, answer: power };
-    },
-    () => {
-      const base = sample([2, 3, 4]);
-      return { text: `log_${base}(${base}) = ?`, answer: 1 };
-    },
-  ])(),
-  "y11-arithmetic-sequences": () => sample([
-    () => {
-      const a = randomNumber(2, 7);
-      const d = randomNumber(2, 8);
-      const n = randomNumber(6, 12);
-      return { text: `Arithmetic sequence a=${a}, d=${d}. T${n} = ?`, answer: a + (n - 1) * d };
-    },
-    () => {
-      const a = randomNumber(3, 12);
-      const d = randomNumber(2, 9);
-      const n = randomNumber(4, 9);
-      return { text: `${a}, ${a + d}, ${a + 2 * d}, ... T${n} = ?`, answer: a + (n - 1) * d };
-    },
-  ])(),
-  "y11-surds": () => sample([
-    () => {
-      const coefficient = randomNumber(2, 9);
-      const radicand = sample([2, 3, 5, 6, 7, 10, 11, 13]);
-      return {
-        text: `Simplify √${coefficient ** 2 * radicand} = ?√?`,
-        answer: { type: "surd", coefficient, radicand },
-      };
-    },
-    () => {
-      const coefficient = randomNumber(2, 8);
-      const radicand = sample([2, 3, 5, 6, 7, 10, 11, 15]);
-      return {
-        text: `Write √${coefficient ** 2 * radicand} as a√b`,
-        answer: { type: "surd", coefficient, radicand },
-      };
-    },
-  ])(),
-  "y12-calculus-derivatives": () => sample([
-    () => {
-      const power = randomNumber(3, 5);
-      const x = randomNumber(2, 4);
-      return { text: `If f(x)=x^${power}, f′(${x}) = ?`, answer: power * x ** (power - 1) };
-    },
-    () => {
-      const coefficient = randomNumber(2, 5);
-      const x = randomNumber(2, 4);
-      return { text: `If f(x)=${coefficient}x², f′(${x}) = ?`, answer: 2 * coefficient * x };
-    },
-  ])(),
-  "y12-integrals": () => sample([
-    () => {
-      const coefficient = randomNumber(2, 9);
-      const power = randomNumber(1, 3);
-      return { text: `Find k: ∫ ${coefficient * (power + 1)}x^${power} dx = kx^${power + 1} + C`, answer: coefficient };
-    },
-    () => {
-      const coefficient = randomNumber(2, 8);
-      return { text: `Find k: ∫ ${coefficient} dx = kx + C`, answer: coefficient };
-    },
-  ])(),
-  "y12-series": () => sample([
-    () => {
-      const n = randomNumber(8, 18);
-      return { text: `1 + 2 + ... + ${n} = ?`, answer: (n * (n + 1)) / 2 };
-    },
-    () => {
-      const n = randomNumber(5, 12);
-      return { text: `2 + 4 + ... + ${2 * n} = ?`, answer: n * (n + 1) };
-    },
-  ])(),
+  "number-divide-integers": () => {
+    const divisor = sample([-9, -8, -7, -6, -5, -4, -3, 3, 4, 5, 6, 7, 8, 9]);
+    const quotient = randomNumber(-9, 9) || 6;
+    return { text: `${divisor * quotient} ÷ ${divisor} = ?`, answer: quotient };
+  },
 };
 
 function getYearLabel(yearLevel) {
@@ -3139,7 +2485,7 @@ function renderHomeProgress() {
 
   elements.homeGamesPlayed.textContent = String(gamesPlayed);
   elements.homeBestScore.textContent = bestScore.toLocaleString();
-  elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "topic-number");
+  elements.homeCurrentGoal.textContent = getGameRankLabel(state.homeFeaturedGame || "topic-speed-operations");
   elements.heroSkillCount.textContent = String(SKILL_IDS.length);
   elements.homeSkillCount.textContent = String(SKILL_IDS.length);
 }
@@ -3176,7 +2522,7 @@ function renderHomeDashboard() {
 }
 
 function renderGamePage() {
-  const info = gameInfo[state.game] || gameInfo["topic-number"];
+  const info = gameInfo[state.game] || gameInfo["topic-speed-operations"];
   const topicId = getLeaderboardGameId(state.game);
   const hasTopicLeaderboard = isTopicArea(state.game);
   if (getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent() && hasTopicLeaderboard) {
@@ -4343,6 +3689,7 @@ function resetGame() {
   elements.answerInput.placeholder = "?";
   elements.answerInput.inputMode = "decimal";
   setSurdAnswerMode(false);
+  setChoiceAnswerMode(null);
 }
 
 function nextQuestion() {
@@ -4354,10 +3701,16 @@ function nextQuestion() {
   state.acceptingAnswer = true;
   const surdMode = isSurdAnswer(state.answer);
   const fractionMode = isFractionAnswer(state.answer);
+  const choiceMode = isChoiceAnswer(state.answer);
   setSurdAnswerMode(surdMode);
+  setChoiceAnswerMode(state.answer);
+  elements.standardAnswerField.hidden = surdMode || choiceMode;
+  elements.answerInput.disabled = surdMode || choiceMode;
+  elements.answerInput.required = !surdMode && !choiceMode;
   elements.answerInput.placeholder = fractionMode ? "e.g. 3/4" : "?";
   elements.answerInput.inputMode = fractionMode ? "text" : "decimal";
   elements.question.classList.toggle("surd-question", surdMode);
+  elements.question.classList.toggle("choice-question", choiceMode);
   elements.question.textContent = question.text;
   elements.questionCount.textContent = question.skillId && isTopicArea(state.game)
     ? `Question ${state.questionNumber} · ${gameInfo[question.skillId]?.name || "Topic skill"}`
@@ -4365,7 +3718,12 @@ function nextQuestion() {
   elements.answerInput.value = "";
   elements.surdCoefficientInput.value = "";
   elements.surdRadicandInput.value = "";
-  (surdMode ? elements.surdCoefficientInput : elements.answerInput).focus();
+  const focusTarget = surdMode
+    ? elements.surdCoefficientInput
+    : choiceMode
+      ? elements.choiceAnswerFields.querySelector("input:not([readonly])") || elements.choiceAnswerFields.querySelector("input")
+      : elements.answerInput;
+  focusTarget?.focus();
   elements.question.classList.remove("bump");
   void elements.question.offsetWidth;
   elements.question.classList.add("bump");
@@ -4511,6 +3869,7 @@ function submitAnswer(event) {
 
   const surdMode = isSurdAnswer(state.answer);
   const fractionMode = isFractionAnswer(state.answer);
+  const choiceMode = isChoiceAnswer(state.answer);
   const guess = surdMode
     ? {
         coefficient: Number(elements.surdCoefficientInput.value),
@@ -4518,12 +3877,16 @@ function submitAnswer(event) {
       }
     : fractionMode
       ? parseFractionInput(elements.answerInput.value)
-      : Number(elements.answerInput.value);
+      : choiceMode
+        ? getChoiceGuess(state.answer)
+        : Number(elements.answerInput.value);
 
   if (surdMode) {
     if (!Number.isFinite(guess.coefficient) || !Number.isFinite(guess.radicand)) return;
   } else if (fractionMode) {
     if (!guess) return;
+  } else if (choiceMode) {
+    if (!guess || (Array.isArray(guess) && !guess.length)) return;
   } else if (!Number.isFinite(guess)) {
     return;
   }
@@ -4534,7 +3897,11 @@ function submitAnswer(event) {
     ? guess.coefficient === state.answer.coefficient && guess.radicand === state.answer.radicand
     : fractionMode
       ? fractionsMatch(guess, state.answer) && (!state.answer.requireSimplified || isSimplifiedFractionGuess(guess))
-      : guess === state.answer;
+      : choiceMode
+        ? state.answer.type === "singleChoice"
+          ? guess === state.answer.value
+          : arraysMatch(guess, state.answer.values)
+        : guess === state.answer;
 
   if (isCorrect) {
     state.streak += 1;
@@ -4636,7 +4003,7 @@ function parsePageHash() {
   if (rawHash.startsWith("game/")) {
     const match = rawHash.match(/^game\/([^/]+)(?:\/(leaderboard))?$/);
     const gameId = match?.[1] || "";
-    if (gameInfo[gameId]) {
+    if (GAME_IDS.includes(gameId)) {
       return { page: "game", gameId, view: match[2] || "" };
     }
   }

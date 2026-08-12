@@ -62,13 +62,8 @@ service cloud.firestore {
 
     function isValidGame(game) {
       return game in [
-        'topic-number',
-        'topic-fractions',
-        'topic-order',
-        'topic-algebra',
-        'topic-graphs-functions',
-        'topic-geometry',
-        'topic-surds-calculus'
+        'topic-speed-operations',
+        'topic-number'
       ];
     }
 
@@ -82,21 +77,9 @@ service cloud.firestore {
         : 0;
     }
 
-    function gameRequiredYear(game) {
-      return game in [
-          'topic-graphs-functions'
-        ] ? 9
-        : game in [
-          'topic-geometry'
-        ] ? 10
-        : game in [
-          'topic-surds-calculus'
-        ] ? 11
-        : 7;
-    }
-
     function canStudentAccessGame(game, yearLevel) {
-      return yearRank(yearLevel) >= gameRequiredYear(game);
+      return isValidGame(game)
+        && yearRank(yearLevel) >= 7;
     }
 
     function isValidName(name) {

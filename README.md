@@ -7,16 +7,10 @@ live topic leaderboards.
 
 ## Topic Areas
 
-- **Number Fluency:** arithmetic, integers, powers, indices, and logarithms as
-  year levels unlock them
-- **Fractions, Ratios & Percentages:** fraction skills first, then ratios and
-  percentage change in higher years
-- **Order of Operations:** BIDMAS and operation-order fluency
-- **Algebra:** equations, brackets, quadratics, simultaneous equations, and
-  sequences as they unlock
-- **Graphs & Functions:** gradients and function notation
-- **Geometry & Measurement:** geometry skills starting with Pythagoras
-- **Surds, Calculus & Series:** senior exact-form and calculus skills
+- **Speed Operations:** single-digit addition, subtraction, multiplication, and
+  division
+- **Number:** factors, multiples, primes, HCF, LCM, squares, square roots, and
+  integer operations
 
 Each topic area has one combined game that mixes only the sub-skills unlocked
 for the player's year level. Each sub-skill is one focused question type. Skills

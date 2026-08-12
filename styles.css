@@ -2389,6 +2389,11 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   letter-spacing: -0.04em;
 }
 
+.question.choice-question {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  letter-spacing: -0.04em;
+}
+
 .answer-form {
   display: flex;
   width: min(360px, 90%);
@@ -2398,6 +2403,11 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
 
 .answer-form.surd-answer-mode {
   width: min(560px, 96%);
+}
+
+.answer-form.choice-answer-mode {
+  display: grid;
+  width: min(620px, 96%);
 }
 
 .standard-answer-field {
@@ -2454,6 +2464,63 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   color: var(--navy);
   font-size: 2rem;
   font-weight: 900;
+}
+
+.choice-answer-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.choice-answer-fields[hidden] {
+  display: none;
+}
+
+.factor-answer-grid,
+.choice-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: 8px;
+}
+
+.choice-answer-fields label,
+.choice-toggle {
+  display: grid;
+  min-height: 54px;
+  padding: 10px 12px;
+  color: var(--navy);
+  background: #f4f6fb;
+  border: 2px solid transparent;
+  border-radius: 15px;
+  place-items: center;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.choice-answer-fields label.prefilled {
+  color: var(--muted);
+  background: #eef2fa;
+}
+
+.choice-answer-fields label span {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.choice-answer-fields input[type="checkbox"],
+.choice-answer-fields input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice-toggle:has(input:checked),
+.choice-answer-fields label:has(input:focus) {
+  background: white;
+  border-color: var(--blue);
+  box-shadow: 0 8px 20px rgba(18, 90, 181, 0.12);
 }
 
 .answer-form button {

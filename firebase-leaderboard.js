@@ -33,13 +33,8 @@ import {
 } from "./firebase-config.js?v=topic-streak-v2-20260811";
 
 const validGames = new Set([
+  "topic-speed-operations",
   "topic-number",
-  "topic-fractions",
-  "topic-order",
-  "topic-algebra",
-  "topic-graphs-functions",
-  "topic-geometry",
-  "topic-surds-calculus",
 ]);
 const validYearLevels = new Set([
   "year7",
@@ -51,13 +46,8 @@ const validYearLevels = new Set([
 ]);
 const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameAccessYears = new Map([
+  ["topic-speed-operations", "year7"],
   ["topic-number", "year7"],
-  ["topic-fractions", "year7"],
-  ["topic-order", "year7"],
-  ["topic-algebra", "year7"],
-  ["topic-graphs-functions", "year9"],
-  ["topic-geometry", "year10"],
-  ["topic-surds-calculus", "year11"],
 ]);
 const configuredDomains = Array.isArray(allowedEmailDomains) && allowedEmailDomains.length
   ? allowedEmailDomains
