@@ -512,6 +512,7 @@ const elements = {
   countdownMessage: document.querySelector("#countdown-message"),
   playMode: document.querySelector("#play-mode"),
   answerForm: document.querySelector("#answer-form"),
+  answerSubmitButton: document.querySelector("#answer-form button[type='submit']"),
   standardAnswerField: document.querySelector("#standard-answer-field"),
   answerInput: document.querySelector("#answer-input"),
   surdAnswerFields: document.querySelector("#surd-answer-fields"),
@@ -895,7 +896,10 @@ function setSurdAnswerMode(enabled) {
 
 function setChoiceAnswerMode(answer) {
   const enabled = isChoiceAnswer(answer);
+  const autoSubmit = enabled && answer.autoSubmit === true && answer.type === "singleChoice";
   elements.answerForm.classList.toggle("choice-answer-mode", enabled);
+  elements.answerForm.classList.toggle("choice-auto-submit-mode", autoSubmit);
+  elements.answerSubmitButton.hidden = autoSubmit;
   elements.choiceAnswerFields.hidden = !enabled;
   elements.choiceAnswerFields.innerHTML = "";
 
@@ -1017,6 +1021,7 @@ const skillQuestionGenerators = {
         type: "singleChoice",
         value: isPrimeNumber(number) ? "Prime" : "Composite",
         options: ["Prime", "Composite"],
+        autoSubmit: true,
       },
     };
   },
@@ -4311,8 +4316,7 @@ function finishGame() {
   }
 }
 
-function submitAnswer(event) {
-  event.preventDefault();
+function submitCurrentAnswer() {
   if (!state.running || !state.acceptingAnswer) return;
 
   const surdMode = isSurdAnswer(state.answer);
@@ -4375,6 +4379,20 @@ function submitAnswer(event) {
   window.setTimeout(() => {
     if (state.running) nextQuestion();
   }, 220);
+}
+
+function submitAnswer(event) {
+  event.preventDefault();
+  submitCurrentAnswer();
+}
+
+function handleChoiceAutoSubmit(event) {
+  if (!state.running || !state.acceptingAnswer) return;
+  if (state.answer?.autoSubmit !== true || state.answer.type !== "singleChoice") return;
+  if (typeof event.target.matches !== "function") return;
+  if (!event.target.matches("input[name='choice-answer']")) return;
+
+  window.setTimeout(submitCurrentAnswer, 80);
 }
 
 function endAndHideGame() {
@@ -4703,6 +4721,7 @@ elements.settingsClose.addEventListener("click", () => setSettingsOpen(false, { 
 elements.gamePageStart.addEventListener("click", () => selectGame(state.game));
 elements.startGameButton.addEventListener("click", requestStartGame);
 elements.answerForm.addEventListener("submit", submitAnswer);
+elements.choiceAnswerFields.addEventListener("change", handleChoiceAutoSubmit);
 document.querySelector("#back-button").addEventListener("click", endAndHideGame);
 document.querySelector("#quit-button").addEventListener("click", quitGame);
 document.querySelector("#play-again").addEventListener("click", requestStartGame);
