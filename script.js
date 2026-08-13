@@ -1620,7 +1620,7 @@ function getProgressAccessMessage() {
   }
 
   if (!state.authAllowed) {
-    return "Sign in with your Google account to load synced medal progress.";
+    return "Sign in with your Google account to load your medal progress.";
   }
 
   if (getActiveAccountType() === "teacher" && !state.teacherYearLevels.length) {
@@ -2246,8 +2246,12 @@ function getCurrentPlayerBestScore(gameId) {
     ...normalizeScores(getRawScores(gameId)),
     ...normalizeScores(getLocalScores()[gameId] || []),
   ].filter(scoreMatchesCurrentPlayer);
+  const progressBestScore = getProgressBestScore(gameId);
 
-  return currentScores.reduce((best, entry) => Math.max(best, entry.score), 0);
+  return Math.max(
+    progressBestScore,
+    currentScores.reduce((best, entry) => Math.max(best, entry.score), 0),
+  );
 }
 
 function getLocalDateKey(date = new Date()) {
@@ -2281,6 +2285,24 @@ function saveProgressStore(store) {
   }
 }
 
+function normalizeProgressBestScores(bestScores, attempts = []) {
+  const savedBestScores = bestScores && typeof bestScores === "object" && !Array.isArray(bestScores)
+    ? bestScores
+    : {};
+  const scores = {};
+  GAME_IDS.forEach((gameId) => {
+    const score = savedBestScores[gameId];
+    if (Number.isInteger(score) && score >= 0) {
+      scores[gameId] = score;
+    }
+  });
+  attempts.forEach((attempt) => {
+    if (!GAME_IDS.includes(attempt?.game) || !Number.isInteger(attempt?.score) || attempt.score < 0) return;
+    scores[attempt.game] = Math.max(scores[attempt.game] || 0, attempt.score);
+  });
+  return scores;
+}
+
 function getProgressPlayerKey(scoreContext = getScoreContext()) {
   if (state.authUid) {
     const contextKey = scoreContext.role === "student"
@@ -2307,6 +2329,7 @@ function getProgressRecord(scoreContext = getScoreContext()) {
     bronzeDays: Array.isArray(record.bronzeDays) ? record.bronzeDays : [],
     topicBronzeDays: Array.isArray(record.topicBronzeDays) ? record.topicBronzeDays : [],
     attempts: Array.isArray(record.attempts) ? record.attempts : [],
+    bestScores: normalizeProgressBestScores(record.bestScores, record.attempts),
   };
 }
 
@@ -2314,6 +2337,12 @@ function saveProgressRecord(record, scoreContext = getScoreContext()) {
   const store = getProgressStore();
   store[getProgressPlayerKey(scoreContext)] = record;
   saveProgressStore(store);
+}
+
+function getProgressBestScore(gameId, scoreContext = getScoreContext()) {
+  const record = getProgressRecord(scoreContext);
+  const bestScore = record.bestScores[gameId];
+  return Number.isInteger(bestScore) && bestScore >= 0 ? bestScore : 0;
 }
 
 function isMrThorneScore(entry) {
@@ -2342,11 +2371,20 @@ function getBestMedalForScore(score, goals) {
 function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) {
   if (!shouldSaveScore(scoreContext)) return;
 
+  const record = getProgressRecord(scoreContext);
+  const previousBestScore = record.bestScores[gameId] || 0;
+  record.bestScores = {
+    ...record.bestScores,
+    [gameId]: Math.max(previousBestScore, score),
+  };
+
   const goals = getMedalGoalsForGame(gameId);
   const bronzeGoal = goals.find((goal) => goal.id === "bronze");
-  if (!bronzeGoal || score < bronzeGoal.score) return;
+  if (!bronzeGoal || score < bronzeGoal.score) {
+    saveProgressRecord(record, scoreContext);
+    return;
+  }
 
-  const record = getProgressRecord(scoreContext);
   const today = getLocalDateKey();
   const bronzeDays = new Set(record.bronzeDays);
   bronzeDays.add(today);
@@ -2541,7 +2579,7 @@ function renderProgressPage() {
   } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
     setProgressStatus("connecting", "Loading your medal progress and Mr Thorne targets...");
   } else {
-    setProgressStatus("shared", "Topic medals use shared best scores. Skill medals expand inside each topic. Streaks count topic Bronze-or-better days.");
+    setProgressStatus("shared", "Topic medals use leaderboard best scores. Skill medals use your saved practice bests inside each topic. Streaks count topic Bronze-or-better days.");
   }
 }
 
