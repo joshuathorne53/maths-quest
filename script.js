@@ -518,6 +518,14 @@ const elements = {
   surdAnswerFields: document.querySelector("#surd-answer-fields"),
   surdCoefficientInput: document.querySelector("#surd-coefficient-input"),
   surdRadicandInput: document.querySelector("#surd-radicand-input"),
+  fractionAnswerFields: document.querySelector("#fraction-answer-fields"),
+  fractionOnlyAnswer: document.querySelector("#fraction-only-answer"),
+  mixedFractionAnswer: document.querySelector("#mixed-fraction-answer"),
+  fractionNumeratorInput: document.querySelector("#fraction-numerator-input"),
+  fractionDenominatorInput: document.querySelector("#fraction-denominator-input"),
+  mixedWholeInput: document.querySelector("#mixed-whole-input"),
+  mixedNumeratorInput: document.querySelector("#mixed-numerator-input"),
+  mixedDenominatorInput: document.querySelector("#mixed-denominator-input"),
   choiceAnswerFields: document.querySelector("#choice-answer-fields"),
   question: document.querySelector("#question"),
   questionCount: document.querySelector("#question-count"),
@@ -812,6 +820,124 @@ function getFormattedAnswer(answer) {
   return String(answer);
 }
 
+function renderStackedFractionHtml(numerator, denominator) {
+  return `
+    <span class="math-fraction">
+      <span class="math-numerator">${escapeHtml(numerator)}</span>
+      <span class="math-denominator">${escapeHtml(denominator)}</span>
+    </span>
+  `;
+}
+
+function renderMixedNumberHtml(whole, numerator, denominator) {
+  return `
+    <span class="math-mixed">
+      <span class="math-whole">${escapeHtml(whole)}</span>
+      ${renderStackedFractionHtml(numerator, denominator)}
+    </span>
+  `;
+}
+
+function renderMathText(value) {
+  const text = String(value);
+  const fractionPattern = /(-?\d+)\s+(\d+)\/(\d+)|(-?\d+|\?)\/(-?\d+|\?)/g;
+  let html = "";
+  let lastIndex = 0;
+  let match = fractionPattern.exec(text);
+
+  while (match) {
+    html += escapeHtml(text.slice(lastIndex, match.index));
+    html += match[1] !== undefined
+      ? renderMixedNumberHtml(match[1], match[2], match[3])
+      : renderStackedFractionHtml(match[4], match[5]);
+    lastIndex = fractionPattern.lastIndex;
+    match = fractionPattern.exec(text);
+  }
+
+  html += escapeHtml(text.slice(lastIndex));
+  return `<span class="math-expression">${html}</span>`;
+}
+
+function hasMathFraction(value) {
+  return /(?:-?\d+|\?)\/(?:-?\d+|\?)/.test(String(value));
+}
+
+function usesMixedFractionInput(answer) {
+  return isFractionAnswer(answer) && (answer.requireMixed || answer.displayAsMixed);
+}
+
+function getIntegerInputValue(input) {
+  const rawValue = String(input.value || "").trim();
+  if (rawValue === "") return null;
+
+  const value = Number(rawValue);
+  return Number.isInteger(value) ? value : null;
+}
+
+function clearFractionAnswerFields() {
+  [
+    elements.fractionNumeratorInput,
+    elements.fractionDenominatorInput,
+    elements.mixedWholeInput,
+    elements.mixedNumeratorInput,
+    elements.mixedDenominatorInput,
+  ].forEach((input) => {
+    input.value = "";
+  });
+}
+
+function setFractionInputState(input, enabled, required) {
+  input.disabled = !enabled;
+  input.required = enabled && required;
+}
+
+function parseFractionBoxInput(answer) {
+  if (!isFractionAnswer(answer)) return null;
+
+  if (usesMixedFractionInput(answer)) {
+    const enteredWhole = getIntegerInputValue(elements.mixedWholeInput);
+    const enteredMixedNumerator = getIntegerInputValue(elements.mixedNumeratorInput);
+    const enteredDenominator = getIntegerInputValue(elements.mixedDenominatorInput);
+    if (
+      enteredWhole === null
+      || enteredMixedNumerator === null
+      || enteredDenominator === null
+      || enteredMixedNumerator < 0
+      || enteredDenominator <= 0
+    ) {
+      return null;
+    }
+
+    const sign = enteredWhole < 0 ? -1 : 1;
+    const enteredNumerator = sign * ((Math.abs(enteredWhole) * enteredDenominator) + enteredMixedNumerator);
+    const parsedAnswer = createFractionAnswer(enteredNumerator, enteredDenominator);
+    return parsedAnswer
+      ? {
+          ...parsedAnswer,
+          enteredNumerator,
+          enteredDenominator,
+          enteredKind: "mixed",
+          enteredWhole,
+          enteredMixedNumerator,
+        }
+      : null;
+  }
+
+  const enteredNumerator = getIntegerInputValue(elements.fractionNumeratorInput);
+  const enteredDenominator = getIntegerInputValue(elements.fractionDenominatorInput);
+  if (enteredNumerator === null || enteredDenominator === null || enteredDenominator <= 0) return null;
+
+  const parsedAnswer = createFractionAnswer(enteredNumerator, enteredDenominator);
+  return parsedAnswer
+    ? {
+        ...parsedAnswer,
+        enteredNumerator,
+        enteredDenominator,
+        enteredKind: "fraction",
+      }
+    : null;
+}
+
 function parseFractionInput(value) {
   const cleanValue = String(value || "").trim();
   const mixedNumberMatch = cleanValue.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
@@ -874,7 +1000,10 @@ function isSimplifiedFractionGuess(guess) {
 }
 
 function isMixedNumberGuess(guess) {
-  return guess.enteredKind === "mixed" && guess.enteredMixedNumerator > 0;
+  return guess.enteredKind === "mixed"
+    && Math.abs(guess.enteredWhole) > 0
+    && guess.enteredMixedNumerator > 0
+    && guess.enteredMixedNumerator < guess.enteredDenominator;
 }
 
 function isImproperFractionGuess(guess) {
@@ -892,6 +1021,22 @@ function setSurdAnswerMode(enabled) {
   elements.surdCoefficientInput.required = enabled;
   elements.surdRadicandInput.disabled = !enabled;
   elements.surdRadicandInput.required = enabled;
+}
+
+function setFractionAnswerMode(answer) {
+  const enabled = isFractionAnswer(answer);
+  const mixed = usesMixedFractionInput(answer);
+  elements.answerForm.classList.toggle("fraction-answer-mode", enabled);
+  elements.answerForm.classList.toggle("mixed-fraction-answer-mode", enabled && mixed);
+  elements.fractionAnswerFields.hidden = !enabled;
+  elements.fractionOnlyAnswer.hidden = !enabled || mixed;
+  elements.mixedFractionAnswer.hidden = !enabled || !mixed;
+
+  setFractionInputState(elements.fractionNumeratorInput, enabled && !mixed, enabled && !mixed);
+  setFractionInputState(elements.fractionDenominatorInput, enabled && !mixed, enabled && !mixed);
+  setFractionInputState(elements.mixedWholeInput, enabled && mixed, enabled && mixed);
+  setFractionInputState(elements.mixedNumeratorInput, enabled && mixed, enabled && mixed);
+  setFractionInputState(elements.mixedDenominatorInput, enabled && mixed, enabled && mixed);
 }
 
 function setChoiceAnswerMode(answer) {
@@ -935,7 +1080,7 @@ function setChoiceAnswerMode(answer) {
       ${answer.options.map((option) => `
         <label class="choice-toggle">
           <input type="${inputType}" name="choice-answer" value="${escapeHtml(option)}" />
-          ${escapeHtml(option)}
+          ${renderMathText(option)}
         </label>
       `).join("")}
     </div>
@@ -4138,7 +4283,9 @@ function resetGame() {
   elements.answerInput.placeholder = "?";
   elements.answerInput.inputMode = "decimal";
   setSurdAnswerMode(false);
+  setFractionAnswerMode(null);
   setChoiceAnswerMode(null);
+  clearFractionAnswerFields();
 }
 
 function nextQuestion() {
@@ -4152,10 +4299,11 @@ function nextQuestion() {
   const fractionMode = isFractionAnswer(state.answer);
   const choiceMode = isChoiceAnswer(state.answer);
   setSurdAnswerMode(surdMode);
+  setFractionAnswerMode(state.answer);
   setChoiceAnswerMode(state.answer);
-  elements.standardAnswerField.hidden = surdMode || choiceMode;
-  elements.answerInput.disabled = surdMode || choiceMode;
-  elements.answerInput.required = !surdMode && !choiceMode;
+  elements.standardAnswerField.hidden = surdMode || fractionMode || choiceMode;
+  elements.answerInput.disabled = surdMode || fractionMode || choiceMode;
+  elements.answerInput.required = !surdMode && !fractionMode && !choiceMode;
   elements.answerInput.placeholder = fractionMode
     ? state.answer.requireMixed
       ? "e.g. 3 2/5"
@@ -4163,16 +4311,22 @@ function nextQuestion() {
     : "?";
   elements.answerInput.inputMode = fractionMode ? "text" : "decimal";
   elements.question.classList.toggle("surd-question", surdMode);
+  elements.question.classList.toggle("fraction-question", hasMathFraction(question.text));
   elements.question.classList.toggle("choice-question", choiceMode);
-  elements.question.textContent = question.text;
+  elements.question.innerHTML = renderMathText(question.text);
   elements.questionCount.textContent = question.skillId && isTopicArea(state.game)
     ? `Question ${state.questionNumber} · ${gameInfo[question.skillId]?.name || "Topic skill"}`
     : `Question ${state.questionNumber}`;
   elements.answerInput.value = "";
   elements.surdCoefficientInput.value = "";
   elements.surdRadicandInput.value = "";
+  clearFractionAnswerFields();
   const focusTarget = surdMode
     ? elements.surdCoefficientInput
+    : fractionMode
+      ? usesMixedFractionInput(state.answer)
+        ? elements.mixedWholeInput
+        : elements.fractionNumeratorInput
     : choiceMode
       ? null
       : elements.answerInput;
@@ -4328,7 +4482,7 @@ function submitCurrentAnswer() {
         radicand: Number(elements.surdRadicandInput.value),
       }
     : fractionMode
-      ? parseFractionInput(elements.answerInput.value)
+      ? parseFractionBoxInput(state.answer)
       : choiceMode
         ? getChoiceGuess(state.answer)
         : Number(elements.answerInput.value);
@@ -4369,7 +4523,7 @@ function submitCurrentAnswer() {
     playTone(true);
   } else {
     state.streak = 0;
-    elements.feedback.textContent = `Not quite. The answer was ${getFormattedAnswer(state.answer)}.`;
+    elements.feedback.innerHTML = `Not quite. The answer was ${renderMathText(getFormattedAnswer(state.answer))}.`;
     elements.feedback.className = "feedback incorrect";
     playTone(false);
   }

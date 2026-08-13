@@ -2394,6 +2394,57 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   letter-spacing: -0.04em;
 }
 
+.question.fraction-question {
+  font-size: clamp(2rem, 5vw, 3.9rem);
+  letter-spacing: -0.05em;
+}
+
+.math-expression {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.18em;
+  align-items: center;
+  justify-content: center;
+}
+
+.math-fraction {
+  display: inline-grid;
+  min-width: 0.85em;
+  align-items: center;
+  justify-items: center;
+  line-height: 0.95;
+  vertical-align: middle;
+}
+
+.math-numerator,
+.math-denominator {
+  display: block;
+  min-width: 100%;
+  padding: 0 0.12em;
+  text-align: center;
+}
+
+.math-numerator {
+  padding-bottom: 0.08em;
+  border-bottom: 0.07em solid currentColor;
+}
+
+.math-denominator {
+  padding-top: 0.08em;
+}
+
+.math-mixed {
+  display: inline-flex;
+  gap: 0.08em;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.math-whole {
+  display: inline-block;
+  line-height: 1;
+}
+
 .answer-form {
   display: flex;
   width: min(360px, 90%);
@@ -2401,8 +2452,13 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   gap: 8px;
 }
 
-.answer-form.surd-answer-mode {
+.answer-form.surd-answer-mode,
+.answer-form.fraction-answer-mode {
   width: min(560px, 96%);
+}
+
+.answer-form.fraction-answer-mode {
+  align-items: center;
 }
 
 .answer-form.choice-answer-mode {
@@ -2466,6 +2522,65 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   font-weight: 900;
 }
 
+.fraction-answer-fields {
+  display: grid;
+  flex: 1;
+  place-items: center;
+}
+
+.fraction-answer-fields[hidden],
+.fraction-only-answer[hidden],
+.mixed-fraction-answer[hidden] {
+  display: none;
+}
+
+.fraction-only-answer {
+  display: grid;
+  place-items: center;
+}
+
+.mixed-fraction-answer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mixed-whole-input {
+  display: grid;
+  gap: 6px;
+  min-width: 96px;
+}
+
+.mixed-whole-input span {
+  color: var(--blue-dark);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fraction-stack-input {
+  display: grid;
+  width: 112px;
+  grid-template-rows: 58px 4px 58px;
+  gap: 6px;
+  align-items: center;
+}
+
+.fraction-stack-input input {
+  height: 58px;
+  border-radius: 14px;
+}
+
+.fraction-input-line {
+  display: block;
+  width: 100%;
+  height: 4px;
+  background: var(--navy);
+  border-radius: 999px;
+}
+
 .choice-answer-fields {
   display: grid;
   gap: 10px;
@@ -2514,10 +2629,21 @@ body.app-page-active .dashboard-main-wide > .page-hero-card > :last-child {
   background: #eef2fa;
 }
 
-.choice-answer-fields label span {
+.factor-answer-grid label > span {
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.choice-toggle .math-expression {
+  gap: 0.28em;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.choice-toggle .math-fraction {
+  font-size: 1.25em;
 }
 
 .choice-answer-fields input[type="checkbox"],

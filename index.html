@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=prime-auto-submit-v1-20260813" />
-    <script src="script.js?v=prime-auto-submit-v1-20260813" defer></script>
-    <script type="module" src="firebase-leaderboard.js?v=prime-auto-submit-v1-20260813"></script>
+    <link rel="stylesheet" href="styles.css?v=fraction-layout-v1-20260813" />
+    <script src="script.js?v=fraction-layout-v1-20260813" defer></script>
+    <script type="module" src="firebase-leaderboard.js?v=fraction-layout-v1-20260813"></script>
   </head>
   <body>
     <header class="site-header">
@@ -512,6 +512,78 @@
                       disabled
                     />
                   </label>
+                </div>
+                <div class="fraction-answer-fields" id="fraction-answer-fields" hidden>
+                  <div class="fraction-only-answer" id="fraction-only-answer">
+                    <div class="fraction-stack-input" role="group" aria-label="Fraction answer">
+                      <label class="sr-only" for="fraction-numerator-input">Numerator</label>
+                      <input
+                        id="fraction-numerator-input"
+                        name="fractionNumerator"
+                        type="number"
+                        inputmode="numeric"
+                        placeholder="?"
+                        autocomplete="off"
+                        step="1"
+                        disabled
+                      />
+                      <span class="fraction-input-line" aria-hidden="true"></span>
+                      <label class="sr-only" for="fraction-denominator-input">Denominator</label>
+                      <input
+                        id="fraction-denominator-input"
+                        name="fractionDenominator"
+                        type="number"
+                        inputmode="numeric"
+                        placeholder="?"
+                        autocomplete="off"
+                        min="1"
+                        step="1"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div class="mixed-fraction-answer" id="mixed-fraction-answer" hidden>
+                    <label class="mixed-whole-input">
+                      <span>Whole</span>
+                      <input
+                        id="mixed-whole-input"
+                        name="mixedWhole"
+                        type="number"
+                        inputmode="numeric"
+                        placeholder="?"
+                        autocomplete="off"
+                        step="1"
+                        disabled
+                      />
+                    </label>
+                    <div class="fraction-stack-input" role="group" aria-label="Fraction part">
+                      <label class="sr-only" for="mixed-numerator-input">Numerator</label>
+                      <input
+                        id="mixed-numerator-input"
+                        name="mixedNumerator"
+                        type="number"
+                        inputmode="numeric"
+                        placeholder="?"
+                        autocomplete="off"
+                        min="0"
+                        step="1"
+                        disabled
+                      />
+                      <span class="fraction-input-line" aria-hidden="true"></span>
+                      <label class="sr-only" for="mixed-denominator-input">Denominator</label>
+                      <input
+                        id="mixed-denominator-input"
+                        name="mixedDenominator"
+                        type="number"
+                        inputmode="numeric"
+                        placeholder="?"
+                        autocomplete="off"
+                        min="1"
+                        step="1"
+                        disabled
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div class="choice-answer-fields" id="choice-answer-fields" hidden></div>
                 <button type="submit">Check</button>
