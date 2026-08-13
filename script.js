@@ -1,4 +1,5 @@
 const GAME_SECONDS = 60;
+const TOPIC_GAME_SECONDS = 300;
 const PAPER_GAME_SECONDS = 300;
 const STORAGE_KEY = "bayside-maths-challenge-leaderboards-v5";
 const PROGRESS_KEY = "bayside-maths-challenge-progress-v1";
@@ -179,6 +180,146 @@ Object.assign(gameInfo, {
     cardClass: "game-card-coral",
     accessYear: "year8",
   },
+  "fractions-simplify-fractions": {
+    name: "Simplify Fractions",
+    shortName: "Simplify",
+    description: "Reduce fractions to their simplest form.",
+    cardDescription: "Simplify proper fractions with smaller numerators.",
+    bullets: ["Common factors", "Simplest form"],
+    icon: "≡",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "fractions-equivalent-fractions": {
+    name: "Equivalent Fractions",
+    shortName: "Equivalent",
+    description: "Complete equivalent fractions by finding the missing numerator or denominator.",
+    cardDescription: "Scale fractions up and down.",
+    bullets: ["Equivalent fractions", "Missing values"],
+    icon: "=",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "fractions-improper-to-mixed": {
+    name: "Improper Fraction → Mixed Number",
+    shortName: "Improper to Mixed",
+    description: "Convert improper fractions into mixed numbers.",
+    cardDescription: "Write improper fractions as mixed numbers.",
+    bullets: ["Improper fractions", "Mixed numbers"],
+    icon: "↘",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "fractions-mixed-to-improper": {
+    name: "Mixed Number → Improper Fraction",
+    shortName: "Mixed to Improper",
+    description: "Convert mixed numbers into improper fractions.",
+    cardDescription: "Write mixed numbers as improper fractions.",
+    bullets: ["Mixed numbers", "Improper fractions"],
+    icon: "↗",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "fractions-compare-fractions": {
+    name: "Compare Fractions",
+    shortName: "Compare",
+    description: "Choose which fraction is larger.",
+    cardDescription: "Compare two fractions quickly.",
+    bullets: ["Fraction size", "Equivalent thinking"],
+    icon: ">",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "fractions-order-fractions": {
+    name: "Order Fractions",
+    shortName: "Order",
+    description: "Put fractions in order from smallest to largest.",
+    cardDescription: "Choose the correct order for three fractions.",
+    bullets: ["Smallest to largest", "Common denominators"],
+    icon: "↕",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "fractions-add-same-denominator": {
+    name: "Add Fractions with Same Denominator",
+    shortName: "Add Same",
+    description: "Add fractions that already have the same denominator.",
+    cardDescription: "Add numerators and keep the denominator.",
+    bullets: ["Same denominator", "Fraction addition"],
+    icon: "+",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "fractions-subtract-same-denominator": {
+    name: "Subtract Fractions with Same Denominator",
+    shortName: "Subtract Same",
+    description: "Subtract fractions that already have the same denominator.",
+    cardDescription: "Subtract numerators and keep the denominator.",
+    bullets: ["Same denominator", "Fraction subtraction"],
+    icon: "−",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "fractions-add-different-denominators": {
+    name: "Add Fractions with Different Denominators",
+    shortName: "Add Different",
+    description: "Add fractions by finding a common denominator.",
+    cardDescription: "Add fractions with unlike denominators.",
+    bullets: ["Common denominators", "Fraction addition"],
+    icon: "⊕",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "fractions-subtract-different-denominators": {
+    name: "Subtract Fractions with Different Denominators",
+    shortName: "Subtract Different",
+    description: "Subtract fractions by finding a common denominator.",
+    cardDescription: "Subtract fractions with unlike denominators.",
+    bullets: ["Common denominators", "Fraction subtraction"],
+    icon: "⊖",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "fractions-multiply-fractions": {
+    name: "Multiply Fractions",
+    shortName: "Multiply",
+    description: "Multiply fractions and give an equivalent answer.",
+    cardDescription: "Multiply numerators and denominators.",
+    bullets: ["Fraction multiplication", "Equivalent answers"],
+    icon: "×",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
+  "fractions-divide-fractions": {
+    name: "Divide Fractions",
+    shortName: "Divide",
+    description: "Divide fractions using reciprocal thinking.",
+    cardDescription: "Divide by multiplying by the reciprocal.",
+    bullets: ["Reciprocals", "Fraction division"],
+    icon: "÷",
+    cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "fractions-add-mixed-numbers": {
+    name: "Add Mixed Numbers",
+    shortName: "Add Mixed",
+    description: "Add mixed numbers and give an equivalent answer.",
+    cardDescription: "Combine whole numbers and fractions.",
+    bullets: ["Mixed numbers", "Fraction addition"],
+    icon: "⊞",
+    cardClass: "game-card-sky",
+    accessYear: "year7",
+  },
+  "fractions-subtract-mixed-numbers": {
+    name: "Subtract Mixed Numbers",
+    shortName: "Subtract Mixed",
+    description: "Subtract mixed numbers and give an equivalent answer.",
+    cardDescription: "Subtract whole numbers and fractions.",
+    bullets: ["Mixed numbers", "Fraction subtraction"],
+    icon: "⊟",
+    cardClass: "game-card-coral",
+    accessYear: "year7",
+  },
 });
 
 const skillTopicMap = {
@@ -197,6 +338,20 @@ const skillTopicMap = {
   "number-subtract-integers": "topic-number",
   "number-multiply-integers": "topic-number",
   "number-divide-integers": "topic-number",
+  "fractions-simplify-fractions": "topic-fractions",
+  "fractions-equivalent-fractions": "topic-fractions",
+  "fractions-improper-to-mixed": "topic-fractions",
+  "fractions-mixed-to-improper": "topic-fractions",
+  "fractions-compare-fractions": "topic-fractions",
+  "fractions-order-fractions": "topic-fractions",
+  "fractions-add-same-denominator": "topic-fractions",
+  "fractions-subtract-same-denominator": "topic-fractions",
+  "fractions-add-different-denominators": "topic-fractions",
+  "fractions-subtract-different-denominators": "topic-fractions",
+  "fractions-multiply-fractions": "topic-fractions",
+  "fractions-divide-fractions": "topic-fractions",
+  "fractions-add-mixed-numbers": "topic-fractions",
+  "fractions-subtract-mixed-numbers": "topic-fractions",
 };
 
 const topicAreaInfo = {
@@ -218,6 +373,16 @@ const topicAreaInfo = {
     bullets: ["Factors, multiples, primes", "Squares, roots, and integers"],
     icon: "∑",
     cardClass: "game-card-sun",
+    accessYear: "year7",
+  },
+  "topic-fractions": {
+    name: "Fractions",
+    shortName: "Fractions",
+    description: "A combined fractions game for simplifying, equivalents, mixed numbers, comparing, ordering, and operations.",
+    cardDescription: "Build fluency with fraction forms and operations.",
+    bullets: ["Equivalent forms and mixed numbers", "Compare, order, and operate"],
+    icon: "⅟",
+    cardClass: "game-card-coral",
     accessYear: "year7",
   },
 };
@@ -530,6 +695,86 @@ function createSimplifiedFractionAnswer(numerator, denominator) {
   return answer ? { ...answer, requireSimplified: true } : null;
 }
 
+function withFractionOptions(answer, options = {}) {
+  return answer ? { ...answer, ...options } : null;
+}
+
+function formatFractionParts(fraction) {
+  return `${fraction.numerator}/${fraction.denominator}`;
+}
+
+function formatMixedNumberParts(mixed) {
+  return `${mixed.whole} ${mixed.numerator}/${mixed.denominator}`;
+}
+
+function formatMixedFractionAnswer(answer) {
+  const sign = answer.numerator < 0 ? "-" : "";
+  const absoluteNumerator = Math.abs(answer.numerator);
+  const whole = Math.floor(absoluteNumerator / answer.denominator);
+  const numerator = absoluteNumerator % answer.denominator;
+
+  if (!numerator) return `${sign}${whole}`;
+  if (!whole) return `${sign}${numerator}/${answer.denominator}`;
+  return `${sign}${whole} ${numerator}/${answer.denominator}`;
+}
+
+function getMixedNumberTotalNumerator(mixed) {
+  return (mixed.whole * mixed.denominator) + mixed.numerator;
+}
+
+function createMixedNumberAnswer(mixed, options = {}) {
+  return withFractionOptions(
+    createFractionAnswer(getMixedNumberTotalNumerator(mixed), mixed.denominator),
+    options,
+  );
+}
+
+function randomReducedProperFraction({
+  minDenominator = 3,
+  maxDenominator = 12,
+  maxNumerator = 9,
+} = {}) {
+  for (let attempts = 0; attempts < 80; attempts += 1) {
+    const denominator = randomNumber(minDenominator, maxDenominator);
+    const numerator = randomNumber(1, Math.min(maxNumerator, denominator - 1));
+    if (greatestCommonDivisor(numerator, denominator) === 1) {
+      return { numerator, denominator };
+    }
+  }
+
+  return { numerator: 1, denominator: 2 };
+}
+
+function randomMixedNumber() {
+  const denominator = randomNumber(3, 9);
+  const numerator = randomNumber(1, denominator - 1);
+  return {
+    whole: randomNumber(1, 5),
+    numerator,
+    denominator,
+  };
+}
+
+function compareFractions(left, right) {
+  return (left.numerator * right.denominator) - (right.numerator * left.denominator);
+}
+
+function getDistinctFractions(count) {
+  const fractions = [];
+  while (fractions.length < count) {
+    const fraction = randomReducedProperFraction();
+    const key = `${fraction.numerator}/${fraction.denominator}`;
+    if (!fractions.some((item) => `${item.numerator}/${item.denominator}` === key)) {
+      fractions.push(fraction);
+    }
+  }
+  return fractions;
+}
+
+function shuffleItems(items) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
 function isSurdAnswer(answer) {
   return answer?.type === "surd";
 }
@@ -548,6 +793,7 @@ function getFormattedAnswer(answer) {
   }
 
   if (isFractionAnswer(answer)) {
+    if (answer.displayAsMixed || answer.requireMixed) return formatMixedFractionAnswer(answer);
     return answer.denominator === 1
       ? String(answer.numerator)
       : `${answer.numerator}/${answer.denominator}`;
@@ -566,6 +812,27 @@ function getFormattedAnswer(answer) {
 
 function parseFractionInput(value) {
   const cleanValue = String(value || "").trim();
+  const mixedNumberMatch = cleanValue.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixedNumberMatch) {
+    const enteredWhole = Number(mixedNumberMatch[1]);
+    const enteredMixedNumerator = Number(mixedNumberMatch[2]);
+    const enteredDenominator = Number(mixedNumberMatch[3]);
+    const sign = enteredWhole < 0 ? -1 : 1;
+    const enteredNumerator = sign * ((Math.abs(enteredWhole) * enteredDenominator) + enteredMixedNumerator);
+    const answer = createFractionAnswer(enteredNumerator, enteredDenominator);
+
+    return answer
+      ? {
+          ...answer,
+          enteredNumerator,
+          enteredDenominator,
+          enteredKind: "mixed",
+          enteredWhole,
+          enteredMixedNumerator,
+        }
+      : null;
+  }
+
   const fractionMatch = cleanValue.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
   if (fractionMatch) {
     const enteredNumerator = Number(fractionMatch[1]);
@@ -577,6 +844,7 @@ function parseFractionInput(value) {
           ...answer,
           enteredNumerator,
           enteredDenominator,
+          enteredKind: "fraction",
         }
       : null;
   }
@@ -587,6 +855,7 @@ function parseFractionInput(value) {
       ...createFractionAnswer(Number(cleanValue), 1),
       enteredNumerator: Number(cleanValue),
       enteredDenominator: 1,
+      enteredKind: "whole",
     };
   }
 
@@ -600,6 +869,15 @@ function fractionsMatch(guess, answer) {
 function isSimplifiedFractionGuess(guess) {
   return guess.enteredDenominator > 0
     && greatestCommonDivisor(guess.enteredNumerator, guess.enteredDenominator) === 1;
+}
+
+function isMixedNumberGuess(guess) {
+  return guess.enteredKind === "mixed" && guess.enteredMixedNumerator > 0;
+}
+
+function isImproperFractionGuess(guess) {
+  return guess.enteredKind === "fraction"
+    && Math.abs(guess.enteredNumerator) > Math.abs(guess.enteredDenominator);
 }
 
 function setSurdAnswerMode(enabled) {
@@ -779,6 +1057,169 @@ const skillQuestionGenerators = {
     const quotient = randomNumber(-9, 9) || 6;
     return { text: `${divisor * quotient} ÷ ${divisor} = ?`, answer: quotient };
   },
+  "fractions-simplify-fractions": () => {
+    const base = randomReducedProperFraction({ minDenominator: 4, maxDenominator: 12, maxNumerator: 8 });
+    const multiplier = randomNumber(2, 6);
+    return {
+      text: `Simplify ${base.numerator * multiplier}/${base.denominator * multiplier}`,
+      answer: createSimplifiedFractionAnswer(base.numerator, base.denominator),
+    };
+  },
+  "fractions-equivalent-fractions": () => {
+    const fraction = randomReducedProperFraction();
+    const multiplier = randomNumber(2, 8);
+    const missingNumerator = Math.random() > 0.5;
+    return missingNumerator
+      ? {
+          text: `Complete ${fraction.numerator}/${fraction.denominator} = ?/${fraction.denominator * multiplier}`,
+          answer: fraction.numerator * multiplier,
+        }
+      : {
+          text: `Complete ${fraction.numerator}/${fraction.denominator} = ${fraction.numerator * multiplier}/?`,
+          answer: fraction.denominator * multiplier,
+        };
+  },
+  "fractions-improper-to-mixed": () => {
+    const mixed = randomMixedNumber();
+    const numerator = getMixedNumberTotalNumerator(mixed);
+    return {
+      text: `Convert ${numerator}/${mixed.denominator} to a mixed number`,
+      answer: createMixedNumberAnswer(mixed, { requireMixed: true, displayAsMixed: true }),
+    };
+  },
+  "fractions-mixed-to-improper": () => {
+    const mixed = randomMixedNumber();
+    return {
+      text: `Convert ${formatMixedNumberParts(mixed)} to an improper fraction`,
+      answer: createMixedNumberAnswer(mixed, { requireImproper: true }),
+    };
+  },
+  "fractions-compare-fractions": () => {
+    const [left, right] = getDistinctFractions(2);
+    const larger = compareFractions(left, right) > 0 ? left : right;
+    return {
+      text: `Which is larger: ${formatFractionParts(left)} or ${formatFractionParts(right)}?`,
+      answer: {
+        type: "singleChoice",
+        value: formatFractionParts(larger),
+        options: shuffleItems([formatFractionParts(left), formatFractionParts(right)]),
+      },
+    };
+  },
+  "fractions-order-fractions": () => {
+    const ordered = getDistinctFractions(3).sort(compareFractions);
+    const options = shuffleItems([
+      [0, 1, 2],
+      [0, 2, 1],
+      [1, 0, 2],
+      [2, 1, 0],
+    ].map((indexes) => indexes.map((index) => formatFractionParts(ordered[index])).join(", ")));
+    const value = ordered.map(formatFractionParts).join(", ");
+    return {
+      text: `Order from smallest to largest: ${shuffleItems(ordered).map(formatFractionParts).join(", ")}`,
+      answer: { type: "singleChoice", value, options },
+    };
+  },
+  "fractions-add-same-denominator": () => {
+    const denominator = randomNumber(5, 14);
+    const leftNumerator = randomNumber(1, denominator - 2);
+    const rightNumerator = randomNumber(1, denominator - leftNumerator - 1);
+    return {
+      text: `${leftNumerator}/${denominator} + ${rightNumerator}/${denominator} = ?`,
+      answer: createFractionAnswer(leftNumerator + rightNumerator, denominator),
+    };
+  },
+  "fractions-subtract-same-denominator": () => {
+    const denominator = randomNumber(5, 14);
+    const leftNumerator = randomNumber(2, denominator - 1);
+    const rightNumerator = randomNumber(1, leftNumerator - 1);
+    return {
+      text: `${leftNumerator}/${denominator} − ${rightNumerator}/${denominator} = ?`,
+      answer: createFractionAnswer(leftNumerator - rightNumerator, denominator),
+    };
+  },
+  "fractions-add-different-denominators": () => {
+    const left = randomReducedProperFraction();
+    let right = randomReducedProperFraction();
+    while (right.denominator === left.denominator) {
+      right = randomReducedProperFraction();
+    }
+    return {
+      text: `${formatFractionParts(left)} + ${formatFractionParts(right)} = ?`,
+      answer: createFractionAnswer(
+        (left.numerator * right.denominator) + (right.numerator * left.denominator),
+        left.denominator * right.denominator,
+      ),
+    };
+  },
+  "fractions-subtract-different-denominators": () => {
+    let left = randomReducedProperFraction();
+    let right = randomReducedProperFraction();
+    while (right.denominator === left.denominator || compareFractions(left, right) <= 0) {
+      left = randomReducedProperFraction();
+      right = randomReducedProperFraction();
+    }
+    return {
+      text: `${formatFractionParts(left)} − ${formatFractionParts(right)} = ?`,
+      answer: createFractionAnswer(
+        (left.numerator * right.denominator) - (right.numerator * left.denominator),
+        left.denominator * right.denominator,
+      ),
+    };
+  },
+  "fractions-multiply-fractions": () => {
+    const left = randomReducedProperFraction();
+    const right = randomReducedProperFraction();
+    return {
+      text: `${formatFractionParts(left)} × ${formatFractionParts(right)} = ?`,
+      answer: createFractionAnswer(left.numerator * right.numerator, left.denominator * right.denominator),
+    };
+  },
+  "fractions-divide-fractions": () => {
+    const left = randomReducedProperFraction();
+    const right = randomReducedProperFraction();
+    return {
+      text: `${formatFractionParts(left)} ÷ ${formatFractionParts(right)} = ?`,
+      answer: createFractionAnswer(left.numerator * right.denominator, left.denominator * right.numerator),
+    };
+  },
+  "fractions-add-mixed-numbers": () => {
+    const left = randomMixedNumber();
+    const right = randomMixedNumber();
+    return {
+      text: `${formatMixedNumberParts(left)} + ${formatMixedNumberParts(right)} = ?`,
+      answer: withFractionOptions(
+        createFractionAnswer(
+          (getMixedNumberTotalNumerator(left) * right.denominator)
+            + (getMixedNumberTotalNumerator(right) * left.denominator),
+          left.denominator * right.denominator,
+        ),
+        { displayAsMixed: true },
+      ),
+    };
+  },
+  "fractions-subtract-mixed-numbers": () => {
+    let left = randomMixedNumber();
+    let right = randomMixedNumber();
+    while (compareFractions(
+      { numerator: getMixedNumberTotalNumerator(left), denominator: left.denominator },
+      { numerator: getMixedNumberTotalNumerator(right), denominator: right.denominator },
+    ) <= 0) {
+      left = randomMixedNumber();
+      right = randomMixedNumber();
+    }
+    return {
+      text: `${formatMixedNumberParts(left)} − ${formatMixedNumberParts(right)} = ?`,
+      answer: withFractionOptions(
+        createFractionAnswer(
+          (getMixedNumberTotalNumerator(left) * right.denominator)
+            - (getMixedNumberTotalNumerator(right) * left.denominator),
+          left.denominator * right.denominator,
+        ),
+        { displayAsMixed: true },
+      ),
+    };
+  },
 };
 
 function getYearLabel(yearLevel) {
@@ -920,6 +1361,7 @@ function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel(
 }
 
 function getGameDuration(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
+  if (isTopicArea(gameId)) return TOPIC_GAME_SECONDS;
   return hasPenAndPaperSkill(gameId, yearLevel) ? PAPER_GAME_SECONDS : GAME_SECONDS;
 }
 
@@ -3707,7 +4149,11 @@ function nextQuestion() {
   elements.standardAnswerField.hidden = surdMode || choiceMode;
   elements.answerInput.disabled = surdMode || choiceMode;
   elements.answerInput.required = !surdMode && !choiceMode;
-  elements.answerInput.placeholder = fractionMode ? "e.g. 3/4" : "?";
+  elements.answerInput.placeholder = fractionMode
+    ? state.answer.requireMixed
+      ? "e.g. 3 2/5"
+      : "e.g. 3/4"
+    : "?";
   elements.answerInput.inputMode = fractionMode ? "text" : "decimal";
   elements.question.classList.toggle("surd-question", surdMode);
   elements.question.classList.toggle("choice-question", choiceMode);
@@ -3896,7 +4342,10 @@ function submitAnswer(event) {
   const isCorrect = surdMode
     ? guess.coefficient === state.answer.coefficient && guess.radicand === state.answer.radicand
     : fractionMode
-      ? fractionsMatch(guess, state.answer) && (!state.answer.requireSimplified || isSimplifiedFractionGuess(guess))
+      ? fractionsMatch(guess, state.answer)
+        && (!state.answer.requireSimplified || isSimplifiedFractionGuess(guess))
+        && (!state.answer.requireMixed || isMixedNumberGuess(guess))
+        && (!state.answer.requireImproper || isImproperFractionGuess(guess))
       : choiceMode
         ? state.answer.type === "singleChoice"
           ? guess === state.answer.value

@@ -63,7 +63,8 @@ service cloud.firestore {
     function isValidGame(game) {
       return game in [
         'topic-speed-operations',
-        'topic-number'
+        'topic-number',
+        'topic-fractions'
       ];
     }
 

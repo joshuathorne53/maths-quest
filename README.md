@@ -11,11 +11,13 @@ live topic leaderboards.
   division
 - **Number:** factors, multiples, primes, HCF, LCM, squares, square roots, and
   integer operations
+- **Fractions:** simplifying, equivalent fractions, improper and mixed numbers,
+  comparing, ordering, fraction operations, and mixed-number operations
 
 Each topic area has one combined game that mixes only the sub-skills unlocked
-for the player's year level. Each sub-skill is one focused question type. Skills
-can also be played individually for medal progress, but shared leaderboards are
-only for topic areas.
+for the player's year level. Combined topic-area games run for 5 minutes. Each
+sub-skill is one focused question type and can also be played individually for
+medal progress, but shared leaderboards are only for topic areas.
 
 ## Run locally
 

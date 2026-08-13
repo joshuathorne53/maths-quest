@@ -35,6 +35,7 @@ import {
 const validGames = new Set([
   "topic-speed-operations",
   "topic-number",
+  "topic-fractions",
 ]);
 const validYearLevels = new Set([
   "year7",
@@ -48,6 +49,7 @@ const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameAccessYears = new Map([
   ["topic-speed-operations", "year7"],
   ["topic-number", "year7"],
+  ["topic-fractions", "year7"],
 ]);
 const configuredDomains = Array.isArray(allowedEmailDomains) && allowedEmailDomains.length
   ? allowedEmailDomains
