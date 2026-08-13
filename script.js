@@ -406,6 +406,7 @@ Object.entries(topicAreaInfo).forEach(([topicId, info]) => {
 const TOPIC_AREA_IDS = Object.keys(topicAreaInfo);
 const SKILL_IDS = Object.keys(skillTopicMap).filter((skillId) => gameInfo[skillId]);
 const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
+const FIVE_MINUTE_SKILL_GAME_IDS = new Set(["number-identify-factors"]);
 const PEN_AND_PAPER_GAME_IDS = new Set();
 
 const state = {
@@ -1362,6 +1363,7 @@ function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel(
 
 function getGameDuration(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
   if (isTopicArea(gameId)) return TOPIC_GAME_SECONDS;
+  if (FIVE_MINUTE_SKILL_GAME_IDS.has(gameId)) return PAPER_GAME_SECONDS;
   return hasPenAndPaperSkill(gameId, yearLevel) ? PAPER_GAME_SECONDS : GAME_SECONDS;
 }
 
