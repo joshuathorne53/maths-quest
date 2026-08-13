@@ -1254,6 +1254,7 @@ const skillQuestionGenerators = {
         type: "singleChoice",
         value: formatFractionParts(larger),
         options: shuffleItems([formatFractionParts(left), formatFractionParts(right)]),
+        autoSubmit: true,
       },
     };
   },
