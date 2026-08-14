@@ -922,6 +922,76 @@ if (!isConfigured) {
       );
     },
 
+    async updateBronzeStreak(game, context = {}) {
+      const user = getAllowedUser();
+      if (!validGames.has(game)) {
+        throw new Error("Unknown game mode.");
+      }
+
+      const accountType = getAccountTypeForEmail(user.email);
+      if (!accountType) {
+        throw makeError("profile/account-type-needed", "Use an approved school Google account before updating a streak.");
+      }
+
+      const role = accountType === "teacher" ? "teacher" : "student";
+      const scoreData = role === "teacher"
+        ? await getTeacherScorePayload(user, game, 0, context.yearLevel)
+        : await getStudentScorePayload(user, game, 0, context.yearLevel);
+      const {
+        scoreDocument,
+        existingScore,
+        existingData,
+        previousScore,
+        previousBestStreak,
+        previousBestTopicBronzeStreak,
+      } = await getScoreDocumentState(user, game, scoreData);
+      const currentBestTopicBronzeStreak = cleanBestTopicBronzeStreak(
+        context.bestTopicBronzeStreak,
+        existingData || { createdAt: new Date() },
+      );
+      const bestTopicBronzeStreak = Math.max(previousBestTopicBronzeStreak, currentBestTopicBronzeStreak);
+
+      if (!bestTopicBronzeStreak || bestTopicBronzeStreak <= previousBestTopicBronzeStreak) {
+        return {
+          id: scoreDocument.id,
+          updated: false,
+          role: scoreData.role,
+          yearLevel: scoreData.yearLevel,
+          bestTopicBronzeStreak: previousBestTopicBronzeStreak,
+        };
+      }
+
+      const preservedScore = previousScore ?? (Number.isInteger(existingData?.score) ? existingData.score : 0);
+      const updateData = {
+        ...scoreData,
+        score: preservedScore,
+        bestStreak: previousBestStreak,
+        bestTopicBronzeStreak,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (existingScore.exists()) {
+        if (!existingData?.createdAt) {
+          updateData.createdAt = serverTimestamp();
+        }
+        await updateDoc(scoreDocument, updateData);
+      } else {
+        await setDoc(scoreDocument, {
+          ...updateData,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      return {
+        id: scoreDocument.id,
+        updated: true,
+        role: scoreData.role,
+        yearLevel: scoreData.yearLevel,
+        score: preservedScore,
+        bestTopicBronzeStreak,
+      };
+    },
+
     async addScore(game, score, context = {}) {
       const user = getAllowedUser();
       if (!validGames.has(game)) {

@@ -407,6 +407,7 @@ const TOPIC_AREA_IDS = Object.keys(topicAreaInfo);
 const SKILL_IDS = Object.keys(skillTopicMap).filter((skillId) => gameInfo[skillId]);
 const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
 const FIVE_MINUTE_SKILL_GAME_IDS = new Set(["number-identify-factors"]);
+const ONE_MINUTE_TOPIC_GAME_IDS = new Set(["topic-speed-operations"]);
 const PEN_AND_PAPER_GAME_IDS = new Set();
 
 const state = {
@@ -1515,7 +1516,9 @@ function hasPenAndPaperSkill(gameId, yearLevel = getEffectiveChallengeYearLevel(
 }
 
 function getGameDuration(gameId, yearLevel = getEffectiveChallengeYearLevel()) {
-  if (isTopicArea(gameId)) return TOPIC_GAME_SECONDS;
+  if (isTopicArea(gameId)) {
+    return ONE_MINUTE_TOPIC_GAME_IDS.has(gameId) ? GAME_SECONDS : TOPIC_GAME_SECONDS;
+  }
   if (FIVE_MINUTE_SKILL_GAME_IDS.has(gameId)) return PAPER_GAME_SECONDS;
   return hasPenAndPaperSkill(gameId, yearLevel) ? PAPER_GAME_SECONDS : GAME_SECONDS;
 }
@@ -2152,7 +2155,8 @@ function getRawScores(game) {
 
 function getVisibleScores(game = state.board, options = {}) {
   const rawScores = Array.isArray(state.sharedScores[game]) ? state.sharedScores[game] : getLocalScores()[game];
-  return filterScoresForBoard(rawScores, state.boardYearLevel, state.teacherFilter, options);
+  return filterScoresForBoard(rawScores, state.boardYearLevel, state.teacherFilter, options)
+    .filter((entry) => entry.score > 0);
 }
 
 function stopSharedBoardListeners({ clearScores = false } = {}) {
@@ -2370,6 +2374,11 @@ function getBestMedalForScore(score, goals) {
   return goals.reduce((best, goal) => (score >= goal.score ? goal : best), null);
 }
 
+function scoreReachesBronze(gameId, score) {
+  const bronzeGoal = getMedalGoalsForGame(gameId).find((goal) => goal.id === "bronze");
+  return Boolean(bronzeGoal) && score >= bronzeGoal.score;
+}
+
 function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) {
   if (!shouldSaveScore(scoreContext)) return;
 
@@ -2381,8 +2390,7 @@ function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) 
   };
 
   const goals = getMedalGoalsForGame(gameId);
-  const bronzeGoal = goals.find((goal) => goal.id === "bronze");
-  if (!bronzeGoal || score < bronzeGoal.score) {
+  if (!scoreReachesBronze(gameId, score)) {
     saveProgressRecord(record, scoreContext);
     return;
   }
@@ -2436,6 +2444,15 @@ function getTopicBronzeDays(record = getProgressRecord()) {
   return [...topicBronzeDays].sort();
 }
 
+function getBronzeDays(record = getProgressRecord()) {
+  const bronzeDays = new Set(record.bronzeDays);
+  getTopicBronzeDays(record).forEach((dateKey) => bronzeDays.add(dateKey));
+  record.attempts.forEach((attempt) => {
+    if (attempt.date) bronzeDays.add(attempt.date);
+  });
+  return [...bronzeDays].sort();
+}
+
 function getLongestStreakFromDays(days) {
   const daySet = new Set(days);
   let longestStreak = 0;
@@ -2458,8 +2475,8 @@ function getLongestStreakFromDays(days) {
 
 function getBronzeStreak(scoreContext = getScoreContext()) {
   const record = getProgressRecord(scoreContext);
-  const topicBronzeDays = getTopicBronzeDays(record);
-  const bronzeDays = new Set(topicBronzeDays);
+  const bronzeDayList = getBronzeDays(record);
+  const bronzeDays = new Set(bronzeDayList);
   const today = getLocalDateKey();
   const yesterday = offsetDateKey(today, -1);
   let cursor = bronzeDays.has(today) ? today : yesterday;
@@ -2472,9 +2489,9 @@ function getBronzeStreak(scoreContext = getScoreContext()) {
 
   return {
     streak,
-    highestStreak: getLongestStreakFromDays(topicBronzeDays),
+    highestStreak: getLongestStreakFromDays(bronzeDayList),
     completedToday: bronzeDays.has(today),
-    lastBronzeDay: topicBronzeDays.at(-1) || "",
+    lastBronzeDay: bronzeDayList.at(-1) || "",
   };
 }
 
@@ -2544,10 +2561,10 @@ function renderProgressPage() {
   elements.progressStreakCount.textContent = `${streak.streak} ${streak.streak === 1 ? "day" : "days"}`;
   elements.progressHighestStreakCount.textContent = `${streak.highestStreak} ${streak.highestStreak === 1 ? "day" : "days"}`;
   elements.progressStreakStatus.textContent = streak.completedToday
-    ? "A topic Bronze or better is banked for today."
+    ? "A Bronze or better is banked for today."
     : streak.streak
-      ? "Get Bronze or better in a topic today to keep this streak going."
-      : "Get Bronze or better in a topic today to start a streak.";
+      ? "Get Bronze or better in any skill or topic today to keep this streak going."
+      : "Get Bronze or better in any skill or topic today to start a streak.";
   elements.progressSummary.textContent = `${bronzeCount}/${progressGameIds.length} bronze, ${goldCount} gold, ${thorneCount} Mr Thorne targets reached.`;
 
   elements.progressGrid.innerHTML = topicRows.length
@@ -2598,7 +2615,7 @@ function renderProgressPage() {
   } else if (getVisibleBoardGameIds().some((gameId) => state.sharedScores[gameId] === null)) {
     setProgressStatus("connecting", "Loading your medal progress and Mr Thorne targets...");
   } else {
-    setProgressStatus("shared", "Topic medals use leaderboard best scores. Skill medals use your saved practice bests inside each topic. Streaks count topic Bronze-or-better days.");
+    setProgressStatus("shared", "Topic medals use leaderboard best scores. Skill medals use your saved practice bests inside each topic. Streaks count any Bronze-or-better skill or topic day.");
   }
 }
 
@@ -3379,7 +3396,7 @@ function renderAllLeaderboards() {
     }),
     renderSummaryLeaderboardCard({
       title: "Streak",
-      description: "Longest streak of days earning at least Bronze in a topic-area game.",
+      description: "Longest streak of days earning at least Bronze in any skill or topic.",
       meta: "Bronze-or-better days",
       icon: "↯",
       scores: streakScores,
@@ -4041,16 +4058,44 @@ function connectSharedLeaderboard() {
   if (isTopicArea(state.board)) listenToSharedBoard(state.board);
 }
 
+async function syncSharedBronzeStreak(gameId, scoreContext, bronzeStreak) {
+  if (!state.sharedConfigured || !state.authAllowed || !hasPlayableProfile()) return false;
+  if (!shouldSaveScore(scoreContext)) return false;
+  if (typeof window.sharedLeaderboard?.updateBronzeStreak !== "function") return false;
+
+  const leaderboardGame = getLeaderboardGameId(gameId);
+  if (!isTopicArea(leaderboardGame) || !bronzeStreak?.highestStreak) return false;
+
+  try {
+    await window.sharedLeaderboard.updateBronzeStreak(leaderboardGame, {
+      ...scoreContext,
+      bestTopicBronzeStreak: bronzeStreak.highestStreak,
+    });
+    return true;
+  } catch (error) {
+    console.warn("Could not sync Bronze streak.", error);
+    return false;
+  }
+}
+
 async function saveSharedScore() {
   if (!state.sharedConfigured || state.savingSharedScore) return;
+  const currentScoreContext = getScoreContext();
+  const currentBronzeStreak = getBronzeStreak(currentScoreContext);
+
   if (!isTopicArea(state.game)) {
     state.pendingSharedScore = null;
-    setLeaderboardStatus("local", "Skill score saved for medals. Play the topic-area game to join the shared leaderboard.");
+    const streakSynced = scoreReachesBronze(state.game, state.score)
+      && await syncSharedBronzeStreak(state.game, currentScoreContext, currentBronzeStreak);
+    setLeaderboardStatus(
+      "local",
+      streakSynced
+        ? "Skill score saved for medals. Your Streak was synced to the shared leaderboard."
+        : "Skill score saved for medals. Play the topic-area game to join the shared leaderboard.",
+    );
     return;
   }
 
-  const currentScoreContext = getScoreContext();
-  const currentBronzeStreak = getBronzeStreak(currentScoreContext);
   if (!shouldSaveScore(currentScoreContext)) {
     state.pendingSharedScore = null;
     return;
