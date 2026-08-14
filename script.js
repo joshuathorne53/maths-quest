@@ -424,6 +424,8 @@ const state = {
   correct: 0,
   questionNumber: 0,
   answer: 0,
+  currentQuestionSkillId: "",
+  topicSkillScores: {},
   time: GAME_SECONDS,
   duration: GAME_SECONDS,
   timerId: null,
@@ -2407,6 +2409,23 @@ function recordProgressAttempt(gameId, score, scoreContext = getScoreContext()) 
   saveProgressRecord(record, scoreContext);
 }
 
+function recordTopicSkillScore(skillId, points) {
+  if (!isTopicArea(state.game) || !isSkillGame(skillId) || !Number.isInteger(points) || points <= 0) return;
+  if (getSkillTopicId(skillId) !== state.game) return;
+
+  state.topicSkillScores[skillId] = (state.topicSkillScores[skillId] || 0) + points;
+}
+
+function recordTopicSkillProgress(scoreContext) {
+  if (!isTopicArea(state.game) || !shouldSaveScore(scoreContext)) return;
+
+  Object.entries(state.topicSkillScores).forEach(([skillId, skillScore]) => {
+    if (!isSkillGame(skillId) || getSkillTopicId(skillId) !== state.game) return;
+    if (!Number.isInteger(skillScore) || skillScore <= 0) return;
+    recordProgressAttempt(skillId, skillScore, scoreContext);
+  });
+}
+
 function getTopicBronzeDays(record = getProgressRecord()) {
   const topicBronzeDays = new Set(record.topicBronzeDays);
   record.attempts
@@ -4303,6 +4322,8 @@ function resetGame() {
     correct: 0,
     questionNumber: 0,
     answer: 0,
+    currentQuestionSkillId: "",
+    topicSkillScores: {},
     time: getGameDuration(state.game),
     duration: getGameDuration(state.game),
     timerId: null,
@@ -4332,6 +4353,7 @@ function nextQuestion() {
 
   const question = createQuestion(state.game);
   state.answer = question.answer;
+  state.currentQuestionSkillId = isTopicArea(state.game) ? question.skillId || "" : "";
   state.questionNumber += 1;
   state.acceptingAnswer = true;
   const surdMode = isSurdAnswer(state.answer);
@@ -4477,6 +4499,7 @@ function finishGame() {
 
   if (saveScore) {
     recordProgressAttempt(state.game, state.score, scoreContext);
+    recordTopicSkillProgress(scoreContext);
     saveLocalScore();
   }
   elements.gamePanel.hidden = true;
@@ -4557,6 +4580,7 @@ function submitCurrentAnswer() {
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     const points = 100 + Math.min(state.streak - 1, 5) * 20;
     state.score += points;
+    recordTopicSkillScore(state.currentQuestionSkillId, points);
     elements.feedback.textContent = state.streak > 2 ? `Correct! ${state.streak} answer streak!` : "Correct! Keep going.";
     elements.feedback.className = "feedback correct";
     playTone(true);
