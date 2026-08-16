@@ -408,6 +408,7 @@ const SKILL_IDS = Object.keys(skillTopicMap).filter((skillId) => gameInfo[skillI
 const GAME_IDS = [...TOPIC_AREA_IDS, ...SKILL_IDS];
 const FIVE_MINUTE_SKILL_GAME_IDS = new Set(["number-identify-factors"]);
 const ONE_MINUTE_TOPIC_GAME_IDS = new Set(["topic-speed-operations"]);
+const SHARED_TEACHER_SCORE_GAME_IDS = new Set(["topic-speed-operations"]);
 const PEN_AND_PAPER_GAME_IDS = new Set();
 
 const state = {
@@ -1921,6 +1922,29 @@ function getScoreIdentity(scoreContext, playerName) {
   return { id, uid: id };
 }
 
+function getScoreSaveYearLevels(gameId, scoreContext) {
+  const selectedYearLevel = cleanYearLevel(scoreContext.yearLevel);
+  if (scoreContext.role !== "teacher" || !SHARED_TEACHER_SCORE_GAME_IDS.has(gameId)) {
+    return selectedYearLevel ? [selectedYearLevel] : [];
+  }
+
+  const sharedYearLevels = (scoreContext.teacherYearLevels || [])
+    .map(cleanYearLevel)
+    .filter((yearLevel, index, levels) => (
+      yearLevel
+      && levels.indexOf(yearLevel) === index
+      && canYearAccessGame(yearLevel, gameId)
+    ));
+
+  if (selectedYearLevel && !sharedYearLevels.includes(selectedYearLevel) && canYearAccessGame(selectedYearLevel, gameId)) {
+    sharedYearLevels.unshift(selectedYearLevel);
+  }
+
+  return selectedYearLevel
+    ? [selectedYearLevel, ...sharedYearLevels.filter((yearLevel) => yearLevel !== selectedYearLevel)]
+    : sharedYearLevels;
+}
+
 function scoreMatchesIdentity(entry, scoreContext, scoreIdentity) {
   if (!entry || entry.role !== scoreContext.role) return false;
 
@@ -1958,45 +1982,57 @@ function saveLocalScore() {
 
   const scores = getLocalScores();
   const playerName = state.player || getGooglePlayerName();
-  const scoreIdentity = getScoreIdentity(scoreContext, playerName);
-  const existingIndex = scores[state.game].findIndex(
-    (entry) => scoreMatchesIdentity(entry, scoreContext, scoreIdentity),
+  const saveYearLevels = getScoreSaveYearLevels(state.game, scoreContext);
+  const matchingEntries = scores[state.game].filter((entry) => saveYearLevels.some((yearLevel) => {
+    const yearScoreContext = { ...scoreContext, yearLevel };
+    return scoreMatchesIdentity(entry, yearScoreContext, getScoreIdentity(yearScoreContext, playerName));
+  }));
+  const previousScore = matchingEntries.length
+    ? Math.max(...matchingEntries.map((entry) => entry.score))
+    : null;
+  const previousBestStreak = matchingEntries.reduce(
+    (highest, entry) => Math.max(highest, Number.isInteger(entry.bestStreak) ? entry.bestStreak : 0),
+    0,
   );
-  const previousScore = existingIndex >= 0 ? scores[state.game][existingIndex].score : null;
-  const previousBestStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestStreak)
-    ? scores[state.game][existingIndex].bestStreak
-    : 0;
-  const previousBestTopicBronzeStreak = existingIndex >= 0 && Number.isInteger(scores[state.game][existingIndex].bestTopicBronzeStreak)
-    ? scores[state.game][existingIndex].bestTopicBronzeStreak
-    : 0;
+  const previousBestTopicBronzeStreak = matchingEntries.reduce(
+    (highest, entry) => Math.max(highest, Number.isInteger(entry.bestTopicBronzeStreak) ? entry.bestTopicBronzeStreak : 0),
+    0,
+  );
   const improved = previousScore === null || state.score > previousScore;
   const bestStreak = Math.max(previousBestStreak, state.bestStreak);
   const bestTopicBronzeStreak = isTopicArea(state.game)
     ? Math.max(previousBestTopicBronzeStreak, getBronzeStreak(scoreContext).highestStreak)
     : previousBestTopicBronzeStreak;
-  const entry = {
-    id: scoreIdentity.id,
-    uid: scoreIdentity.uid,
-    name: playerName,
-    score: improved ? state.score : previousScore,
-    bestStreak,
-    bestTopicBronzeStreak,
-    role: scoreContext.role,
-    game: state.game,
-  };
+  const bestScore = improved ? state.score : previousScore;
 
-  if (scoreContext.role === "teacher") {
-    entry.teacherYearLevels = scoreContext.teacherYearLevels;
-    entry.yearLevel = scoreContext.yearLevel;
-  } else {
-    entry.yearLevel = scoreContext.yearLevel;
-  }
+  saveYearLevels.forEach((yearLevel) => {
+    const yearScoreContext = { ...scoreContext, yearLevel };
+    const scoreIdentity = getScoreIdentity(yearScoreContext, playerName);
+    const existingIndex = scores[state.game].findIndex(
+      (entry) => scoreMatchesIdentity(entry, yearScoreContext, scoreIdentity),
+    );
+    const entry = {
+      id: scoreIdentity.id,
+      uid: scoreIdentity.uid,
+      name: playerName,
+      score: bestScore,
+      bestStreak,
+      bestTopicBronzeStreak,
+      role: scoreContext.role,
+      game: state.game,
+      yearLevel,
+    };
 
-  if (existingIndex >= 0) {
-    scores[state.game][existingIndex] = entry;
-  } else {
-    scores[state.game].push(entry);
-  }
+    if (scoreContext.role === "teacher") {
+      entry.teacherYearLevels = scoreContext.teacherYearLevels;
+    }
+
+    if (existingIndex >= 0) {
+      scores[state.game][existingIndex] = entry;
+    } else {
+      scores[state.game].push(entry);
+    }
+  });
 
   scores[state.game] = normalizeScores(scores[state.game])
     .sort((a, b) => b.score - a.score)
@@ -2009,7 +2045,7 @@ function saveLocalScore() {
     rank: visibleScores.findIndex(scoreMatchesCurrentPlayer) + 1,
     improved,
     previousScore,
-    bestScore: improved ? state.score : previousScore,
+    bestScore,
     saved: true,
   };
 }

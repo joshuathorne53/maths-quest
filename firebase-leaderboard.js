@@ -37,6 +37,7 @@ const validGames = new Set([
   "topic-number",
   "topic-fractions",
 ]);
+const sharedTeacherScoreGames = new Set(["topic-speed-operations"]);
 const validYearLevels = new Set([
   "year7",
   "year8",
@@ -804,6 +805,101 @@ if (!isConfigured) {
     };
   }
 
+  function shouldShareTeacherScoreAcrossYearLevels(game, scoreData) {
+    return scoreData?.role === "teacher" && sharedTeacherScoreGames.has(game);
+  }
+
+  function getSharedTeacherScoreYearLevels(game, scoreData) {
+    const selectedYearLevel = cleanYearLevel(scoreData.yearLevel);
+    const sharedYearLevels = cleanYearLevels(scoreData.teacherYearLevels)
+      .filter((yearLevel) => canStudentAccessGame(game, yearLevel));
+
+    if (selectedYearLevel && !sharedYearLevels.includes(selectedYearLevel) && canStudentAccessGame(game, selectedYearLevel)) {
+      sharedYearLevels.unshift(selectedYearLevel);
+    }
+
+    return selectedYearLevel
+      ? [selectedYearLevel, ...sharedYearLevels.filter((yearLevel) => yearLevel !== selectedYearLevel)]
+      : sharedYearLevels;
+  }
+
+  async function saveSharedTeacherScoreForAllYears(user, game, score, baseScoreData, context = {}) {
+    const saveYearLevels = getSharedTeacherScoreYearLevels(game, baseScoreData);
+    const scoreStates = await Promise.all(saveYearLevels.map(async (yearLevel) => {
+      const scoreData = {
+        ...baseScoreData,
+        yearLevel,
+      };
+      return {
+        yearLevel,
+        scoreData,
+        ...await getScoreDocumentState(user, game, scoreData),
+      };
+    }));
+    const previousScores = scoreStates
+      .map((scoreState) => scoreState.previousScore)
+      .filter(Number.isInteger);
+    const sharedPreviousScore = previousScores.length ? Math.max(...previousScores) : null;
+    const sharedScore = Math.max(score, sharedPreviousScore ?? 0);
+    const currentBestStreak = cleanBestStreak(context.bestStreak);
+    const currentBestTopicBronzeStreak = scoreStates.reduce(
+      (highest, scoreState) => Math.max(
+        highest,
+        cleanBestTopicBronzeStreak(context.bestTopicBronzeStreak, scoreState.existingData || { createdAt: new Date() }),
+      ),
+      0,
+    );
+    const sharedBestStreak = scoreStates.reduce(
+      (highest, scoreState) => Math.max(highest, scoreState.previousBestStreak),
+      currentBestStreak,
+    );
+    const sharedBestTopicBronzeStreak = scoreStates.reduce(
+      (highest, scoreState) => Math.max(highest, scoreState.previousBestTopicBronzeStreak),
+      currentBestTopicBronzeStreak,
+    );
+
+    await Promise.all(scoreStates.map(async ({
+      scoreDocument,
+      existingScore,
+      existingData,
+      scoreData,
+    }) => {
+      const updateData = {
+        ...scoreData,
+        score: sharedScore,
+        bestStreak: sharedBestStreak,
+        bestTopicBronzeStreak: sharedBestTopicBronzeStreak,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (existingScore.exists()) {
+        if (!existingData?.createdAt) {
+          updateData.createdAt = serverTimestamp();
+        }
+        await updateDoc(scoreDocument, updateData);
+      } else {
+        await setDoc(scoreDocument, {
+          ...updateData,
+          createdAt: serverTimestamp(),
+        });
+      }
+    }));
+
+    const selectedYearLevel = cleanYearLevel(baseScoreData.yearLevel);
+    const selectedScoreState = scoreStates.find((scoreState) => scoreState.yearLevel === selectedYearLevel) || scoreStates[0];
+    return {
+      id: selectedScoreState?.scoreDocument.id || "",
+      improved: sharedPreviousScore === null || score > sharedPreviousScore,
+      previousScore: sharedPreviousScore,
+      role: baseScoreData.role,
+      yearLevel: selectedYearLevel || selectedScoreState?.yearLevel || "",
+      score: sharedScore,
+      bestStreak: sharedBestStreak,
+      bestTopicBronzeStreak: sharedBestTopicBronzeStreak,
+      syncedYearLevels: saveYearLevels,
+    };
+  }
+
   function sameArray(left = [], right = []) {
     return left.length === right.length && left.every((value, index) => value === right[index]);
   }
@@ -1007,6 +1103,10 @@ if (!isConfigured) {
       const scoreData = role === "teacher"
         ? await getTeacherScorePayload(user, game, score, context.yearLevel)
         : await getStudentScorePayload(user, game, score, context.yearLevel);
+      if (shouldShareTeacherScoreAcrossYearLevels(game, scoreData)) {
+        return saveSharedTeacherScoreForAllYears(user, game, score, scoreData, context);
+      }
+
       const currentBestStreak = cleanBestStreak(context.bestStreak);
       const {
         scoreDocument,
