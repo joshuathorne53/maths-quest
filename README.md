@@ -1,9 +1,9 @@
 # Bayside Maths Challenge
 
 A bright, responsive maths website for Bayside Christian College, built for
-GitHub Pages. Students in Years 7-12 can play timed topic-area games, practise
-individual skills, use their school-assigned year level, and appear on shared
-live topic leaderboards.
+GitHub Pages. Students from Prep to Year 12 use school-assigned year levels,
+play timed topic-area games when content is unlocked for them, practise
+individual skills, and appear on shared live topic leaderboards.
 
 ## Topic Areas
 
@@ -53,11 +53,10 @@ all-teachers view, the board shows that signed-in student plus the relevant
 teachers, not every other student. The leaderboard page also includes combined
 topic scores and a longest Streak board.
 
-The site is high-school only: Year 7 to Year 12. Students can access skill
-challenges at their assigned year level and every lower year level. For example, a
-Year 10 student can play Year 7, Year 8, Year 9, and Year 10 skills, but not
-Year 11 or Year 12 skills. Topic areas can stay available while gaining extra
-skills for higher year levels.
+The site supports Prep to Year 12. Students can access skill challenges at their
+assigned year level and every lower year level once those skills exist. The
+current topic content is still configured to unlock from Year 7, and topic areas
+can gain extra skills for higher or lower year levels over time.
 
 Teachers use `@baysidecc.vic.edu.au` Google accounts. They choose the leaderboard
 name and year levels they teach in Settings, then can appear in the teacher

@@ -62,7 +62,11 @@ def clean_email(value: object) -> str:
 
 def clean_year_level(value: object) -> str:
     text = str(value or "").strip().lower()
-    match = re.search(r"(7|8|9|10|11|12)", text)
+    compact = re.sub(r"[^a-z0-9]", "", text)
+    if compact in {"p", "prep", "foundation"}:
+        return "prep"
+
+    match = re.search(r"\b(?:year\s*)?([1-9]|1[0-2])(?:\.0+)?\b", text)
     return f"year{match.group(1)}" if match else ""
 
 

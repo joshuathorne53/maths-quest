@@ -39,6 +39,13 @@ const validGames = new Set([
 ]);
 const sharedTeacherScoreGames = new Set(["topic-speed-operations"]);
 const validYearLevels = new Set([
+  "prep",
+  "year1",
+  "year2",
+  "year3",
+  "year4",
+  "year5",
+  "year6",
   "year7",
   "year8",
   "year9",
@@ -170,6 +177,7 @@ function cleanBestTopicBronzeStreak(bestStreak, scoreData = {}) {
 
 function getYearRank(yearLevel) {
   const cleanLevel = cleanYearLevel(yearLevel);
+  if (cleanLevel === "prep") return 0;
   return cleanLevel ? Number(cleanLevel.replace("year", "")) : 0;
 }
 

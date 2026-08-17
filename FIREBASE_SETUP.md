@@ -75,13 +75,13 @@ score for each topic area in their assigned year level. Topic score documents ca
 also store `bestTopicBronzeStreak`, the player's longest streak of days earning at
 least Bronze in a topic-area game.
 
-The site is high-school only: `year7`, `year8`, `year9`, `year10`, `year11`,
-and `year12`. Students can submit scores for topic areas at their assigned year
-level and lower. Topic areas include sub-skills that unlock by year level, and
-topic-area games only sample from the sub-skills unlocked for that player. For
-example, a `year10` student can practise topic skills such as `y7-integers`,
-`y8-ratios`, `y9-gradients`, and `y10-quadratics`, but not Year 11 or Year 12
-skills.
+The site supports Prep to Year 12: `prep`, `year1`, `year2`, `year3`, `year4`,
+`year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`, and `year12`.
+Students can submit scores for topic areas at their assigned year level and
+lower once content is unlocked for that range. Topic areas include sub-skills
+that unlock by year level, and topic-area games only sample from the sub-skills
+unlocked for that player. The current topic content is still configured to
+unlock from Year 7.
 
 Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
 Teachers open **Settings**, choose the year levels they teach, and the website
@@ -91,13 +91,13 @@ creates or updates their `teachers/{uid}` profile automatically with:
 - `name`: the teacher's chosen leaderboard name
 - `email`: the teacher's school email address in lowercase
 - `approved`: `true`
-- `yearLevels`: an array, for example `["year7", "year8"]`
+- `yearLevels`: an array, for example `["year5", "year6"]`
 - `createdAt`: a Firestore timestamp
 - `approvedAt`: a Firestore timestamp
 - `updatedAt`: a Firestore timestamp
 
-The allowed `yearLevels` values are `year7`, `year8`, `year9`, `year10`,
-`year11`, and `year12`.
+The allowed `yearLevels` values are `prep`, `year1`, `year2`, `year3`, `year4`,
+`year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`, and `year12`.
 
 Year-level topic leaderboards include teacher filters:
 
@@ -130,7 +130,7 @@ delete any existing manual assignments.
 If a student signs in with an email that is not in `studentDirectory`, the site
 creates `yearLevelRequests/{uid}` with their name and email. The Requests page
 appears in the sidebar only for `joshua.thorne@baysidecc.vic.edu.au`, where the
-admin can assign the missing student to Year 7-12. Because this is a static
+admin can assign the missing student to Prep-Year 12. Because this is a static
 GitHub Pages site, it does not send a real email by itself; the request is stored
 in Firestore for the admin page.
 

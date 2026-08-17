@@ -16,6 +16,13 @@ const MEDAL_GOALS = [
 ];
 
 const YEAR_LEVELS = [
+  { id: "prep", label: "Prep" },
+  { id: "year1", label: "Year 1" },
+  { id: "year2", label: "Year 2" },
+  { id: "year3", label: "Year 3" },
+  { id: "year4", label: "Year 4" },
+  { id: "year5", label: "Year 5" },
+  { id: "year6", label: "Year 6" },
   { id: "year7", label: "Year 7" },
   { id: "year8", label: "Year 8" },
   { id: "year9", label: "Year 9" },

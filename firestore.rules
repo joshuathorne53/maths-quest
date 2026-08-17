@@ -40,6 +40,13 @@ service cloud.firestore {
 
     function validYearLevels() {
       return [
+        'prep',
+        'year1',
+        'year2',
+        'year3',
+        'year4',
+        'year5',
+        'year6',
         'year7',
         'year8',
         'year9',
@@ -56,7 +63,7 @@ service cloud.firestore {
     function isValidYearLevelList(yearLevels) {
       return yearLevels is list
         && yearLevels.size() >= 1
-        && yearLevels.size() <= 6
+        && yearLevels.size() <= 13
         && yearLevels.hasOnly(validYearLevels());
     }
 
@@ -69,7 +76,14 @@ service cloud.firestore {
     }
 
     function yearRank(yearLevel) {
-      return yearLevel == 'year7' ? 7
+      return yearLevel == 'prep' ? 0
+        : yearLevel == 'year1' ? 1
+        : yearLevel == 'year2' ? 2
+        : yearLevel == 'year3' ? 3
+        : yearLevel == 'year4' ? 4
+        : yearLevel == 'year5' ? 5
+        : yearLevel == 'year6' ? 6
+        : yearLevel == 'year7' ? 7
         : yearLevel == 'year8' ? 8
         : yearLevel == 'year9' ? 9
         : yearLevel == 'year10' ? 10
