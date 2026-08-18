@@ -55,7 +55,7 @@ const validYearLevels = new Set([
 ]);
 const validTeacherFilters = new Set(["none", "year", "all"]);
 const gameAccessYears = new Map([
-  ["topic-speed-operations", "year7"],
+  ["topic-speed-operations", "prep"],
   ["topic-number", "year7"],
   ["topic-fractions", "year7"],
 ]);
@@ -183,7 +183,7 @@ function getYearRank(yearLevel) {
 
 function canStudentAccessGame(game, yearLevel) {
   const requiredYear = gameAccessYears.get(game);
-  return Boolean(requiredYear) && getYearRank(yearLevel) >= getYearRank(requiredYear);
+  return Boolean(requiredYear) && Boolean(cleanYearLevel(yearLevel)) && getYearRank(yearLevel) >= getYearRank(requiredYear);
 }
 
 function makeError(code, message) {
@@ -792,8 +792,9 @@ if (!isConfigured) {
       throw makeError("teacher/year-levels-needed", "Choose at least one teaching year level before playing.");
     }
 
-    const cleanLevel = cleanYearLevel(yearLevel);
-    if (!cleanLevel || !teacherYearLevels.includes(cleanLevel)) {
+    const sharedTeacherScoreGame = sharedTeacherScoreGames.has(game);
+    const cleanLevel = cleanYearLevel(yearLevel) || (sharedTeacherScoreGame ? "prep" : "");
+    if (!cleanLevel || (!sharedTeacherScoreGame && !teacherYearLevels.includes(cleanLevel))) {
       throw makeError("teacher/year-level-locked", "Choose one of your saved teaching year levels before playing.");
     }
 
@@ -819,7 +820,7 @@ if (!isConfigured) {
 
   function getSharedTeacherScoreYearLevels(game, scoreData) {
     const selectedYearLevel = cleanYearLevel(scoreData.yearLevel);
-    const sharedYearLevels = cleanYearLevels(scoreData.teacherYearLevels)
+    const sharedYearLevels = [...validYearLevels]
       .filter((yearLevel) => canStudentAccessGame(game, yearLevel));
 
     if (selectedYearLevel && !sharedYearLevels.includes(selectedYearLevel) && canStudentAccessGame(game, selectedYearLevel)) {
@@ -1041,6 +1042,17 @@ if (!isConfigured) {
       const scoreData = role === "teacher"
         ? await getTeacherScorePayload(user, game, 0, context.yearLevel)
         : await getStudentScorePayload(user, game, 0, context.yearLevel);
+      if (shouldShareTeacherScoreAcrossYearLevels(game, scoreData)) {
+        const result = await saveSharedTeacherScoreForAllYears(user, game, 0, scoreData, context);
+        return {
+          id: result.id,
+          updated: true,
+          role: result.role,
+          yearLevel: result.yearLevel,
+          bestTopicBronzeStreak: result.bestTopicBronzeStreak,
+        };
+      }
+
       const {
         scoreDocument,
         existingScore,

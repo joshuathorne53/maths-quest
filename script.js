@@ -45,7 +45,7 @@ Object.assign(gameInfo, {
     bullets: ["Single-digit facts", "Speed operations"],
     icon: "+",
     cardClass: "game-card-sky",
-    accessYear: "year7",
+    accessYear: "prep",
   },
   "speed-single-digit-subtraction": {
     name: "Single-Digit Subtraction",
@@ -55,7 +55,7 @@ Object.assign(gameInfo, {
     bullets: ["Subtraction facts", "Speed operations"],
     icon: "-",
     cardClass: "game-card-coral",
-    accessYear: "year7",
+    accessYear: "prep",
   },
   "speed-single-digit-multiplication": {
     name: "Single-Digit Multiplication",
@@ -65,7 +65,7 @@ Object.assign(gameInfo, {
     bullets: ["Single-digit factors", "Times tables"],
     icon: "x",
     cardClass: "game-card-sun",
-    accessYear: "year7",
+    accessYear: "prep",
   },
   "speed-single-digit-division": {
     name: "Single-Digit Division",
@@ -75,7 +75,7 @@ Object.assign(gameInfo, {
     bullets: ["Division facts", "Related multiplication"],
     icon: "/",
     cardClass: "game-card-sky",
-    accessYear: "year7",
+    accessYear: "prep",
   },
   "number-identify-factors": {
     name: "Identify Factors",
@@ -370,7 +370,7 @@ const topicAreaInfo = {
     bullets: ["Addition and subtraction", "Multiplication and division"],
     icon: "⚡",
     cardClass: "game-card-sky",
-    accessYear: "year7",
+    accessYear: "prep",
   },
   "topic-number": {
     name: "Number",
@@ -1445,6 +1445,10 @@ function getLeaderboardGameId(gameId) {
   return isSkillGame(gameId) ? getSkillTopicId(gameId) : gameId;
 }
 
+function isSharedTeacherScoreGame(gameId) {
+  return SHARED_TEACHER_SCORE_GAME_IDS.has(getLeaderboardGameId(gameId));
+}
+
 function getGameTypeLabel(gameId) {
   return isTopicArea(gameId) ? "topic area" : "skill";
 }
@@ -1469,6 +1473,13 @@ function getGameRequiredYear(gameId) {
 }
 
 function getTeacherPlayableChallengeYearLevels(gameId = state.game) {
+  if (isSharedTeacherScoreGame(gameId)) {
+    if (!state.teacherYearLevels.length) return [];
+    return YEAR_LEVELS
+      .map((yearLevel) => yearLevel.id)
+      .filter((yearLevel) => canYearAccessGame(yearLevel, getLeaderboardGameId(gameId)));
+  }
+
   return state.teacherYearLevels
     .map(cleanYearLevel)
     .filter((yearLevel, index, levels) => yearLevel && levels.indexOf(yearLevel) === index)
@@ -1477,6 +1488,10 @@ function getTeacherPlayableChallengeYearLevels(gameId = state.game) {
 
 function getTeacherChallengeYearLevel(gameId = state.game) {
   const playableYearLevels = getTeacherPlayableChallengeYearLevels(gameId);
+  if (isSharedTeacherScoreGame(gameId)) {
+    return playableYearLevels[0] || DEFAULT_YEAR_LEVEL;
+  }
+
   const selectedYearLevel = cleanYearLevel(state.teacherChallengeYearLevel);
   if (selectedYearLevel && playableYearLevels.includes(selectedYearLevel)) return selectedYearLevel;
 
@@ -1718,6 +1733,10 @@ function getGameAccessMessage(gameId) {
 
   if (getActiveAccountType() === "teacher") {
     const playableYearLevels = getTeacherPlayableChallengeYearLevels(gameId);
+    if (isSharedTeacherScoreGame(gameId) && playableYearLevels.length) {
+      return "Available for teacher accounts. Your score is shared across every year-level leaderboard.";
+    }
+
     return playableYearLevels.length
       ? `Available for teacher accounts. Choose ${getYearLabel(getTeacherChallengeYearLevel(gameId))} or another saved teaching year before playing.`
       : "No saved teaching year has skills unlocked for this topic yet.";
@@ -1931,19 +1950,16 @@ function getScoreIdentity(scoreContext, playerName) {
 
 function getScoreSaveYearLevels(gameId, scoreContext) {
   const selectedYearLevel = cleanYearLevel(scoreContext.yearLevel);
-  if (scoreContext.role !== "teacher" || !SHARED_TEACHER_SCORE_GAME_IDS.has(gameId)) {
+  if (scoreContext.role !== "teacher" || !isSharedTeacherScoreGame(gameId)) {
     return selectedYearLevel ? [selectedYearLevel] : [];
   }
 
-  const sharedYearLevels = (scoreContext.teacherYearLevels || [])
-    .map(cleanYearLevel)
-    .filter((yearLevel, index, levels) => (
-      yearLevel
-      && levels.indexOf(yearLevel) === index
-      && canYearAccessGame(yearLevel, gameId)
-    ));
+  const leaderboardGameId = getLeaderboardGameId(gameId);
+  const sharedYearLevels = YEAR_LEVELS
+    .map((yearLevel) => yearLevel.id)
+    .filter((yearLevel) => canYearAccessGame(yearLevel, leaderboardGameId));
 
-  if (selectedYearLevel && !sharedYearLevels.includes(selectedYearLevel) && canYearAccessGame(selectedYearLevel, gameId)) {
+  if (selectedYearLevel && !sharedYearLevels.includes(selectedYearLevel) && canYearAccessGame(selectedYearLevel, leaderboardGameId)) {
     sharedYearLevels.unshift(selectedYearLevel);
   }
 
@@ -1970,8 +1986,11 @@ function scoreMatchesIdentity(entry, scoreContext, scoreIdentity) {
 
 function scoreMatchesCurrentPlayer(entry, scoreContext = getScoreContext()) {
   if (isTeacherTestingAsStudent()) return false;
-  const scoreIdentity = getScoreIdentity(scoreContext, state.player || getGooglePlayerName());
-  if (scoreMatchesIdentity(entry, scoreContext, scoreIdentity)) return true;
+  const identityContext = scoreContext.role === "teacher" && isSharedTeacherScoreGame(entry.game || state.board || state.game)
+    ? { ...scoreContext, yearLevel: entry.yearLevel }
+    : scoreContext;
+  const scoreIdentity = getScoreIdentity(identityContext, state.player || getGooglePlayerName());
+  if (scoreMatchesIdentity(entry, identityContext, scoreIdentity)) return true;
   return !state.authUid && entry.name === state.player;
 }
 
@@ -2874,7 +2893,8 @@ function renderTeacherChallengeYearControl() {
     && state.authAllowed
     && getActiveAccountType() === "teacher"
     && !isTeacherTestingAsStudent()
-    && isTopicArea(state.game);
+    && isTopicArea(state.game)
+    && !isSharedTeacherScoreGame(state.game);
   const playableYearLevels = showControl ? getTeacherPlayableChallengeYearLevels(state.game) : [];
   elements.teacherChallengeYearWrap.hidden = !showControl || !playableYearLevels.length;
 
@@ -2936,12 +2956,19 @@ function updateStartPanel() {
         elements.startGameButton.disabled = true;
         elements.startNote.textContent = "Choose a different topic or update your teaching years in settings.";
       } else {
-        const yearLabel = teacherChallengeYearLevel ? ` for ${getYearLabel(teacherChallengeYearLevel)}` : "";
+        const sharedTeacherScoreGame = isSharedTeacherScoreGame(state.game);
+        const yearLabel = teacherChallengeYearLevel && !sharedTeacherScoreGame
+          ? ` for ${getYearLabel(teacherChallengeYearLevel)}`
+          : "";
         elements.startPlayer.textContent = `Playing as ${getGooglePlayerName()}, teacher${yearLabel}.`;
         elements.startGameButton.textContent = "Start game →";
-        elements.startNote.textContent = teacherChallengeYearLevel
-          ? `${gameInfo[state.game].name} questions and leaderboard score will use ${getYearLabel(teacherChallengeYearLevel)}.`
-          : "Teacher skill practice saves to your progress but not shared leaderboards.";
+        if (sharedTeacherScoreGame) {
+          elements.startNote.textContent = `${gameInfo[state.game].name} uses the same questions and teacher score across every year-level leaderboard.`;
+        } else if (teacherChallengeYearLevel) {
+          elements.startNote.textContent = `${gameInfo[state.game].name} questions and leaderboard score will use ${getYearLabel(teacherChallengeYearLevel)}.`;
+        } else {
+          elements.startNote.textContent = "Teacher skill practice saves to your progress but not shared leaderboards.";
+        }
       }
     } else {
       elements.startPlayer.textContent = "Choose your teaching year levels before playing as a teacher.";
@@ -3281,7 +3308,9 @@ function renderTopicPageSkills() {
       ? canYearAccessGame(topicYearLevel, skillId)
       : canAccessGame(skillId)
   ));
-  const yearLabel = getYearLabel(topicYearLevel);
+  const yearLabel = getActiveAccountType() === "teacher" && !isTeacherTestingAsStudent() && isSharedTeacherScoreGame(state.game)
+    ? "every year level"
+    : getYearLabel(topicYearLevel);
   elements.topicPageSkillsTitle.textContent = `${gameInfo[state.game].name} sub skills`;
   elements.topicPageSkillsSummary.textContent = availableSkillIds.length
     ? `${availableSkillIds.length} ${availableSkillIds.length === 1 ? "skill is" : "skills are"} available for ${yearLabel}. Practise one exact question type, then play the topic area game for the shared leaderboard.`
@@ -4218,7 +4247,7 @@ async function saveSharedScore() {
     );
     state.pendingSharedScore = null;
 
-    if (savedScore.role === "teacher") {
+    if (savedScore.role === "teacher" && !isSharedTeacherScoreGame(scoreToSave.game)) {
       setBoardYearLevel(savedScore.yearLevel || currentScoreContext.yearLevel);
     }
 

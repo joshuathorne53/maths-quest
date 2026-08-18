@@ -92,9 +92,21 @@ service cloud.firestore {
         : 0;
     }
 
+    function gameAccessYear(game) {
+      return game == 'topic-speed-operations' ? 'prep'
+        : game == 'topic-number' ? 'year7'
+        : game == 'topic-fractions' ? 'year7'
+        : 'year12';
+    }
+
     function canStudentAccessGame(game, yearLevel) {
       return isValidGame(game)
-        && yearRank(yearLevel) >= 7;
+        && isValidYearLevel(yearLevel)
+        && yearRank(yearLevel) >= yearRank(gameAccessYear(game));
+    }
+
+    function isSharedTeacherScoreGame(game) {
+      return game == 'topic-speed-operations';
     }
 
     function isValidName(name) {
@@ -224,7 +236,10 @@ service cloud.firestore {
         && isValidYearLevel(request.resource.data.yearLevel)
         && canStudentAccessGame(game, request.resource.data.yearLevel)
         && hasSavedTeacherYears()
-        && get(teacherProfilePath()).data.yearLevels.hasAny([request.resource.data.yearLevel])
+        && (
+          get(teacherProfilePath()).data.yearLevels.hasAny([request.resource.data.yearLevel])
+          || isSharedTeacherScoreGame(game)
+        )
         && request.resource.data.teacherYearLevels == get(teacherProfilePath()).data.yearLevels
         && isValidYearLevelList(request.resource.data.teacherYearLevels);
     }
