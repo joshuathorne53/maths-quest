@@ -2353,6 +2353,15 @@ function saveProgressStore(store) {
   }
 }
 
+function normalizeProgressRecord(record = {}) {
+  return {
+    bronzeDays: Array.isArray(record.bronzeDays) ? record.bronzeDays : [],
+    topicBronzeDays: Array.isArray(record.topicBronzeDays) ? record.topicBronzeDays : [],
+    attempts: Array.isArray(record.attempts) ? record.attempts : [],
+    bestScores: normalizeProgressBestScores(record.bestScores, record.attempts),
+  };
+}
+
 function normalizeProgressBestScores(bestScores, attempts = []) {
   const savedBestScores = bestScores && typeof bestScores === "object" && !Array.isArray(bestScores)
     ? bestScores
@@ -2388,17 +2397,65 @@ function getProgressPlayerKey(scoreContext = getScoreContext()) {
   return `local:${scoreContext.role}:${contextKey}:${playerName}`;
 }
 
+function getTeacherProgressKeys() {
+  if (getActiveAccountType() !== "teacher" || isTeacherTestingAsStudent()) {
+    return [];
+  }
+
+  if (state.authUid) {
+    return YEAR_LEVELS.map((yearLevel) => `uid:${state.authUid}:teacher:${yearLevel.id}`);
+  }
+
+  const playerName = getGooglePlayerName().toLowerCase();
+  return YEAR_LEVELS.map((yearLevel) => `local:teacher:${yearLevel.id}:${playerName}`);
+}
+
+function mergeProgressRecords(records) {
+  const bronzeDays = new Set();
+  const topicBronzeDays = new Set();
+  const attempts = [];
+  const bestScores = {};
+
+  records.forEach((record) => {
+    const normalizedRecord = normalizeProgressRecord(record);
+    normalizedRecord.bronzeDays.forEach((dateKey) => bronzeDays.add(dateKey));
+    normalizedRecord.topicBronzeDays.forEach((dateKey) => topicBronzeDays.add(dateKey));
+    attempts.push(...normalizedRecord.attempts);
+    Object.entries(normalizedRecord.bestScores).forEach(([gameId, score]) => {
+      bestScores[gameId] = Math.max(bestScores[gameId] || 0, score);
+    });
+  });
+
+  return {
+    bronzeDays: [...bronzeDays].sort(),
+    topicBronzeDays: [...topicBronzeDays].sort(),
+    attempts: attempts.slice(-400),
+    bestScores,
+  };
+}
+
 function getProgressRecord(scoreContext = getScoreContext()) {
   const store = getProgressStore();
   const key = getProgressPlayerKey(scoreContext);
   const record = store[key] && typeof store[key] === "object" ? store[key] : {};
 
-  return {
-    bronzeDays: Array.isArray(record.bronzeDays) ? record.bronzeDays : [],
-    topicBronzeDays: Array.isArray(record.topicBronzeDays) ? record.topicBronzeDays : [],
-    attempts: Array.isArray(record.attempts) ? record.attempts : [],
-    bestScores: normalizeProgressBestScores(record.bestScores, record.attempts),
-  };
+  return normalizeProgressRecord(record);
+}
+
+function getStreakProgressRecord(scoreContext = getScoreContext()) {
+  if (scoreContext.role !== "teacher" || isTeacherTestingAsStudent()) {
+    return getProgressRecord(scoreContext);
+  }
+
+  const store = getProgressStore();
+  const teacherRecords = getTeacherProgressKeys()
+    .map((key) => store[key])
+    .filter((record) => record && typeof record === "object");
+
+  return mergeProgressRecords([
+    ...teacherRecords,
+    getProgressRecord(scoreContext),
+  ]);
 }
 
 function saveProgressRecord(record, scoreContext = getScoreContext()) {
@@ -2536,7 +2593,7 @@ function getLongestStreakFromDays(days) {
 }
 
 function getBronzeStreak(scoreContext = getScoreContext()) {
-  const record = getProgressRecord(scoreContext);
+  const record = getStreakProgressRecord(scoreContext);
   const bronzeDayList = getBronzeDays(record);
   const bronzeDays = new Set(bronzeDayList);
   const today = getLocalDateKey();
@@ -4588,7 +4645,9 @@ async function requestStartGame() {
   if (scoreContext.role === "student" || scoreContext.role === "test") {
     setBoardYearLevel(scoreContext.yearLevel);
   } else if (scoreContext.role === "teacher") {
-    setBoardYearLevel(scoreContext.yearLevel);
+    if (!isSharedTeacherScoreGame(state.game)) {
+      setBoardYearLevel(scoreContext.yearLevel);
+    }
     state.teacherFilter = "year";
     renderTeacherFilterControls();
   }
@@ -4607,7 +4666,9 @@ function finishGame() {
   if (scoreContext.role === "student" || scoreContext.role === "test") {
     setBoardYearLevel(scoreContext.yearLevel);
   } else if (scoreContext.role === "teacher") {
-    setBoardYearLevel(scoreContext.yearLevel);
+    if (!isSharedTeacherScoreGame(state.game)) {
+      setBoardYearLevel(scoreContext.yearLevel);
+    }
     if (state.teacherFilter === "none") {
       state.teacherFilter = "year";
       renderTeacherFilterControls();

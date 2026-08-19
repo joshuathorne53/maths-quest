@@ -69,19 +69,21 @@ Student leaderboard names come from the user's Google account. Teacher accounts
 can customise their leaderboard name in Settings. Students can have one score
 document per topic area per assigned year level, using document IDs such as
 `{uid}_year7`; older `{uid}` student score documents remain valid so existing
-scores keep showing. Teacher accounts keep one score document per topic area.
-Students can play any number of attempts. The leaderboard keeps their highest
-score for each topic area in their assigned year level. Topic score documents can
-also store `bestTopicBronzeStreak`, the player's longest streak of days earning at
-least Bronze in a topic-area game.
+scores keep showing. Teacher accounts keep one score document per topic area per
+leaderboard year level. Speed Operations is shared for teachers, so the same
+teacher best score is written to every year-level leaderboard. Students can play
+any number of attempts. The leaderboard keeps their highest score for each topic
+area in their assigned year level. Topic score documents can also store
+`bestTopicBronzeStreak`, the player's longest streak of days earning at least
+Bronze in a topic-area game. Teacher Streak values are account-wide, not
+separate per year level.
 
 The site supports Prep to Year 12: `prep`, `year1`, `year2`, `year3`, `year4`,
 `year5`, `year6`, `year7`, `year8`, `year9`, `year10`, `year11`, and `year12`.
 Students can submit scores for topic areas at their assigned year level and
 lower once content is unlocked for that range. Topic areas include sub-skills
 that unlock by year level, and topic-area games only sample from the sub-skills
-unlocked for that player. The current topic content is still configured to
-unlock from Year 7.
+unlocked for that player.
 
 Teacher accounts are automatic for `@baysidecc.vic.edu.au` Google accounts.
 Teachers open **Settings**, choose the year levels they teach, and the website

@@ -172,7 +172,9 @@ function getMaxPossibleStreakSince(timestamp) {
 }
 
 function cleanBestTopicBronzeStreak(bestStreak, scoreData = {}) {
-  return Math.min(cleanBestStreak(bestStreak), getMaxPossibleStreakSince(scoreData.createdAt));
+  const cleanStreak = cleanBestStreak(bestStreak);
+  if (scoreData?.role === "teacher") return cleanStreak;
+  return Math.min(cleanStreak, getMaxPossibleStreakSince(scoreData.createdAt));
 }
 
 function getYearRank(yearLevel) {
@@ -909,6 +911,84 @@ if (!isConfigured) {
     };
   }
 
+  async function syncTeacherStreakAcrossYearLevels(user, game, baseScoreData) {
+    if (baseScoreData.role !== "teacher" || sharedTeacherScoreGames.has(game)) {
+      return {
+        bestStreak: cleanBestStreak(baseScoreData.bestStreak),
+        bestTopicBronzeStreak: cleanBestStreak(baseScoreData.bestTopicBronzeStreak),
+      };
+    }
+
+    const saveYearLevels = cleanYearLevels(baseScoreData.teacherYearLevels)
+      .filter((yearLevel) => canStudentAccessGame(game, yearLevel));
+    if (!saveYearLevels.length) {
+      return {
+        bestStreak: cleanBestStreak(baseScoreData.bestStreak),
+        bestTopicBronzeStreak: cleanBestStreak(baseScoreData.bestTopicBronzeStreak),
+      };
+    }
+
+    const scoreStates = await Promise.all(saveYearLevels.map(async (yearLevel) => {
+      const scoreDocument = doc(scoreCollection(game), getTeacherScoreDocumentId(user, yearLevel));
+      const existingScore = await getDoc(scoreDocument);
+      const existingData = existingScore.exists() ? existingScore.data() : null;
+      return {
+        yearLevel,
+        scoreDocument,
+        existingScore,
+        existingData,
+      };
+    }));
+    const bestStreak = scoreStates.reduce(
+      (highest, scoreState) => Math.max(highest, cleanBestStreak(scoreState.existingData?.bestStreak)),
+      cleanBestStreak(baseScoreData.bestStreak),
+    );
+    const bestTopicBronzeStreak = scoreStates.reduce(
+      (highest, scoreState) => Math.max(highest, cleanBestTopicBronzeStreak(scoreState.existingData?.bestTopicBronzeStreak, scoreState.existingData || {})),
+      cleanBestStreak(baseScoreData.bestTopicBronzeStreak),
+    );
+    if (!bestTopicBronzeStreak) {
+      return { bestStreak, bestTopicBronzeStreak };
+    }
+
+    await Promise.all(scoreStates.map(async ({
+      yearLevel,
+      scoreDocument,
+      existingScore,
+      existingData,
+    }) => {
+      const preservedScore = Number.isInteger(existingData?.score) && existingData.score >= 0
+        ? existingData.score
+        : 0;
+      const updateData = {
+        name: baseScoreData.name,
+        uid: baseScoreData.uid,
+        role: "teacher",
+        teacherYearLevels: baseScoreData.teacherYearLevels,
+        game,
+        yearLevel,
+        score: preservedScore,
+        bestStreak,
+        bestTopicBronzeStreak,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (existingScore.exists()) {
+        if (!existingData?.createdAt) {
+          updateData.createdAt = serverTimestamp();
+        }
+        await updateDoc(scoreDocument, updateData);
+      } else {
+        await setDoc(scoreDocument, {
+          ...updateData,
+          createdAt: serverTimestamp(),
+        });
+      }
+    }));
+
+    return { bestStreak, bestTopicBronzeStreak };
+  }
+
   function sameArray(left = [], right = []) {
     return left.length === right.length && left.every((value, index) => value === right[index]);
   }
@@ -1068,12 +1148,22 @@ if (!isConfigured) {
       const bestTopicBronzeStreak = Math.max(previousBestTopicBronzeStreak, currentBestTopicBronzeStreak);
 
       if (!bestTopicBronzeStreak || bestTopicBronzeStreak <= previousBestTopicBronzeStreak) {
+        const syncedStreaks = scoreData.role === "teacher"
+          ? await syncTeacherStreakAcrossYearLevels(user, game, {
+              ...scoreData,
+              bestStreak: previousBestStreak,
+              bestTopicBronzeStreak,
+            })
+          : {
+              bestStreak: previousBestStreak,
+              bestTopicBronzeStreak: previousBestTopicBronzeStreak,
+            };
         return {
           id: scoreDocument.id,
           updated: false,
           role: scoreData.role,
           yearLevel: scoreData.yearLevel,
-          bestTopicBronzeStreak: previousBestTopicBronzeStreak,
+          bestTopicBronzeStreak: syncedStreaks.bestTopicBronzeStreak,
         };
       }
 
@@ -1098,13 +1188,24 @@ if (!isConfigured) {
         });
       }
 
+      const syncedStreaks = scoreData.role === "teacher"
+        ? await syncTeacherStreakAcrossYearLevels(user, game, {
+            ...scoreData,
+            bestStreak: previousBestStreak,
+            bestTopicBronzeStreak,
+          })
+        : {
+            bestStreak: updateData.bestStreak,
+            bestTopicBronzeStreak,
+          };
+
       return {
         id: scoreDocument.id,
         updated: true,
         role: scoreData.role,
         yearLevel: scoreData.yearLevel,
         score: preservedScore,
-        bestTopicBronzeStreak,
+        bestTopicBronzeStreak: syncedStreaks.bestTopicBronzeStreak,
       };
     },
 
@@ -1167,6 +1268,13 @@ if (!isConfigured) {
           }
         }
 
+        const syncedStreaks = scoreData.role === "teacher"
+          ? await syncTeacherStreakAcrossYearLevels(user, game, scoreData)
+          : {
+              bestStreak: scoreData.bestStreak,
+              bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
+            };
+
         return {
           id: scoreDocument.id,
           improved: false,
@@ -1174,8 +1282,8 @@ if (!isConfigured) {
           role: scoreData.role,
           yearLevel: scoreData.yearLevel,
           score: previousScore,
-          bestStreak: scoreData.bestStreak,
-          bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
+          bestStreak: syncedStreaks.bestStreak,
+          bestTopicBronzeStreak: syncedStreaks.bestTopicBronzeStreak,
         };
       }
 
@@ -1196,6 +1304,13 @@ if (!isConfigured) {
         });
       }
 
+      const syncedStreaks = scoreData.role === "teacher"
+        ? await syncTeacherStreakAcrossYearLevels(user, game, scoreData)
+        : {
+            bestStreak: scoreData.bestStreak,
+            bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
+          };
+
       return {
         id: scoreDocument.id,
         improved: true,
@@ -1203,8 +1318,8 @@ if (!isConfigured) {
         role: scoreData.role,
         yearLevel: scoreData.yearLevel,
         score,
-        bestStreak: scoreData.bestStreak,
-        bestTopicBronzeStreak: scoreData.bestTopicBronzeStreak,
+        bestStreak: syncedStreaks.bestStreak,
+        bestTopicBronzeStreak: syncedStreaks.bestTopicBronzeStreak,
       };
     },
   };
