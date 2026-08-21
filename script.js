@@ -1183,12 +1183,18 @@ const skillQuestionGenerators = {
   },
   "number-hcf": () => {
     const a = sample([18, 24, 30, 36, 42, 48, 54, 60, 72]);
-    const b = sample([24, 30, 36, 48, 54, 60, 72, 84]);
+    let b = sample([24, 30, 36, 48, 54, 60, 72, 84]);
+    while (b === a) {
+      b = sample([24, 30, 36, 48, 54, 60, 72, 84]);
+    }
     return { text: `Find the HCF of ${a} and ${b}`, answer: greatestCommonDivisor(a, b) };
   },
   "number-lcm": () => {
     const a = randomNumber(4, 12);
-    const b = randomNumber(4, 15);
+    let b = randomNumber(4, 15);
+    while (b === a) {
+      b = randomNumber(4, 15);
+    }
     return { text: `Find the LCM of ${a} and ${b}`, answer: leastCommonMultiple(a, b) };
   },
   "number-evaluate-squares": () => {
